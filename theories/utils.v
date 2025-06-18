@@ -7,7 +7,7 @@
 (*        Mozilla Public License Version 2.0, MPL-2.0         *)
 (**************************************************************)
 
-From Coq Require Import List Permutation Utf8.
+From Coq Require Import PeanoNat Lia List Permutation Utf8.
 
 Import ListNotations.
 
@@ -65,33 +65,6 @@ Tactic Notation "double" "length" "induction" hyp(l) hyp(m)
   in intro H; pattern l, m; revert l m H; apply list_eq_length_rect;
     [ | intros x l y m IH ].
 
-(** Relational morphisms to transfer Accessibility and Well-foundedness *)
-
-Section wf_rel_morph.
-
-  Variables (X Y : Type) (R : X → X → Prop) (T : Y → Y → Prop)
-            (f : X → Y → Prop)
-            (f_surj : ∀y, ∃x, f x y)
-            (f_morph : ∀ x₁ x₂ y₁ y₂, f x₁ y₁ → f x₂ y₂ → T y₁ y₂ → R x₁ x₂).
-
-  Theorem Acc_rel_morph x y : f x y → Acc R x → Acc T y.
-  Proof.
-    intros H1 H2; revert H2 y H1.
-    induction 1 as [ x _ IH ]; intros y ?.
-    constructor; intros z ?.
-    destruct (f_surj z); eauto.
-  Qed.
-
-  Hint Resolve Acc_rel_morph : core.
-
-  Corollary wf_rel_morph : well_founded R → well_founded T.
-  Proof. intros ? y; destruct (f_surj y); eauto. Qed.
-
-End wf_rel_morph.
-
-Tactic Notation "wf" "rel" "morph" uconstr(g) :=
-  apply wf_rel_morph with (f := g).
-
 (** Finite choice principle on lists *)
 
 #[local] Hint Resolve incl_nil_l incl_cons
@@ -119,9 +92,132 @@ Section list_choice.
 
 End list_choice.
 
+(** Maximum of a list of nat *)
+
+Definition lmax := fold_right Nat.max 0.
+
+Fact lmax_in l x : x ∈ l → x ≤ lmax l.
+Proof.
+  revert x; rewrite <- Forall_forall.
+  induction l as [ | n l IHl ]; simpl; constructor; try lia.
+  revert IHl; apply Forall_impl; lia.
+Qed.
+
+Fact lmax_find l : l = [] ∨ lmax l ∈ l.
+Proof.
+  induction l as [ | x l [ -> | IHl ]]; auto; right; simpl.
+  + lia.
+  + destruct (Nat.max_spec x (lmax l)) as [ (_ & ->) | (_ & ->) ]; auto.
+Qed.
+
+(** Reverse finite prefix of a sequence of type f : nat → X
+      pfx_rev f n = [f (n-1);...;f 0] *)
+
+Section pfx_rev.
+
+  Variables (X : Type).
+
+  Implicit Type (f : nat → X).
+
+  Definition pfx_rev f :=
+    fix loop n :=
+      match n with
+      | 0   => []
+      | S n => f n :: loop n
+      end.
+
+  Fact in_pfx_rev f n x : x ∈ pfx_rev f n ↔ ∃k, k < n ∧ f k = x.
+  Proof.
+    induction n as [ | n IHn ]; simpl.
+    + split; [ easy | ]; now intros (? & ? & _).
+    + rewrite IHn; split.
+      * intros [ <- | (k & ? & <-) ]; [ exists n | exists k ]; split; auto; lia.
+      * intros (k & H1 & H2).
+        destruct (Nat.eq_dec n k) as [ <- | ]; auto; right; exists k; split; auto; lia.
+  Qed.
+  
+  Fact pfx_rev_ext f g n : (∀i, i < n → f i = g i) → pfx_rev f n = pfx_rev g n.
+  Proof.
+    induction n as [ | n IHn ]; intros Hn; simpl; auto.
+    f_equal.
+    + apply Hn; lia.
+    + apply IHn; intros; apply Hn; lia.
+  Qed.
+
+  Fact pfx_rev_add f a b : pfx_rev f (a+b) = pfx_rev (λ n, f (n+b)) a ++ pfx_rev f b.
+  Proof. induction a; simpl; f_equal; auto. Qed.
+  
+  Fact pfx_rev_S f n : pfx_rev f (1+n) = pfx_rev (λ n, f (1+n)) n ++ [f 0].
+  Proof.
+    rewrite Nat.add_comm, pfx_rev_add; f_equal; auto.
+    apply pfx_rev_ext; intros; f_equal; lia.
+  Qed.
+
+End pfx_rev.
+
+Arguments pfx_rev {X}.
+
 (** Inductive predicate for the extends relations between lists *)
-Inductive extends {X} (l : list X) : list X → Prop :=
-  | extends_intro x : extends l (x::l).
+
+Section extends.
+
+  Variables (X : Type).
+
+  Implicit Type (l : list X).
+
+  Inductive extends l : list X → Prop :=
+    | extends_intro x : extends l (x::l).
+
+  Hint Constructors extends : core.
+
+  Fact extends_inv l m :
+      extends l m
+    → match m with
+      | []   => False
+      | _::m => l = m
+      end.
+  Proof. now destruct 1. Qed.
+
+  Fact hd_extends {l m} : extends l m → { x : X | m = x::l }.
+  Proof.
+    destruct m as [ | x m ]; intros H%extends_inv.
+    + easy.
+    + now exists x; subst.
+  Qed.
+
+  (* extends-sequences are sequences of n-prefixes *)
+  Fact extends_pfx_rev_init (α : nat → list X) (l₀ : list X) :
+      α 0 = l₀ 
+    → (∀n, extends (α n) (α (S n)))
+    → { ρ | ∀n, α n = pfx_rev ρ n ++ l₀ }.
+  Proof.
+    intros H1 H2.
+    exists (λ n, proj1_sig (hd_extends (H2 n))).
+    intros n.
+    induction n as [ | n IHn ].
+    + now simpl.
+    + simpl.
+      rewrite <- IHn.
+      exact (proj2_sig (hd_extends _)).
+  Qed.
+
+  Fact extends_pfx_rev (α : nat → list X) :
+      α 0 = [] 
+    → (∀n, extends (α n) (α (S n)))
+    → { ρ | ∀n, α n = pfx_rev ρ n }.
+  Proof.
+    intros H1 H2.
+    destruct extends_pfx_rev_init 
+      with (1 := H1) as (r & Hr); auto.
+    exists r; intro; now rewrite Hr, app_nil_r.
+  Qed.
+
+End extends.
+
+Arguments extends {X}.
+Arguments pfx_rev {X}.
+Arguments extends {X}.
+Arguments extends_pfx_rev {X}.
 
 (** Extra results for Forall2, ie finitary conjunction over two lists *)
 
@@ -218,5 +314,31 @@ Section Forall2_extra.
 
 End Forall2_extra.
 
+(** Relational morphisms to transfer Accessibility and Well-foundedness *)
+
+Section wf_rel_morph.
+
+  Variables (X Y : Type) (R : X → X → Prop) (T : Y → Y → Prop)
+            (f : X → Y → Prop)
+            (f_surj : ∀y, ∃x, f x y)
+            (f_morph : ∀ x₁ x₂ y₁ y₂, f x₁ y₁ → f x₂ y₂ → T y₁ y₂ → R x₁ x₂).
+
+  Theorem Acc_rel_morph x y : f x y → Acc R x → Acc T y.
+  Proof.
+    intros H1 H2; revert H2 y H1.
+    induction 1 as [ x _ IH ]; intros y ?.
+    constructor; intros z ?.
+    destruct (f_surj z); eauto.
+  Qed.
+
+  Hint Resolve Acc_rel_morph : core.
+
+  Corollary wf_rel_morph : well_founded R → well_founded T.
+  Proof. intros ? y; destruct (f_surj y); eauto. Qed.
+
+End wf_rel_morph.
+
+Tactic Notation "wf" "rel" "morph" uconstr(g) :=
+  apply wf_rel_morph with (f := g).
 
 
