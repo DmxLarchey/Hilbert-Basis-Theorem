@@ -8,20 +8,13 @@
 (**************************************************************)
 
 From Coq Require Import List Arith Lia Wellfounded Relations Setoid Utf8.
+From Coq Require Fin.
 
-From KruskalTrees Require Import idx.
-
-Import ListNotations idx_notations.
+Import ListNotations.
 
 Require Import utils bar php ring ideal poly noetherian.
 
-(** These comments are interesting
-
-      https://mathoverflow.net/questions/222923/alternate-proofs-of-hilberts-basis-theorem
-
-   Ref:  https://link.springer.com/chapter/10.1007/3-540-48167-2_3
-         Coquand & Perrson
-*)
+(** Ref:  https://link.springer.com/chapter/10.1007/3-540-48167-2_3 by Coquand & Perrson *)
 
 Section lex.
 
@@ -236,28 +229,32 @@ End HTB.
 
 Section Hilbert_Basis_Theorem.
 
+  Notation idx := Fin.t.
+
   (* Recall that idx n = {1,...,n} and here
      we show that R[X₁,...,Xₙ] is Noetherian.
 
      Formally this is the multivariate ring generated
      by (idx n) over R *)
 
+  (* idx 0 is an empty type *)
+  Local Fact idx0_rect : ∀ (P : idx 0 → Type) (p : idx 0), P p.
+  Proof. exact Fin.case0. Qed.
+
+  (* idx n + {*} and idx (S n) are equipotent (in bijection) *)
   Let idx2sum {n} (i : idx (S n)) : idx n + unit :=
-    match idx_S_inv i with
-    | Some j => inl j
-    | None   => inr tt
-    end.
+    Fin.caseS' i _ (inr tt) (λ p : idx n, inl p).
 
   Let sum2idx {n} (c : idx n + unit) : idx (S n) :=
     match c with
-    | inl i => idx_nxt i
-    | inr _ => idx_fst
+    | inl i => Fin.FS i
+    | inr _ => Fin.F1
     end.
 
   Local Fact idx2sum_bij n : bijection sum2idx (@idx2sum n).
   Proof.
     split.
-    + intro p; idx invert p; trivial.
+    + revert n; apply Fin.rectS; simpl; auto.
     + intros [ | []]; simpl; trivial.
   Qed.
 
@@ -279,10 +276,10 @@ Section Hilbert_Basis_Theorem.
        ∧ (noetherian R → noetherian Rₙ) } } }.
   Proof.
     induction n as [ | n (Rn & phi & h & H1 & H0) ].
-    + exists R, (λ x, x), (idx_O_rect _); split; auto; split; auto.
+    + exists R, (λ x, x), (idx0_rect _); split; auto; split; auto.
       intros T ga h Hga; split.
       * exists ga; split right; auto.
-        intros p; idx invert p.
+        apply idx0_rect.
       * intros al be H1 H2 H3 H4 H5 H6 r.
         now rewrite H6.
     + generalize (poly_ring_correct Rn); intros H2.

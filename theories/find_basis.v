@@ -107,6 +107,8 @@ Section find_basis.
 
 End find_basis.
 
+Check find_basis.
+
 Section finitely_generated_ideals.
 
   Variables (X : Type) (R : ring) (HR : noetherian R)

@@ -340,5 +340,3 @@ End wf_rel_morph.
 
 Tactic Notation "wf" "rel" "morph" uconstr(g) :=
   apply wf_rel_morph with (f := g).
-
-
