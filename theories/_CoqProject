@@ -1,0 +1,14 @@
+-R . Ideals
+
+utils.v
+bar.v
+measure.v
+php.v
+ring.v
+ideal.v
+poly.v
+hbt.v
+noetherian.v
+find_basis.v
+noetherian_nc.v
+
