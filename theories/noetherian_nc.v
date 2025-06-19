@@ -15,6 +15,8 @@ Import ListNotations idx_notations.
 
 Require Import utils bar ring ideal noetherian find_basis.
 
+Arguments principal_ideal {R}.
+
 Section principal__finitely_generated.
 
   Variables (R : ring).
@@ -24,7 +26,7 @@ Section principal__finitely_generated.
   Implicit Type (I : R → Prop).
 
   Definition fingen_ideal I := ∃l, I ≡₁ Idl ⌞l⌟.
-  Definition principal_ideal I := ∃g, I ≡₁ λ y, g |ᵣ y.
+ (* Definition principal_ideal I := ∃g, I ≡₁ λ y, g |ᵣ y. *) (* defined in ideal.v *)
 
   Fact fingen__ring_ideal : fingen_ideal ⊆₁ ring_ideal.
   Proof.
@@ -45,7 +47,7 @@ Section principal__finitely_generated.
 
   (** nc stands for for non constructive *)
 
-  Definition principal_nc := ring_ideal ⊆₁ principal_ideal.
+  Definition principal_nc := ring_ideal ⊆₁ @principal_ideal R.
   Definition noetherian_nc := ring_ideal ⊆₁ fingen_ideal.
 
   Fact principal__noetherian_nc : principal_nc → noetherian_nc.

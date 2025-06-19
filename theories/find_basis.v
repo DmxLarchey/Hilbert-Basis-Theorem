@@ -26,10 +26,11 @@ Local Definition sincl {X} (P Q : X → Prop) := P ⊆₁ Q ∧ ~ Q ⊆₁ P.
 Definition strict_incl {X} (P Q : X → Prop) := P ⊆₁ Q ∧ ∃x, Q x ∧ ¬ P x.
 
 #[local] Notation "P ⊂₁ Q" := (strict_incl P Q) (at level 70, format "P  ⊂₁  Q").
+#[local] Notation LD := linearly_dependent.
 
-Lemma Acc_strict_incl_rev_upclosed_right (R : ring) l :
-    Acc (λ l m : list R, extends⁻¹ l m ∧ ¬ linearly_dependent m) l
-  → ¬ linearly_dependent l
+Local Lemma Acc_strict_incl_rev_upclosed_right (R : ring) l :
+    Acc (λ l m : list R, extends⁻¹ l m ∧ ¬ LD m) l
+  → ¬ LD l
   → ∀P, ⌞l⌟ ⊆₁ P → Acc (λ P Q, Q ⊂₁ P ∧ ring_ideal Q) P.
 Proof.
   induction 1 as [ l _ IHl ].
@@ -47,7 +48,7 @@ Qed.
     is (constructivelly) well-founded on ideals of R, 
     Hence any strictly increasing sequence of ideals of R is terminating. *)
 
-Theorem noetherian__wf_strict_incl_rev R :
+Theorem noetherian__wf_strict_incl_rev {R} :
     noetherian R
   → well_founded (λ P Q : R → Prop, Q ⊂₁ P ∧ ring_ideal Q).
 Proof.
@@ -58,15 +59,32 @@ Proof.
   + simpl; tauto.
 Qed.
 
-Definition Idl_strict_incl (R : ring) (l m : list R) := Idl ⌞l⌟ ⊂₁ Idl ⌞m⌟.
-
-Theorem noetherian__wf_Idl_strict_incl {R} : noetherian R → well_founded (Idl_strict_incl R)⁻¹.
+Theorem noetherian__wf_strict_incl_ideal {R} :
+    noetherian R
+  → well_founded (λ P Q : sig (@ring_ideal R), proj1_sig Q ⊂₁ proj1_sig P).
 Proof.
   intros H%noetherian__wf_strict_incl_rev; revert H.
-  wf rel morph (fun P l => P = Idl ⌞l⌟).
-  + intro; eauto.
-  + intros ? ? l m -> ->; split; auto.
-    apply Idl_ring_ideal.
+  wf rel morph (fun x y => x = proj1_sig y).
+  + intros []; simpl; eauto.
+  + intros ? ? [] []; simpl; intros; subst; auto.
+Qed.
+
+Theorem noetherian__wf_Idl_strict_incl {R} : noetherian R → well_founded (λ P Q : R → Prop, Idl Q ⊂₁ Idl P).
+Proof.
+  intros H%noetherian__wf_strict_incl_ideal; revert H.
+  wf rel morph (fun P Q => proj1_sig P = Idl Q).
+  + intros P; now exists (exist _ _ (Idl_ring_ideal _ P)).
+  + intros ? ? ? ? -> ->; auto.
+Qed.
+
+Definition Idl_strict_incl (R : ring) (l m : list R) := Idl ⌞l⌟ ⊂₁ Idl ⌞m⌟.
+
+Theorem noetherian__wf_fin_Idl_strict_incl {R} : noetherian R → well_founded (λ l m : list R, Idl ⌞m⌟ ⊂₁ Idl ⌞l⌟).
+Proof.
+  intros H%noetherian__wf_Idl_strict_incl; revert H.
+  wf rel morph (fun P l => P = ⌞l⌟).
+  + intros l; now exists ⌞l⌟.
+  + intros ? ? ? ? -> ->; auto.
 Qed.
 
 Section find_basis.
@@ -84,7 +102,7 @@ Section find_basis.
   Lemma complete_basis l : ⌞l⌟ ⊆₁ P → ∃b, ⌞l⌟ ⊆₁ ⌞b⌟ ∧ P ≡₁ Idl ⌞b⌟.
   Proof.
     induction l as [ l IH ]
-      using (well_founded_induction_type (noetherian__wf_Idl_strict_incl HR)).
+      using (well_founded_induction_type (noetherian__wf_fin_Idl_strict_incl HR)).
     intros Hl.
     destruct (HP2 l) as [ (x & H1 & H2) | H ].
     + destruct (IH (x::l)) as (b & []).

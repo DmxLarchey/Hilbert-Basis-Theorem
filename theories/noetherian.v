@@ -7,7 +7,7 @@
 (*        Mozilla Public License Version 2.0, MPL-2.0         *)
 (**************************************************************)
 
-From Coq Require Import List Ring Setoid Utf8.
+From Coq Require Import List Ring ZArith Lia Lia Setoid Utf8.
 
 Import ListNotations.
 
@@ -96,6 +96,8 @@ Arguments Good {_}.
 
 Definition linearly_dependent {R : ring} := Good (λ m : list R, Idl ⌞m⌟).
 
+#[local] Notation LD := linearly_dependent.
+
 (** bar LD l can be read as l is bound to become linearly dependent 
     after finitely many steps, however it is extended by adding 
     elements (on the lhs) 
@@ -103,7 +105,7 @@ Definition linearly_dependent {R : ring} := Good (λ m : list R, Idl ⌞m⌟).
     Hence bar LD [] means that whichever way you build a list,
     it is bound to become LD after finitely many steps. *) 
     
-Definition noetherian (R : ring) := bar (@linearly_dependent R) [].
+Definition noetherian (R : ring) := bar (@LD R) [].
 
 Section noetherian_finite.
 
@@ -136,9 +138,10 @@ Check finite_noetherian.
 
 Section wf_strict_divisibility_principal_noetherian.
 
-  (* If R is a principal ring where 
-      a) divisibility is weakly decidable,
-      b) strict divisibility is well-founded
+  (* If R is:
+       a) a principal ring, ie every finitely generated ideal in mono-generated 
+       b) divisibility is weakly decidable,
+       c) strict divisibility is well-founded
      then R is (constructivelly) Noetherian
 
      This is enough to show that Z (the integers)
@@ -153,11 +156,11 @@ Section wf_strict_divisibility_principal_noetherian.
 
   (* If g is Acc(essible) for strict divisibility
      then any list l generating the same ideal as g
-     is eventually extended in a non-strictly increasing way *)  
+     is eventually extended in to a linearly dependent list *)  
   Local Lemma Acc_sdiv__bar_Good (g : R) :
       Acc ring_sdiv g
     → ∀l, Idl ⌞l⌟ ≡₁ ring_div g 
-    → bar linearly_dependent l.
+    → bar LD l.
   Proof.
     induction 1 as [ g _ IHg ]; intros l Hl.
     constructor 2; intros x.
@@ -171,44 +174,140 @@ Section wf_strict_divisibility_principal_noetherian.
       apply Hl, ring_div_refl.
   Qed.
 
+  Hypothesis (HR2 : @well_founded R ring_sdiv).
+
   (* Hence since 0ᵣ is Acc(essible), the
      list [] generating the ideal {0ᵣ} 
      is eventually becoming LD *)
      
-  Hypothesis (HR2 : @well_founded R ring_sdiv).
-
   Theorem wf_principal_noetherian : noetherian R.
   Proof.
     apply Acc_sdiv__bar_Good with 0ᵣ; auto.
-    intros x; rewrite Idl_iff_lc__list; split.
+    intro; rewrite Idl_iff_lc__list; split.
     + intros <-%lc_inv; apply ring_div_refl.
-    + intros (k & ->); constructor; ring.
+    + intros (? & ->); constructor; ring.
   Qed.
 
 End wf_strict_divisibility_principal_noetherian.
 
 Check wf_principal_noetherian.
 
+#[local] Open Scope Z_scope.
+
+Local Definition Zsdiv x y := (x | y)%Z ∧ ¬ (y | x)%Z.
+
+Local Lemma Zsdiv_Acc_not_zero n : ∀z, Z.abs z = n → z ≠ 0 → Acc Zsdiv z.
+Proof.
+  induction n using (well_founded_induction Wf_Z.R_wf); intros z H1 H2.
+  constructor.
+  intros y (H3 & H4).
+  assert (y ≠ 0) as H5.
+  1: intros ->; apply H4; exists 0; ring.
+  apply H with (2 := eq_refl); auto.
+  split; [ apply Z.abs_nonneg | ].
+  apply Z.abs_pos in H5.
+  rewrite <- H1.
+  destruct H3 as (d & ->).
+  rewrite Z.abs_mul, <- (Z.mul_1_l (_ y)) at 1.
+  apply Z.mul_lt_mono_pos_r; auto.
+  cut (Z.abs d = 0 ∨ Z.abs d = 1 ∨ 1 < Z.abs d); [ | lia ].
+  intros [ C | [C|] ]; auto.
+  + rewrite Z.abs_0_iff in C; subst d.
+    destruct H2; ring.
+  + destruct H4; exists d.
+    rewrite Z.mul_assoc, <- Z.abs_square, !C; ring.
+Qed.
+
+Local Proposition Zsdiv_wf : well_founded Zsdiv.
+Proof.
+  intros z.
+  destruct (Z.eq_dec z 0) as [ -> | H ].
+  + constructor.
+    intros y (H1 & H2).
+    apply Zsdiv_Acc_not_zero with (1 := eq_refl); auto.
+    intros ->; apply H2.
+    exists 0; ring.
+  + apply Zsdiv_Acc_not_zero with (1 := eq_refl); auto.
+Qed.
+
+#[local] Hint Resolve Z_principal : core.
+
+Theorem Z_noetherian : noetherian Z_ring.
+Proof.
+  apply wf_principal_noetherian; auto; simpl.
+  + intros x y; destruct (Znumtheory.Zdivide_dec x y); auto.
+  + apply Zsdiv_wf.
+Qed.
+
+Section quotient_noetherian.
+
+  Variable (R : ring)
+           (rel : R → R → Prop)
+           (rel_ovr : req ⊆₂ rel) 
+           (rel_eqv : Equivalence rel)
+           (rel_ext : @ring_eq_ext R op_a op_m iv_a rel).
+
+  Notation Q := (@quotient_ring R rel rel_ovr rel_eqv rel_ext).
+
+  Add Ring R_is_ring : (is_ring R).
+  Add Ring Q_is_ring : (is_ring Q).
+
+  Hint Constructors Idl : core.
+
+  Fact quotient_Idl : @Idl R ⊆₂ @Idl Q.
+  Proof.
+    intros I.
+    induction 1 as [ | x y H _ IH | | | ]; eauto.
+    + revert IH; now apply Idl_eq, rel_ovr.
+    + change (@un_a R) with (@un_a Q); auto.
+    + change (@op_a R x (@iv_a R y)) with (@op_a Q x (@iv_a Q y)); auto.
+    + change (@op_m R a x) with (@op_m Q a x); auto.
+  Qed.
+
+  Fact quotient_linearly_dependent l : @LD R l → @LD Q l.
+  Proof.
+    induction 1 as [ x l H | x l H IH ].
+    + constructor 1; apply quotient_Idl, H.
+    + now constructor 2. 
+  Qed.
+
+  Hypothesis HR : noetherian R.  
+
+  Theorem quotient_noetherian: noetherian (@quotient_ring R rel rel_ovr rel_eqv rel_ext).
+  Proof.
+    revert HR.
+    unfold noetherian, quotient_ring; simpl.
+    generalize ([] : list R).
+    induction 1 as [ l Hl | l Hl IHl ].
+    + constructor 1; now apply quotient_linearly_dependent.
+    + constructor 2; intros x. 
+      apply IHl; auto.
+  Qed.
+
+End quotient_noetherian.
+
+Check quotient_noetherian.
+
 (** How can we show that Q (the field of rationals) is
     Noetherian. Trivial because Idl ⌞l⌟ is either {0} or the whole Q *)
 
 Section fields.
 
-  Variables (R : ring)
-            (HR : ∀x : R, x ∼ᵣ 0ᵣ ∨ ∃y, y *ᵣ x ∼ᵣ 1ᵣ).
+  Variables (F : ring)
+            (HF : ∀x : F, x ∼ᵣ 0ᵣ ∨ ∃y, y *ᵣ x ∼ᵣ 1ᵣ).
 
-  Add Ring R_is_ring : (is_ring R).
+  Add Ring R_is_ring : (is_ring F).
 
-  Local Fact req_list_choose l : (∃ x y : R, x ∈ l ∧ y *ᵣ x ∼ᵣ 1ᵣ) ∨ ∀ x : R, x ∈ l → x ∼ᵣ 0ᵣ.
+  Local Fact req_list_choose l : (∃ x y : F, x ∈ l ∧ y *ᵣ x ∼ᵣ 1ᵣ) ∨ ∀x, x ∈ l → x ∼ᵣ 0ᵣ.
   Proof.
     destruct list_choice
-      with (Q := fun x : R => ∃y, op_m y x ∼ᵣ un_m)
-           (P := fun x : R => x ∼ᵣ un_a)
+      with (Q := fun x : F => ∃y, op_m y x ∼ᵣ un_m)
+           (P := fun x : F => x ∼ᵣ un_a)
            (l := l)
       as [ | (? & ? & []) ]; eauto.
   Qed.
 
-  Theorem field_principal : principal R.
+  Theorem field_principal : principal F.
   Proof.
     intros l.
     destruct (req_list_choose l)
@@ -229,10 +328,10 @@ Section fields.
         constructor 3.
   Qed.
 
-  Theorem field_noetherian : noetherian R.
+  Theorem field_noetherian : noetherian F.
   Proof.
     constructor 2; intros x.
-    destruct (HR x) as [ Hx | (z & Hz) ].
+    destruct (HF x) as [ Hx | (z & Hz) ].
     + constructor 1; constructor 1.
       constructor 2 with un_a.
       * now rewrite Hx.
@@ -246,3 +345,4 @@ Section fields.
   Qed.
 
 End fields.
+
