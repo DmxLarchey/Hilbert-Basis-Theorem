@@ -7,11 +7,9 @@
 (*        Mozilla Public License Version 2.0, MPL-2.0         *)
 (**************************************************************)
 
-From Coq Require Import List Arith Lia Wellfounded Relations Setoid Utf8.
+From Stdlib Require Import List Arith Lia Wellfounded Relations Setoid Utf8.
 
-From KruskalTrees Require Import idx.
-
-Import ListNotations idx_notations.
+Import ListNotations.
 
 Require Import utils bar ring ideal noetherian find_basis.
 

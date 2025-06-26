@@ -7,7 +7,7 @@
 (*        Mozilla Public License Version 2.0, MPL-2.0         *)
 (**************************************************************)
 
-From Coq Require Import List Arith Lia Wellfounded Setoid Utf8.
+From Stdlib Require Import List Arith Lia Wellfounded Setoid Utf8.
 
 Require Import utils ring ideal measure.
 

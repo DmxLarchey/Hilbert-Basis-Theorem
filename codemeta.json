@@ -1,0 +1,40 @@
+{
+    "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+    "type": "SoftwareSourceCode",
+    "author": [
+        {
+            "id": "https://orcid.org/0000-0001-9860-7203",
+            "type": "Person",
+            "affiliation": {
+                "type": "Organization",
+                "name": "Departement of Formal Method, TYPES team, LORIA, CNRS"
+            },
+            "email": "dominique.larchey-wendling@loria.fr",
+            "familyName": "Larchey-Wendling",
+            "givenName": "Dominique"
+        }
+    ],
+    "codeRepository": "https://github.com/DmxLarchey/Hilbert-Basis-Theorem",
+    "dateCreated": "2025-06-18",
+    "datePublished": "2025-06-26",
+    "description": "A constructive proof of Hilbert's basis theorem in Coq/Rocq",
+    "funder": {
+        "type": "Organization",
+        "name": "CNRS"
+    },
+    "keywords": [
+        "Coq",
+        "bar induction",
+        "constructive",
+        "Hilbert basis theorem"
+    ],
+    "license": "https://spdx.org/licenses/MPL-2.0",
+    "name": "Hilbert Basis Theorem in Coq",
+    "operatingSystem": [
+        "Linux",
+        "MacOS"
+    ],
+    "programmingLanguage": "Coq/Rocq",
+    "softwareRequirements": "https://github.com/rocq-prover",
+    "developmentStatus": "active"
+}

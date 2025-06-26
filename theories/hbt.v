@@ -7,8 +7,9 @@
 (*        Mozilla Public License Version 2.0, MPL-2.0         *)
 (**************************************************************)
 
-From Coq Require Import List Arith Lia Wellfounded Relations Setoid Utf8.
-From Coq Require Fin.
+From Stdlib Require Import List Arith Lia Wellfounded Relations Setoid Utf8.
+
+From Stdlib Require Fin.
 
 Import ListNotations.
 
