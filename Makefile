@@ -1,4 +1,3 @@
-Makefile 
 all:
 	export TIMED
 	@+$(MAKE) -C theories all
