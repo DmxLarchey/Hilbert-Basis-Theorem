@@ -23,19 +23,18 @@ Section principal__finitely_generated.
 
   Implicit Type (I : R → Prop).
 
-  Definition fingen_ideal I := ∃l, I ≡₁ Idl ⌞l⌟.
  (* Definition principal_ideal I := ∃g, I ≡₁ λ y, g |ᵣ y. *) (* defined in ideal.v *)
 
-  Fact fingen__ring_ideal : fingen_ideal ⊆₁ ring_ideal.
+  Fact fingen__ring_ideal : fingen_ideal ⊆₁ @ring_ideal R.
   Proof.
-    intros P (l & Hl); split right.
-    + intros u v E H%Hl; apply Hl; now rewrite <- E.
-    + apply Hl; constructor 3.
-    + intros u v ?%Hl ?%Hl; apply Hl; now constructor.
-    + intros u v ?%Hl; apply Hl; now constructor.
+    intros P (b & Hb); repeat split.
+    + intros ? ? E ?%Hb; apply Hb; now rewrite <- E.
+    + apply Hb; constructor 3.
+    + intros ? ? ?%Hb ?%Hb; apply Hb; now constructor.
+    + intros ? ? ?%Hb; apply Hb; now constructor.
   Qed.
 
-  Fact principal__fingen_ideal : principal_ideal ⊆₁ fingen_ideal.
+  Fact principal__fingen_ideal : principal_ideal ⊆₁ @fingen_ideal R.
   Proof.
     intros P (g & Hg); exists [g].
     intros x; rewrite Hg; split.
@@ -46,7 +45,7 @@ Section principal__finitely_generated.
   (** nc stands for for non constructive *)
 
   Definition principal_nc := ring_ideal ⊆₁ @principal_ideal R.
-  Definition noetherian_nc := ring_ideal ⊆₁ fingen_ideal.
+  Definition noetherian_nc := ring_ideal ⊆₁ @fingen_ideal R.
 
   Fact principal__noetherian_nc : principal_nc → noetherian_nc.
   Proof. intros H P HP; now apply principal__fingen_ideal, H. Qed.
@@ -136,14 +135,14 @@ End noetherian_nc_is_meaningless_constructivelly.
     establishing HBT constructivelly. Moreover, we will show
     that using XM, one can prove that this definition implies
     (is equivalent?) the classical definition. *)
-    
+
 Check noetherian_nc_implies_XM.
 
 (** Show that under XM and dependent choice, the constructive definition
     of Noetherian and the classical one coincide: with XM, one can actually show that
-    in constructively Noetherian rings aall ideals are finitely generated.
+    in constructively Noetherian rings all ideals are finitely generated.
 
-    We now study under which conditions an ideal can be proved finitely generated 
+    We now study under which conditions an ideal can be proved finitely generated
     constructively. We already explained how the classically understood Noetherianess
     (non-decidable) ideals of Z/2Z can be used to establish excluded middle. So
     we need some assumptions on ideals to show that they are finitely generated
@@ -157,12 +156,7 @@ Section noetherian__noetherian_nc__XM.
   Proof.
     intros R HR P HP.
     apply find_basis; auto.
-    intros l.
-    destruct xm with (A := ∃x, P x ∧ ¬ Idl ⌞l⌟ x); auto.
-    right.
-    intros x Hp.
-    destruct xm with (A := Idl ⌞l⌟ x); auto.
-    destruct H; eauto.
+    intro; apply incl_witnessed_dec__XM, xm.
   Qed.
 
   Hypothesis dc : ∀ X (R : X → X → Prop), (∀x, ∃y, R x y) → ∀x, ∃ρ, ρ 0 = x ∧ ∀n, R (ρ n) (ρ (1+n)).
@@ -191,8 +185,6 @@ Section noetherian__noetherian_nc__XM.
       apply Idl_mono with (P := ⌞m⌟), Idl_idem, Idl_mono with (P := ⌞l⌟); auto.
       apply Hl; constructor 1; now exists b.
   Qed.
-  
-  (** Question what constructive definition for principal ideals *)
 
 End noetherian__noetherian_nc__XM.
 

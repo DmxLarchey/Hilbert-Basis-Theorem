@@ -69,7 +69,9 @@ Proof.
   + intros ? ? [] []; simpl; intros; subst; auto.
 Qed.
 
-Theorem noetherian__wf_Idl_strict_incl {R} : noetherian R → well_founded (λ P Q : R → Prop, Idl Q ⊂₁ Idl P).
+Theorem noetherian__wf_Idl_strict_incl {R} :
+    noetherian R
+  → well_founded (λ P Q : R → Prop, Idl Q ⊂₁ Idl P).
 Proof.
   intros H%noetherian__wf_strict_incl_ideal; revert H.
   wf rel morph (fun P Q => proj1_sig P = Idl Q).
@@ -79,13 +81,40 @@ Qed.
 
 Definition Idl_strict_incl (R : ring) (l m : list R) := Idl ⌞l⌟ ⊂₁ Idl ⌞m⌟.
 
-Theorem noetherian__wf_fin_Idl_strict_incl {R} : noetherian R → well_founded (λ l m : list R, Idl ⌞m⌟ ⊂₁ Idl ⌞l⌟).
+Theorem noetherian__wf_fin_Idl_strict_incl {R} :
+    noetherian R
+  → well_founded (λ l m : list R, Idl ⌞m⌟ ⊂₁ Idl ⌞l⌟).
 Proof.
   intros H%noetherian__wf_Idl_strict_incl; revert H.
   wf rel morph (fun P l => P = ⌞l⌟).
   + intros l; now exists ⌞l⌟.
   + intros ? ? ? ? -> ->; auto.
 Qed.
+
+Definition fingen_ideal {R : ring} I := ∃ l : list R, I ≡₁ Idl ⌞l⌟.
+
+Section fingen_ideal_wdec.
+
+  Variables (R : ring) (I : R → Prop) (HI : fingen_ideal I).
+
+  Lemma fingen_ideal_wdec (l : list R) :
+      (∀x, Idl ⌞l⌟ x ∨ ¬ Idl ⌞l⌟ x)
+    → (∃x, I x ∧ ¬ Idl ⌞l⌟ x) ∨ I ⊆₁ Idl ⌞l⌟.
+  Proof.
+    intros Hl.
+    destruct HI as (b & Hb).
+    destruct list_choice
+      with (P := Idl ⌞l⌟) (Q := λ x, ¬ Idl ⌞l⌟ x) (l := b)
+      as [ | (x & []) ]; auto.
+    + right.
+      intros x.
+      rewrite Hb.
+      apply Idl_smallest; auto.
+      apply Idl_ring_ideal.
+    + left; exists x; rewrite Hb; split; auto. 
+  Qed.
+
+End fingen_ideal_wdec.
 
 Section find_basis.
 
@@ -125,40 +154,20 @@ Section find_basis.
 
 End find_basis.
 
-Check find_basis.
+Section incl_witnessed_dec__XM.
 
-Section finitely_generated_ideals.
+  Hypothesis xm : ∀A, A ∨ ¬ A.
 
-  Variables (X : Type) (R : ring) (HR : noetherian R)
-            (P : R → Prop) (HP : ∃b, P ≡₁ Idl ⌞b⌟).
+  Fact incl_witnessed_dec__XM X (P Q : X -> Prop) : (∃x, P x ∧ ¬ Q x) ∨ P ⊆₁ Q.
+  Proof. 
+    destruct xm with (A := ∃x, P x ∧ ¬ Q x); auto.
+    right.
+    intros x Hp.
+    destruct xm with (A := Q x); auto.
+    destruct H; eauto.
+  Qed.
 
-  (* Membership ie Idl ⌞l⌟ x is not necessarily decidable ... 
-     Is it decidable for polynomials provided it is decidable
-     for base elements? 
-     For instance assume b1 , ... , bk is polynomial.
-     Is p a linear combination of b1, ...., bk ?
-       1) deg p < max (deg bi)
-       2) dep p >= max (dep bi)
-
-     In case 2, we could try to obtain the dom coef
-     of p as a linear combination of the dom coef of the bi
-     If not possible, the p cannot be a linear combination
-     of the bi. 
-     If possible, remove the leading coef of p and start over
-     with the remaining polynomial of lesser degree.
-
-     In case 1, we cannot simply ignore the polynomials
-     bi of higher degrees. Unless they all have different
-     degrees. Is this possible? 
-     
-     What about Groebner bases ? *)
-
-  Fact finitely_gen_ideal_choice l : (∃x, P x ∧ ¬ Idl ⌞l⌟ x) ∨ P ⊆₁ Idl ⌞l⌟.
-  Proof.
-    destruct HP as (b & Hb).
-  Admitted.
-
-End finitely_generated_ideals.
+End incl_witnessed_dec__XM.
 
 
 
