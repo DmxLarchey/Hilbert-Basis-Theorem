@@ -24,15 +24,48 @@ Section characteristic_property_of_the_polynomial_ring.
   (** This is the initiality property for the polynomial ring:
       it is initial in the category of pointed rings which extend R *)
 
+  (** A pointed extension of R *)
+  Record ring_pointed_ext := 
+    { pe_ring :> ring;
+      pe_embed : R → pe_ring;
+      pe_embed_homo : ring_homo pe_embed;
+      pe_point : pe_ring }.
+
+  (** A homomorphism of pointed extensions *)
+  Definition pe_homo {Rx Tx : ring_pointed_ext} (γ : Rx → Tx) :=
+      ring_homo γ
+    ∧ γ (pe_point Rx) ∼ᵣ pe_point Tx
+    ∧ ∀r, γ (pe_embed Rx r) ∼ᵣ pe_embed Tx r.
+
   Definition is_polynomial_ring (Rx : ring) (φ : R → Rx) (x : Rx) :=
       ring_homo φ
    ∧ (∀ (T : ring) (γ : R → T) (t : T),
-          ring_homo γ 
+          ring_homo γ
        → (∃ α : Rx → T, ring_homo α ∧ α x ∼ᵣ t ∧ ∀r, α (φ r) ∼ᵣ γ r)
        ∧ (∀ α β : Rx → T,
               ring_homo α → α x ∼ᵣ t → (∀r, α (φ r) ∼ᵣ γ r)
             → ring_homo β → β x ∼ᵣ t → (∀r, β (φ r) ∼ᵣ γ r)
             → ∀p, α p ∼ᵣ β p)).
+
+  Definition is_poly_ring (Rx : ring_pointed_ext) :=
+    ∀ Tx : ring_pointed_ext, 
+        (∃α : Rx → Tx, pe_homo α)
+      ∧ (∀ α β : Rx → Tx, pe_homo α → pe_homo β → ∀p, α p ∼ᵣ β p).
+
+  Fact is_poly_ring_iff Rx : is_poly_ring Rx <-> is_polynomial_ring Rx (pe_embed Rx) (pe_point Rx).
+  Proof.
+    destruct Rx as [ Rx phi Hphi x ]; simpl; split.
+    + intros H; split; auto.
+      intros T f t Hf.
+      destruct (H {| pe_ring := T; pe_embed := f; pe_embed_homo := Hf; pe_point := t |}) as (H1 & H2);
+        simpl in H1, H2.
+      split; auto.
+      intros a b Ha1 Ha2 Ha3 Hb1 Hb2 Hb3.
+      apply H2; red; simpl; auto.
+    + intros (H1 & H2) Tx.
+      destruct H2 with (1 := pe_embed_homo Tx) (t := pe_point Tx); split; simpl; auto.
+      intros ? ? (? & ? & ?) (? & ? & ?); eauto.
+  Qed.
 
   (** unicity up to isomorphism *)
 
@@ -86,6 +119,10 @@ Section characteristic_property_of_the_polynomial_ring.
   Qed.
 
 End characteristic_property_of_the_polynomial_ring.
+
+Arguments pe_ring {_}.
+Arguments pe_embed {_}.
+Arguments pe_point {_}.
 
 Section characteristic_property_of_multivariate_rings.
 
@@ -204,59 +241,7 @@ Proof.
     * intro; rewrite <- P5, H2; auto.
 Qed.
 
-Section list_utils.
-
-  Variables (X : Type).
-
-  Implicit Type l : list X.
-
-  Definition list_repeat x : nat → list X :=
-    fix loop n :=
-      match n with
-      | 0   => []
-      | S n => x::loop n
-      end.
-
-  Fact list_repeat_length x n : ⌊list_repeat x n⌋ = n.
-  Proof. induction n; simpl; f_equal; auto. Qed.
-
-  (** This allows to isolate the lead coefficient of a polynomial
-      a₀+...+aₙXⁿ = [a₀;...;aₙ] *)
-  Inductive is_last x : list X → Prop :=
-    is_last_intro l : is_last x (l++[x]).
-
-  Fact is_last_inv x l :
-      is_last x l
-    → match l with
-      | []   => False
-      | y::m => 
-        match m with 
-        | [] => x = y
-        | _  => is_last x m
-        end
-      end.
-  Proof.
-    destruct 1 as [ [ | ? l ] ]; simpl; auto.
-    destruct l; constructor.
-  Qed.
-
-  Fact is_last_cons x y l : is_last x l → is_last x (y::l).
-  Proof. intros []; constructor 1 with (l := _::_). Qed.
-
-  Fact is_last_app l r x : is_last x r → is_last x (l++r).
-  Proof. intros [ r' ]; rewrite app_assoc; constructor. Qed.
-
-End list_utils.
-
-Arguments list_repeat {_}.
-
-Hint Constructors is_last : core.
-
-Arguments is_last {_}.
-
-Fact is_last_map X Y (f : X → Y) x l :
-  is_last x l → is_last (f x) (map f l).
-Proof. intros []; rewrite map_app; simpl; auto. Qed.
+#[local] Hint Constructors is_last : core.
 
 Section polynomial_ring.
 
@@ -660,28 +645,28 @@ Section polynomial_ring.
      which is critical in the HBT *)
 
   Fact poly_shift_poly_m n q :
-      list_repeat 0ᵣ n++q ∼ₚ (list_repeat 0ᵣ n++[1ᵣ]) *ₚ q.
+      repeat 0ᵣ n++q ∼ₚ (repeat 0ᵣ n++[1ᵣ]) *ₚ q.
   Proof.
     induction n as [ | n IHn ].
     + simpl; rewrite poly_s_neutral, poly_a_comm, poly_a_neutral; auto.
-    + simpl list_repeat; simpl app.
+    + simpl repeat; simpl app.
       rewrite cons_un_a_poly_m, IHn; auto.
   Qed.
 
   Fact poly_shift_scal a n p :
-      (list_repeat 0ᵣ n ++ [a]) *ₚ p ∼ₚ list_repeat 0ᵣ n ++ poly_s a p.
+      (repeat 0ᵣ n ++ [a]) *ₚ p ∼ₚ repeat 0ᵣ n ++ poly_s a p.
   Proof.
     induction n as [ | n IHn ].
     + simpl; rewrite poly_a_comm, poly_a_neutral; auto.
-    + simpl list_repeat; simpl app; simpl poly_m.
+    + simpl repeat; simpl app; simpl poly_m.
       rewrite poly_s_poly_zero_l, poly_a_neutral; auto.
       apply cons_morph; auto.
   Qed.
  
-  Fact poly_zero_list_repeat n x : 0ᵣ ∼ᵣ x → poly_zero (list_repeat x n).
+  Fact poly_zero_repeat n x : 0ᵣ ∼ᵣ x → poly_zero (repeat x n).
   Proof. intro; induction n; simpl; auto. Qed.
 
-  Hint Resolve poly_zero_list_repeat : core.
+  Hint Resolve poly_zero_repeat : core.
 
   (* Elimination of the head coefficient:
      given a linear combination x of their head coefficients,
@@ -714,8 +699,8 @@ Section polynomial_ring.
   Proof.
     induction 1 as [ x H1 | a x l c r H1 H2 IH2 ] in q |- *.
     + intros ->%Forall2_nil_inv_l _.
-      exists (list_repeat un_a d++[x]), x; repeat split; auto.
-      * rewrite length_app, list_repeat_length; simpl; lia.
+      exists (repeat un_a d++[x]), x; repeat split; auto.
+      * rewrite length_app, repeat_length; simpl; lia.
       * constructor 1.
         simpl.
         apply Forall_app.
@@ -723,9 +708,9 @@ Section polynomial_ring.
     + intros (_ & q' & [u] & H3 & ->)%Forall2_cons_inv_l
              (H4 & H5)%Forall_cons_iff.
       destruct (IH2 _ H3 H5) as (p & y & G1 & G2 & G3 & G4).
-      exists ((list_repeat un_a (d-⌊u⌋) ++ (poly_s a (u++[x]))) +ₚ p), (op_a (op_m a x) y).
-      assert (⌊list_repeat un_a (d-⌊u⌋) ++ poly_s a (u ++ [x])⌋ = 1+d) as E.
-      1:{ rewrite length_app, poly_s_length, list_repeat_length.
+      exists ((repeat un_a (d-⌊u⌋) ++ (poly_s a (u++[x]))) +ₚ p), (op_a (op_m a x) y).
+      assert (⌊repeat un_a (d-⌊u⌋) ++ poly_s a (u ++ [x])⌋ = 1+d) as E.
+      1:{ rewrite length_app, poly_s_length, repeat_length.
           rewrite length_app in H4 |- *; simpl in *; lia. }
       repeat split.
       * rewrite poly_a_length, E; lia.
@@ -733,7 +718,7 @@ Section polynomial_ring.
         - rewrite E; auto.
         - apply is_last_app, is_last_map; auto.
       * rewrite <- H1, <- G3; ring.
-      * constructor 2 with (list_repeat un_a (d-⌊u⌋)++[a]) p; auto.
+      * constructor 2 with (repeat un_a (d-⌊u⌋)++[a]) p; auto.
         unfold op_a, op_m, req; simpl.
         rewrite poly_shift_scal; auto.
   Qed.
@@ -949,7 +934,7 @@ Section polynomial_ring.
 
   (** We show that the poly_ring extension satisfies its
       characteristic property. *)
-  Theorem poly_ring_correct : is_polynomial_ring R poly_ring poly_embed poly_unknown.
+  Theorem polynomial_ring_correct : is_polynomial_ring R poly_ring poly_embed poly_unknown.
   Proof.
     split.
     + apply poly_embed_homo.
@@ -962,6 +947,23 @@ Section polynomial_ring.
         rewrite poly_extends_uniq with (h := be); eauto.
         apply poly_extends_uniq; auto.
   Qed. 
+  
+  (** We show that the poly_ring extension satisfies its
+      characteristic property. *)
+  Theorem poly_ring_correct : is_poly_ring R {| pe_ring := poly_ring; pe_embed := poly_embed; pe_embed_homo := poly_embed_homo; pe_point := poly_unknown |}.
+  Proof.
+    intros Tx.
+    split.
+    + exists (poly_extends Tx (pe_embed Tx) (pe_point Tx)); split right.
+      * apply poly_extends_homo, pe_embed_homo.
+      * destruct Tx as [ Tx f Hf x ]; simpl.
+        rewrite ring_homo_un_a, ring_homo_un_m, ring_op_m_un_a, ring_op_a_un_a, ring_un_a_op_a, ring_op_m_un_m; auto.
+      * intro; simpl; rewrite ring_op_m_un_a, ring_op_a_un_a; auto.
+    + intros al be (H1 & H2 & H3) (H4 & H5 & H6) p.
+      generalize (pe_embed_homo _ Tx).
+      intro; rewrite poly_extends_uniq with (h := be); eauto.
+      apply poly_extends_uniq; auto.
+  Qed.
 
 End polynomial_ring.
 

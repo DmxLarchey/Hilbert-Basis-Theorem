@@ -219,6 +219,72 @@ Arguments pfx_rev {X}.
 Arguments extends {X}.
 Arguments extends_pfx_rev {X}.
 
+(** repeat x n = [x;...;x] where x is repeated n times *)
+
+Section repeat.
+
+  Variables (X : Type).
+
+  Definition repeat x : nat → list X :=
+    fix loop n :=
+      match n with
+      | 0   => []
+      | S n => x::loop n
+      end.
+
+  Fact repeat_length x n : ⌊repeat x n⌋ = n.
+  Proof. induction n; simpl; f_equal; auto. Qed.
+
+End repeat.
+
+Arguments repeat {_}.
+
+(** The last member of a list 
+
+    This allows to isolate the head coefficient of 
+    a representation of a polynomial
+        a₀+...+aₙXⁿ = [a₀;...;aₙ] *)
+
+Section is_last.
+
+  Variables (X : Type).
+
+  Implicit Type l : list X.
+
+  Inductive is_last x : list X → Prop :=
+    | is_last_intro l : is_last x (l++[x]).
+
+  Fact is_last_inv x l :
+      is_last x l
+    → match l with
+      | []   => False
+      | y::m => 
+        match m with 
+        | [] => x = y
+        | _  => is_last x m
+        end
+      end.
+  Proof.
+    destruct 1 as [ [ | ? l ] ]; simpl; auto.
+    destruct l; constructor.
+  Qed.
+
+  Fact is_last_cons x y l : is_last x l → is_last x (y::l).
+  Proof. intros []; constructor 1 with (l := _::_). Qed.
+
+  Fact is_last_app l r x : is_last x r → is_last x (l++r).
+  Proof. intros [ r' ]; rewrite app_assoc; constructor. Qed.
+
+End is_last.
+
+Arguments is_last {_}.
+
+#[local] Hint Constructors is_last : core.
+
+Fact is_last_map X Y (f : X → Y) x l :
+  is_last x l → is_last (f x) (map f l).
+Proof. intros []; rewrite map_app; simpl; auto. Qed.
+
 (** Extra results for Forall2, ie finitary conjunction over two lists *)
 
 Fact Forall2_right_Forall X Y (P : Y → Prop) (l : list X) m :

@@ -85,15 +85,20 @@ Section ring_utils.
     rewrite E; ring.
   Qed.
 
+  Fact ring_op_m_un_a x : x *ᵣ 0ᵣ ∼ᵣ 0ᵣ.      Proof. ring. Qed.
+  Fact ring_op_m_un_m x : x *ᵣ 1ᵣ ∼ᵣ x.       Proof. ring. Qed.
+  Fact ring_op_a_un_a x : x +ᵣ 0ᵣ ∼ᵣ x.       Proof. ring. Qed.
+  Fact ring_un_a_op_a x : 0ᵣ +ᵣ x ∼ᵣ x.       Proof. ring. Qed.
+
 End ring_utils.
 
 Section ring_homo.
 
   (** The notion of ring homomorphism *)
 
-  Variables (R K : ring).
+  Variables (R K : ring) (f : R → K).
 
-  Definition ring_homo (f : R → K) :=
+  Definition ring_homo :=
       (∀ x y, x ∼ᵣ y → f x ∼ᵣ f y)
     ∧ (∀ x y, f (x +ᵣ y) ∼ᵣ f x +ᵣ f y)
     ∧ (∀ x y, f (x *ᵣ y) ∼ᵣ f x *ᵣ f y)
@@ -101,10 +106,15 @@ Section ring_homo.
 
   Add Ring R_is_ring : (is_ring R).
   Add Ring K_is_ring : (is_ring K).
+  
+  Hypothesis Hf : ring_homo.
+  
+  Fact ring_homo_un_m : f 1ᵣ ∼ᵣ 1ᵣ.
+  Proof. apply Hf. Qed.
 
-  Fact ring_homo_un_a f : ring_homo f → f 0ᵣ ∼ᵣ 0ᵣ.
+  Fact ring_homo_un_a : f 0ᵣ ∼ᵣ 0ᵣ.
   Proof.
-    intros (H1 & H2 & H3 & H4).
+    destruct Hf as (H1 & H2 & H3 & H4).
     generalize (H2 un_a un_a).
     rewrite H1 with (y := un_a); try ring.
     intros E.

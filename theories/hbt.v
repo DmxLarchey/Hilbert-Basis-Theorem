@@ -169,6 +169,7 @@ Section HTB.
   Proof. intro; red; rewrite length_app; simpl; lia. Qed.
   
   Hint Resolve T_le T_lt lex_app : core.
+  Hint Constructors is_last : core.
 
   Local Lemma HBT_main h : bar LD h → ∀k, Forall2 is_last h k → (∀m, lex T m k → bar LD m) → bar LD k.
   Proof.
@@ -283,7 +284,7 @@ Section Hilbert_Basis_Theorem.
         apply idx0_rect.
       * intros al be H1 H2 H3 H4 H5 H6 r.
         now rewrite H6.
-    + generalize (poly_ring_correct Rn); intros H2.
+    + generalize (polynomial_ring_correct Rn); intros H2.
       generalize (HBT Rn); intros G.
       apply poly_ring__multivariate_ring in H2.
       generalize (multivariate_ring_compose H1 H2); intros H3.
