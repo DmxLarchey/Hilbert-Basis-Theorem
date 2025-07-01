@@ -136,10 +136,10 @@ Section polynomial_ring.
   Proof.
     revert m k; induction l as [ | x l IHl ]; intros [ | y m ] [ | z k ];
         simpl; auto.
-    + intros (<- & H)%poly_zero_inv (E & G); constructor; auto.
+    + intros (<- & H)%poly_zero_inv []; constructor; auto.
       revert H; now apply poly_zero_poly_eq_closed.
     + intros []%poly_zero_inv []%poly_zero_inv; split; eauto.
-    + intros (E & H) (F & G)%poly_zero_inv; constructor; auto.
+    + intros (E & ?) (? & G)%poly_zero_inv; constructor; auto.
       * now rewrite E.
       * revert G; apply poly_zero_poly_eq_closed; auto.
     + intros [] []; split; eauto.
@@ -186,7 +186,7 @@ Section polynomial_ring.
       ⌊l⌋ = ⌊m⌋
     → is_last a l
     → is_last b m
-    → is_last (op_a a b) (l +ₚ m).
+    → is_last (a +ᵣ b) (l +ₚ m).
   Proof.
     revert m; induction l as [ | x [] IHl ]; intros [ | y [] ]; simpl; try discriminate.
     + now intros _ ?%is_last_inv.
@@ -384,8 +384,7 @@ Section polynomial_ring.
   Fact poly_i_length l : ⌊poly_i l⌋ = ⌊l⌋.
   Proof. apply poly_s_length. Qed.
 
-  Fact poly_shift_poly_m n q :
-      repeat 0ᵣ n++q ∼ₚ (repeat 0ᵣ n++[1ᵣ]) *ₚ q.
+  Fact poly_shift_poly_m n q : repeat 0ᵣ n++q ∼ₚ (repeat 0ᵣ n++[1ᵣ]) *ₚ q.
   Proof.
     induction n as [ | n IHn ].
     + simpl; rewrite poly_s_neutral, poly_a_comm, poly_a_neutral; auto.
@@ -393,8 +392,7 @@ Section polynomial_ring.
       rewrite cons_un_a_poly_m, IHn; auto.
   Qed.
 
-  Fact poly_shift_scal a n p :
-      (repeat 0ᵣ n ++ [a]) *ₚ p ∼ₚ repeat 0ᵣ n ++ poly_s a p.
+  Fact poly_shift_scal a n p : (repeat 0ᵣ n++[a]) *ₚ p ∼ₚ repeat 0ᵣ n++poly_s a p.
   Proof.
     induction n as [ | n IHn ].
     + simpl; rewrite poly_a_comm, poly_a_neutral; auto.
@@ -440,7 +438,8 @@ Section polynomial_ring.
 
   (** Construction of the polynomial ring R[X] is finished
       but we need to establish its initiality to confirm
-      that we have built the "right" ring, see below. 
+      that we have built the "right" pointed extension 
+      of ring R, ie, the initial one in this category; see below. 
 
       But before that, we show the critical theorem
       "update_lead_coef" that allows to combine
@@ -455,7 +454,7 @@ Section polynomial_ring.
 
   (* Elimination of the head coefficient:
      given a linear combination x of their head coefficients,
-     we can form a linear combination the representations of 
+     we can form a linear combination the representations of
      polynomials q₁,...,qₙ with head being x and of arbitrary 
      length provided it is greater than (all) the length 
      of q₁,...,qₙ:
@@ -478,10 +477,14 @@ Section polynomial_ring.
         where pᵢ = 1+d-⌊qᵢ⌋ for i in [1;...;n] *)
 
   Lemma lc_lead_coef d (a : list R) x (q : list poly_ring) :
-      lc a x
-    → Forall2 is_last a q
-    → Forall (λ l, ⌊l⌋ ≤ 1+d) q
-    → ∃ p y, ⌊p⌋ = 1+d ∧ is_last y p ∧ x ∼ᵣ y ∧ lc q p.
+      lc a x                       (* x is a linear combination of [a₁;...;aₙ] *)
+    → Forall2 is_last a q          (* [a₁;...;aₙ] are the heads of [q₁;...;qₙ] *) 
+    → Forall (λ l, ⌊l⌋ ≤ 1+d) q    (* 1+d is greater the all the length ⌊q₁⌋,...,⌊qₙ⌋ *)
+    → ∃ p y, 
+         ⌊p⌋ = 1+d                 (* p has length 1+d *)
+       ∧ is_last y p ∧ x ∼ᵣ y      (* p has head y ~ᵣ x *)
+       ∧ lc q p                    (* p is a linear combination of [q₁;...;qₙ] *)
+    .
   Proof.
     induction 1 as [ x H1 | a x l c r H1 H2 IH2 ] in q |- *.
     + intros ->%Forall2_nil_inv_l _.
@@ -510,10 +513,13 @@ Section polynomial_ring.
   Qed.
 
   Theorem update_lead_coef (a : list R) x v p :
-      lc a x
-    → Forall2 is_last a v
-    → Forall (λ q, ⌊q⌋ ≤ 1+⌊p⌋) v
-    → ∃q : poly_ring, ⌊q⌋ ≤ ⌊p⌋ ∧ update (q::v) ((p++[x])::v).
+      lc a x                           (* x is a linear combination of [a₁;...;aₙ] *)
+    → Forall2 is_last a v              (* [a₁;...;aₙ] are the heads of [v₁;...;vₙ] *) 
+    → Forall (λ q, ⌊q⌋ ≤ 1+⌊p⌋) v      (* ⌊p++[x]⌋ longer than ⌊v₁⌋,...,⌊vₙ⌋       *)
+    → ∃q : poly_ring,
+         ⌊q⌋ ≤ ⌊p⌋                     (* q is strictly shorter than p++[x]             *)
+       ∧ update (q::v) ((p++[x])::v)   (* replacing p++[x] with q constitutes an update *)
+    .
   Proof.
     intros H1 H2 H3.
     destruct lc_lead_coef
