@@ -264,49 +264,48 @@ Section Hilbert_Basis_Theorem.
 
   Variable (R : ring).
 
-  (** By induction on n, there exists a multivariate ring
+  (** By induction on n, one can compute a multi-extension 
+      over unknowns in {1,...,n} of a ring R, ie a tupple
       (Rₙ,φₙ,𝓧ₙ) with  
          - Rₙ : ring
          - φₙ : R → Rₙ (ring embedding)
          - 𝓧ₙ : {1,...,n} → Rₙ (unknowns)
-      such that Rₙ is Noetherian with R is *)
+      such that Rₙ is Noetherian when R is 
+
+      Notice that multi-ring extensions are
+      unique up to isomorphism *)
+
   Local Lemma HTB_rec n :
-    { Rₙ : ring & 
-    { φₙ : R → Rₙ & 
-    { 𝓧ₙ : idx n → Rₙ |
-         @is_multivariate_ring (idx n) R Rₙ φₙ 𝓧ₙ 
-       ∧ (noetherian R → noetherian Rₙ) } } }.
+    { Rₙ | is_multi_ring (idx n) R Rₙ ∧ (noetherian R → noetherian Rₙ) }.
   Proof.
-    induction n as [ | n (Rn & phi & h & H1 & H0) ].
-    + exists R, (λ x, x), (idx0_rect _); split; auto; split; auto.
-      intros T ga h Hga; split.
-      * exists ga; split right; auto.
+    induction n as [ | n (Rn & Hn1 & Hn2) ].
+    + exists {| me_ring := R;
+                me_embed := λ x, x;
+                me_embed_homo := ring_homo_id R;
+                me_points := idx0_rect _ |}; simpl; split; auto.
+      intros [ T f Hf h ]; simpl; split.
+      * exists f; split right; simpl; auto.
         apply idx0_rect.
-      * intros al be H1 H2 H3 H4 H5 H6 r.
-        now rewrite H6.
-    + generalize (polynomial_ring_correct Rn); intros H2.
+      * intros ? ? (_ & _ & ?) (_ & _ & G) ?; simpl in *; now rewrite G.
+    + generalize (poly_ring_correct Rn); intros H2.
+      apply poly_ring__multi_ring in H2; simpl in H2.
       generalize (HBT Rn); intros G.
-      apply polynomial_ring__multivariate_ring in H2.
-      generalize (multivariate_ring_compose H1 H2); intros H3.
-      apply multivariate_ring_bijection with (1 := idx2sum_bij n) in H3.
-      exists (poly_ring Rn), (λ x, poly_embed (phi x)); eauto.
+      generalize (multi_ring_compose Hn1 H2); intros H3.
+      apply multi_ring_bijection with (1 := idx2sum_bij n) in H3.
+      simpl in *; eauto.
   Qed.
 
-  Definition multivariate_ring n := projT1 (HTB_rec n).
-  Definition multivariate_embed n : R → multivariate_ring n := projT1 (projT2 (HTB_rec n)).
-  Definition multivariate_unknowns n : idx n → multivariate_ring n := proj1_sig (projT2 (projT2 (HTB_rec n))).
+  Definition multi_ring n := proj1_sig (HTB_rec n).
 
-  Theorem multivariate_ring_correct n :
-     @is_multivariate_ring (idx n) R (multivariate_ring n) (multivariate_embed n) (multivariate_unknowns n).
-  Proof. apply (proj2_sig (projT2 (projT2 (HTB_rec n)))). Qed.
+  Theorem multi_ring_correct n : is_multi_ring _ _ (multi_ring n).
+  Proof. apply (proj2_sig (HTB_rec n)). Qed.
 
-  Theorem Hilbert_Basis_Theorem n : noetherian R → noetherian (multivariate_ring n).
-  Proof. apply (proj2_sig (projT2 (projT2 (HTB_rec n)))). Qed.
+  Theorem Hilbert_Basis_Theorem n : noetherian R → noetherian (multi_ring n).
+  Proof. apply (proj2_sig (HTB_rec n)). Qed.
 
 End Hilbert_Basis_Theorem.
 
-Check multivariate_embed.
-Check multivariate_unknowns.
-Print is_multivariate_ring.
-Check multivariate_ring_correct.
+Print is_multi_ring.
+Check multi_ring.
+Check multi_ring_correct.
 Check Hilbert_Basis_Theorem.
