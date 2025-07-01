@@ -59,8 +59,8 @@ Section list_mutual_rect.
 
   Theorem list_mutual_rect l m : P l m.
   Proof.
-    induction on l m as IH with measure (@length X l + @length Y m).
-    revert l m IH; intros [ | x l ] [ | y m ] IH; auto.
+    induction on l m as IH with measure (⌊l⌋ + ⌊m⌋).
+    revert l m IH; intros [] [] IH; auto.
     apply HP2; apply IH; simpl; lia.
   Qed.
 

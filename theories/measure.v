@@ -79,10 +79,19 @@ Proof. apply wf_inverse_image, lt_wf. Qed.
 Proof. apply wf_inverse_image, lt_wf. Qed.
 
 Tactic Notation "induction" "on" hyp(x) "as" ident(IH) "with" "measure" uconstr(f) :=
-  induction on x as IH wf by (wf_measure₁ (λ x, f)).
+  match type of x with
+  | ?Tx => induction on x as IH wf by (wf_measure₁ (λ (x : Tx), f))
+  end.
 
 Tactic Notation "induction" "on" hyp(x) hyp(y) "as" ident(IH) "with" "measure" uconstr(f) :=
-  induction on x y as IH wf by (wf_measure₂ (λ x y, f)); unfold uncurry₂ in IH.
+  match type of x with 
+  | ?Tx => match type of y with 
+  | ?Ty => induction on x y as IH wf by (wf_measure₂ (λ (x : Tx) (y : Ty), f)); unfold uncurry₂ in IH
+  end end.
 
 Tactic Notation "induction" "on" hyp(x) hyp(y) hyp(z) "as" ident(IH) "with" "measure" uconstr(f) :=
-  induction on x y z as IH wf by (wf_measure₃ (λ x y z, f)); unfold uncurry₃ in IH.
+  match type of x with
+  | ?Tx => match type of y with
+  | ?Ty => match type of z with
+  | ?Tz => induction on x y z as IH wf by (wf_measure₃ (λ (x : Tx) (y : Ty) (z : Tz), f)); unfold uncurry₃ in IH
+  end end end.
