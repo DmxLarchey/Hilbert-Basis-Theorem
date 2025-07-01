@@ -286,7 +286,7 @@ Section Hilbert_Basis_Theorem.
         now rewrite H6.
     + generalize (polynomial_ring_correct Rn); intros H2.
       generalize (HBT Rn); intros G.
-      apply poly_ring__multivariate_ring in H2.
+      apply polynomial_ring__multivariate_ring in H2.
       generalize (multivariate_ring_compose H1 H2); intros H3.
       apply multivariate_ring_bijection with (1 := idx2sum_bij n) in H3.
       exists (poly_ring Rn), (λ x, poly_embed (phi x)); eauto.

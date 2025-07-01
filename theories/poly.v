@@ -354,8 +354,47 @@ Proof.
   + intros p q K1 K2 K4 K5 K6 K8 r.
     generalize (λ u, K2 (inl u)) (λ v, K2 (inr v)); clear K2; intros K2 K3.
     generalize (λ u, K6 (inl u)) (λ v, K6 (inr v)); clear K6; intros K6 K7.
-    apply G4; auto; apply F4; auto.
-Qed.s
+    apply G4; auto.
+    all: apply F4; auto.
+Qed.
+
+(** R{U}{V} is R{U+V} *)
+Fact multi_ring_compose {U V R RU RUV} :
+    @is_multi_ring U R RU
+  → @is_multi_ring V RU RUV
+  → @is_multi_ring (U+V) R 
+       {| me_ring := RUV; 
+          me_embed := λ x, me_embed RUV (me_embed RU x); 
+          me_embed_homo := ring_homo_compose (me_embed_homo RU) (me_embed_homo RUV); 
+          me_points := λ x, match x with inl u => me_embed RUV (me_points RU u) | inr v => me_points RUV v end
+       |}.
+Proof.
+  destruct RU as [ RU phi Hphi f ];
+    destruct RUV as [ RUV psi Hpsi g ]; simpl in *.
+  intros HU HUV TUV.
+  destruct (HU {| me_ring := TUV; 
+                  me_embed := me_embed TUV;
+                  me_embed_homo := me_embed_homo TUV; 
+                  me_points := λ u, me_points TUV (inl u) |})
+    as ((al & Hal) & H1); simpl in *.
+  destruct (HUV {| me_ring := TUV; 
+                  me_embed := al;
+                  me_embed_homo := proj1 Hal; 
+                  me_points := λ v, me_points TUV (inr v) |})
+    as ((be & Hbe) & H2); simpl in *.
+  split.
+  + destruct Hal as (F1 & F2 & F3).
+    destruct Hbe as (G1 & G2 & G3). 
+    simpl in *.
+    exists be; split right; simpl; auto.
+    * intros []; simpl; auto; now rewrite G3.
+    * intro; now rewrite G3.
+  + destruct Hal as (U1 & U2 & H3).
+    intros a b (F1 & F2 & F3) (G1 & G2 & G3) p; simpl in *.
+    generalize (λ u, F2 (inl u)) (λ v, F2 (inr v)); clear F2; intros F2 F4.
+    generalize (λ u, G2 (inl u)) (λ v, G2 (inr v)); clear G2; intros G2 G4.
+    apply H2; auto; split right; simpl; auto; apply H1; split right; auto.
+Qed.
 
 Definition bijection {U V} (f : U → V) (g : V → U) :=
   (∀v, f (g v) = v)
@@ -379,6 +418,36 @@ Proof.
     apply F4; auto.
     * intro; rewrite <- P2, H2; auto.
     * intro; rewrite <- P5, H2; auto.
+Qed.
+
+(** if R{U} and V is in bijection with V then R{V} and iso ? 
+    to be used to show that R{X}[x] is R{X}{unit} and then R{option X} *)
+Fact multi_ring_bijection U V f g R RU :
+    @bijection U V f g 
+  → @is_multi_ring U R RU
+  → @is_multi_ring V R
+      {| me_ring := RU; 
+         me_embed := me_embed RU; 
+         me_embed_homo := me_embed_homo RU; 
+         me_points := (λ v, me_points RU (g v)) 
+      |}. 
+Proof.
+  intros (H1 & H2).
+  destruct RU as [ RU phi Hphi h ]; simpl. 
+  intros G RV.
+  destruct (G {| me_ring := RV; 
+                 me_embed := me_embed RV; 
+                 me_embed_homo := me_embed_homo RV; 
+                 me_points := (λ u, me_points RV (f u)) 
+              |})
+    as ((a & G1 & G2 & G3) & H); split; simpl in *.
+  + exists a; split right; auto.
+    intro; simpl; now rewrite G2, H1.
+  + intros b c (F1 & F2 & F3) (F4 & F5 & F6); simpl in *; apply H.
+    * split right; simpl; auto.
+      intro; now rewrite <- F2, H2.
+    * split right; simpl; auto.
+      intro; now rewrite <- F5, H2.
 Qed.
 
 #[local] Hint Constructors is_last : core.
@@ -1100,7 +1169,7 @@ Section polynomial_ring.
         rewrite ring_homo_un_a, ring_homo_un_m, ring_op_m_un_a, ring_op_a_un_a, ring_un_a_op_a, ring_op_m_un_m; auto.
       * intro; simpl; rewrite ring_op_m_un_a, ring_op_a_un_a; auto.
     + intros al be (H1 & H2 & H3) (H4 & H5 & H6) p.
-      generalize (pe_embed_homo _ Tx).
+      generalize (pe_embed_homo Tx).
       intro; rewrite poly_extends_uniq with (h := be); eauto.
       apply poly_extends_uniq; auto.
   Qed.

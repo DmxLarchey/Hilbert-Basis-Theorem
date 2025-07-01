@@ -132,7 +132,7 @@ Proof. apply H. Qed.
 Fact ring_homo_id (R : ring) : @ring_homo R R (λ x, x).
 Proof. split right; eauto. Qed.
 
-Fact ring_homo_compose (R T K : ring) f g :
+Fact ring_homo_compose {R T K : ring} {f g} :
      @ring_homo R T f → @ring_homo T K g → ring_homo (λ x, g (f x)).
 Proof. intros (? & ? & ? & ?) (? & ? & ? & ?); split right; eauto. Qed.
 
