@@ -13,7 +13,7 @@ From Stdlib Require Fin.
 
 Import ListNotations.
 
-Require Import utils bar php ring ideal poly noetherian.
+Require Import utils bar ring ideal poly category noetherian.
 
 (** Ref:  https://link.springer.com/chapter/10.1007/3-540-48167-2_3 by Coquand & Perrson *)
 

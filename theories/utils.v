@@ -11,6 +11,8 @@ From Stdlib Require Import PeanoNat Lia List Permutation Utf8.
 
 Import ListNotations.
 
+Require Import measure.
+
 #[global] Notation "l ≈ₚ m" := (@Permutation _ l m) (at level 70).
 
 #[global] Notation "⌊ l ⌋" := (length l) (at level 1, format "⌊ l ⌋").   (* length *)
@@ -46,6 +48,23 @@ End list_double_rect.
 Tactic Notation "double" "list" "induction" hyp(l) hyp(m) "as" simple_intropattern(x) simple_intropattern(y) simple_intropattern(IH) :=
   pattern l, m; revert l m; apply list_double_rect;
     [ intros m | intros l | intros x l y m IH ].
+
+Section list_mutual_rect.
+
+  Variables (X Y : Type)
+            (P : list X → list Y → Type)
+            (HP0 : ∀m, P [] m)
+            (HP1 : ∀l, P l [])
+            (HP2 : ∀ x l y m, P l m → P (x::l) m → P l (y::m) → P (x::l) (y::m)).
+
+  Theorem list_mutual_rect l m : P l m.
+  Proof.
+    induction on l m as IH with measure (@length X l + @length Y m).
+    revert l m IH; intros [ | x l ] [ | y m ] IH; auto.
+    apply HP2; apply IH; simpl; lia.
+  Qed.
+
+End list_mutual_rect.
 
 Section list_eq_length_rect.
 

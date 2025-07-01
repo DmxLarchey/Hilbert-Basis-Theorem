@@ -6,6 +6,7 @@ measure.v
 php.v
 ring.v
 ideal.v
+category.v
 poly.v
 hbt.v
 noetherian.v
