@@ -119,10 +119,23 @@ Proof.
   induction 1 as [ x l Hx | x l _ IH ].
   + intros ? (y & m & E & ? & ->)%Forall2_cons_inv_l.
     constructor 1; rewrite <- E.
-    admit.
+    rewrite !Idl_iff_lc__list in Hx |- *.
+    revert Hx m H.
+    clear y E H2.
+    induction 1 as [ x E | a x l z p E H IH ]; intros m Hm.
+    * apply H1 in E.
+      rewrite <- E, ring_homo_un_a; auto.
+      inversion Hm; auto.
+    * apply H1 in E.
+      rewrite <- E.
+      destruct H1 as (H1 & H2 & H3 & H4).
+      rewrite H2, H3.
+      apply Forall2_cons_inv_l in Hm as (y & m' & E1 & ? & ->).
+      constructor 2 with (a := f a) (z := f z); auto.
+      now rewrite <- E1.
   + intros ? (? & ? & ? & ? & ->)%Forall2_cons_inv_l.
     constructor 2; now apply IH.
-Admitted.
+Qed.
 
 Section noetherian_finite.
 
