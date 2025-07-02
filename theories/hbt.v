@@ -21,8 +21,8 @@ Section lex.
 
   Variables (X : Type) (R : X → X → Prop).
 
-  (* This order is stronger that shortlex, ie either shorter
-     or of equal length and lexicographically smaller *)
+  (** This order is stronger that shortlex, ie either shorter
+      or of equal length and lexicographically smaller *)
   Inductive lex : list X → list X → Prop :=
     | lex_stop p q m : R p q   → lex (p::m) (q::m)
     | lex_next x l m : lex l m → lex l (x::m).
@@ -42,21 +42,25 @@ Section lex.
 
   Hypothesis R_wf : well_founded R.
 
+  (** Wellfoundness of lexicographic orders is usually proved 
+      by nested induction *)
   Theorem lex_wf : well_founded lex.
   Proof.
     intros l.
+    (* first induction, structural on l *)
     induction l as [ | q l IH ].
-    + constructor.
-      now intros ? ?%lex_inv.
-    + induction q using (well_founded_induction R_wf) in l, IH |- *.
+    + (* when l = [], it has no predecessors *)
+      constructor; now intros ? ?%lex_inv.
+    + (* second induction on the head of q::l, using R_wf as an induction principle *)
+      induction q using (well_founded_induction R_wf) in l, IH |- *.
       constructor.
-      intros ? [ (p & Hpq & ->) | ]%lex_inv; eauto.
+      intros ? [ (? & ? & ->) | ]%lex_inv; eauto.
       now apply Acc_inv with (1 := IH).
   Qed.
 
   (** It gives rises to a tailored induction principle used below
       called "open induction" in Coquand & Perrson but we view it
-      as a specialized case of a well-founded lexicographic product 
+      as a specialized case of a well-founded lexicographic product
       on lists here *)
 
   Section lex_special_wf.
@@ -98,35 +102,33 @@ Section linearly_dependent.
 
   Implicit Type (l m : list R).
 
-  Local Remark LD_split m : LD m ↔ ∃ l x r, m = l ++ x :: r ∧ Idl ⌞r⌟ x.
+  Local Remark LD_split m : LD m ↔ ∃ l x r, m = l++x::r ∧ Idl ⌞r⌟ x.
   Proof. apply Good_split. Qed.
 
-  (** We show, in sequence, that:
-        - Idl _ x is update-closed
-        - LD _ is update-closed
-        - bar LD _ is update-closed *)
+  (** Since we know that Idl _ is invariant under update
+      We derive, in sequence, that:
+        a) LD _ is invariant under update
+        b) bar LD _ is invariant under update *)
 
-  (* linear dependency is invariant uner update *)
+  Hint Resolve Idl_update_closed
+               Idl_substract: core.
+  Hint Constructors Good : core.
+
+  (* linear dependency is invariant under update *)
   Local Lemma LD_update_closed l m : update l m → LD l → LD m.
-  Proof.
-    unfold LD.
-    induction 1 as [ x l r y H%Idl_iff_lc__list G | x l m H IH ]; intros [ H1 | H1 ]%Good_inv.
-    + constructor 1; rewrite <- G; now apply Idl_op_a.
-    + now constructor 2.
-    + constructor 1.
-      revert H1; now apply Idl_update_closed.
-    + constructor 2; auto.
-  Qed.
+  Proof. unfold LD; induction 1 as [ ? ? ? ?%Idl_iff_lc__list |]; intros []%Good_inv; eauto. Qed.
 
-  Hint Resolve LD_update_closed : core.
   Hint Constructors bar update : core.
+  Hint Resolve LD_update_closed : core.
 
   (* bar LD is invariant under update *)
   Local Theorem bar_LD_update_closed l m : update l m → bar LD l → bar LD m.
-  Proof. intros H1 H2; revert H2 m H1; induction 1; eauto. Qed.
+  Proof. apply bar_rel_closed; eauto. Qed.
+
+  (** Three specializations of bar_Good_app_middle *)
 
   (* bar LD is invariant under adding elements anywhere *)
-  Local Fact bar_LD_app_middle l m r :  bar LD (l++r) → bar LD (l++m++r).
+  Local Fact bar_LD_app_middle m : ∀ l r, bar LD (l++r) → bar LD (l++m++r).
   Proof.
     apply bar_Good_app_middle.
     intros ? ? ?; apply Idl_mono.
@@ -153,7 +155,7 @@ Section HTB.
 
   Hint Constructors lex bar : core.
 
-  (** A well-founded order on polynomials, being of smaller length *)
+  (** A well-founded order on representation of polynomials, being of smaller length *)
   Let T p q := ⌊p⌋ < ⌊q⌋.
 
   Local Fact T_wf : well_founded T.
@@ -164,50 +166,52 @@ Section HTB.
 
   Local Fact T_le p q x : ⌊p⌋ ≤ ⌊q⌋ → T p (q++[x]).
   Proof. intro; red; rewrite length_app; simpl; lia. Qed.
-  
+
   Local Fact T_lt p q x : 1+⌊p⌋ < ⌊q⌋ → T (p++[x]) q.
   Proof. intro; red; rewrite length_app; simpl; lia. Qed.
-  
-  Hint Resolve T_le T_lt lex_app : core.
-  Hint Constructors is_last : core.
 
-  Local Lemma HBT_main h : bar LD h → ∀k, Forall2 is_last h k → (∀m, lex T m k → bar LD m) → bar LD k.
+  Hint Resolve T_le T_lt lex_app : core.
+  Hint Constructors is_last update : core.
+  
+    Local Lemma HBT_main h : bar LD h → ∀k, Forall2 is_last h k → (∀m, lex T m k → bar LD m) → bar LD k.
   Proof.
+    (* induction on bar LD h *)
     induction 1 as [ h Hh | h _ IHh ].
     + (* The list of head coefficients is linearly dependent in R 
-         hence h = u++[x]++v where x is a linear combination of v
- 
-         From Forall2 is_last (u++[x]++v) k, we split k accordingly into 
-         k = l++[p++[x]]++r where Forall2 is_last u l and Forall2 is_last v r *)
+         hence h = u++[x]++v where x is a linear combination of v. *)
       apply LD_split in Hh as (u & x & v & -> & Hx%Idl_iff_lc__list).
-      intros ? (l & y & r & _ & [p] & Hr & ->)%Forall2_middle_inv_l IH.
-      (* because LD is monotone, it is enough to should bar LD ((p++[x])::r) *)
+      (* From Forall2 is_last (u++[x]++v) k, we split k accordingly into 
+         k = l++[p]++m where is_last p x and Forall2 is_last v m *)
+      intros ? (l & p & m & _ & Hp & Hm & ->)%Forall2_middle_inv_l IH.
+      (* because LD is monotone, it is enough to show bar LD (p::m) *)
       apply bar_LD_app_left.
-      (* either all polynomials in r have degree less than 1+⌊p⌋
-         or one of them, say q, has degree strictly greeter than 1+⌊p⌋ *)
+      (* either all polynomials in m have degree less than ⌊p⌋
+         or one of them, say q, has degree strictly greater than ⌊p⌋ *)
       destruct list_choice 
-        with (P := λ q : list R, ⌊q⌋ <= 1+⌊p⌋) 
-             (Q := λ q : list R, 1+⌊p⌋ < ⌊q⌋)
-             (l := r)
-        as [ Hr' | (q & H3 & H4) ].
+        with (P := λ q : list R, ⌊q⌋ ≤ ⌊p⌋) 
+             (Q := λ q : list R, ⌊p⌋ < ⌊q⌋)
+             (l := m)
+        as [ Hm' | (q & H3 & H4) ].
       * intros; lia.
-      * (** all polynomial in r have a degree lesser than that of p++[x]. 
-            By update, we change p++[x] into a polynomial of strictly lesser 
-            length using linear combinations of r. *)
-        rewrite <- Forall_forall in Hr'.
+      * (* All polynomial in m have a degree lesser than that of p.
+           We build a new polynomial q of degree strictly less than p
+           such that p-q is a linear combination of m *)
+        rewrite <- Forall_forall in Hm'.
         destruct update_lead_coef
-          with (R := R) (1 := Hx) (2 := Hr) (3 := Hr')
+          with (R := R) (1 := Hx) (2 := Hp) (3 := Hm) (4 := Hm')
           as (q & H3 & H4).
-        apply bar_LD_update_closed with (1 := H4); auto.
-      * (** some polynomial in r, say q has a degree strictly greater than 
-            that of p++[x]. Then r = r1++[q]++r2 with
-            1+⌊p⌋ < ⌊q⌋. By IH we get bar LD ([p++[x]]++r2) and conclude  *)
-        apply in_split in H3 as (r1 & r2 & ->).
+        (* We update p by q *)
+        apply bar_LD_update_closed with (q::m); auto.
+      * (* Some polynomial in m, say q has a degree strictly greater than 
+           that of p. Then m = m'++[q]++r with ⌊p⌋ < ⌊q⌋.
+            By IH we get bar LD ([p]++r) and conclude *)
+        apply in_split in H3 as (m' & r & ->).
         apply (bar_LD_app_middle (poly_ring _)) with (l := [_]).
         apply (bar_LD_cons_middle (poly_ring _)) with (l := [_]).
         apply IH, lex_app; simpl; eauto.
-    + intros k Hhk IH.
-      (* it is sufficient to show bar LD (p::k) for any p *)
+    + (* h are the heads of k *)
+      intros k Hhk IH.
+      (* it is sufficient to show ∀p, bar LD (p::k) *)
       constructor 2.
       (* we use the special lexicographic induction on lex (p::k) 
          and can thus further assume bar LD l for any l <lex p::k *)
@@ -216,7 +220,7 @@ Section HTB.
       intros p; destruct p as [ | x q _ ] using rev_ind.
       * (* p is [] (the zero polynomial) and thus []::_ is LD *)
         constructor 1; constructor; constructor 3.
-      * (* Forall2 is_last (x::h) ((q++[x])::k holds
+      * (* x::h are the heads of (q++[x])::k 
            hence we get bar LD ((q++[x])::k) using IHh *)
         apply (IHh x); auto.
   Qed.

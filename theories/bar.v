@@ -19,7 +19,7 @@ Section bar.
 
   Variables (X : Type).
 
-  Implicit Type (P : list X → Prop).
+  Implicit Type (R : list X → list X → Prop) (P : list X → Prop) (m : list X).
 
   Inductive bar P l : Prop :=
     | bar_stop : P l → bar P l
@@ -53,27 +53,43 @@ Section bar.
     + intros l; apply (H n); lia.
   Qed.
 
+  (** This results subsumes bar_app_middle, bar_permutation below *) 
+  Lemma bar_rel_closed R P :
+      (∀ x l m, R l m → R (x::l) (x::m))
+    → (∀ l m, R l m → P l → P m)
+    →  ∀ l m, R l m → bar P l → bar P m.
+  Proof. intros ? ? l m H1 H2; revert H2 m H1; induction 1; eauto. Qed.
+  
+  Inductive list_insert m : list X → list X → Prop :=
+    | list_insert_intro l r : list_insert m (l++r) (l++m++r).
+
+  Hint Constructors list_insert : core.
+
+  (** This result is not part of Kruskal-AlmostFull and could be added there !! *)
+  Lemma bar_app_middle P m :
+   (∀ l r, P (l++r) → P (l++m++r))
+  → ∀ l r, bar P (l++r) → bar P (l++m++r).
+  Proof.
+    intros ? ? ?.
+    apply bar_rel_closed with (R := list_insert m); eauto; induction 1; eauto.
+    constructor 1 with (l := _::_).
+  Qed.
+  
+  Fact bar_permutation P :
+      (∀ l m, l ≈ₚ m → P l → P m)
+    → (∀ l m, l ≈ₚ m → bar P l → bar P m).
+  Proof. apply bar_rel_closed; now constructor. Qed.
+
   Notation monotone P := (∀ x l, P l → P (x::l)).
 
-  Lemma bar_monotone P : monotone P → monotone (bar P).
+  Fact bar_monotone P : monotone P → monotone (bar P).
   Proof. induction 2; eauto. Qed.
 
   Hint Resolve bar_monotone : core.
 
-  Lemma bar_app_left P : monotone P → ∀ l r, bar P r → bar P (l++r).
+  Fact bar_app_left P : monotone P → ∀ l r, bar P r → bar P (l++r).
   Proof. intros ? l ? ?; induction l; simpl; eauto. Qed.
 
-  (** This result is not part of Kruskal-AlmostFull and could be added there !! *)
-  Lemma bar_app_middle P :
-   (∀ l m r, P (l++r) → P (l++m++r))
-  → ∀ l m r, bar P (l++r) → bar P (l++m++r).
-  Proof. intros ? ? ? ? H%bar_app_iff; apply bar_app_iff; revert H; apply bar_mono; eauto. Qed.
-
-  Fact bar_permutation P :
-      (∀ l m, l ≈ₚ m → P l → P m)
-    → (∀ l m, l ≈ₚ m → bar P l → bar P m).
-  Proof. intros H l m H1 H2; revert H2 m H1; induction 1; eauto. Qed.
-  
   Fact bar_sequences P l : bar P l → ∀ρ, ∃n, P (pfx_rev ρ n ++ l).
   Proof.
     induction 1 as [ l Hl | l _ IHl ].
@@ -93,6 +109,27 @@ Section bar.
 End bar.
 
 Arguments bar {_}.
+
+Section bar_relmap.
+
+  Variables (X Y : Type) (f : X → Y → Prop)
+            (R : list X → Prop)
+            (T : list Y → Prop)
+            (Hf : ∀y, ∃x, f x y)                     (** f is surjective *)
+            (HRT : ∀ l m, Forall2 f l m → R l → T m)   (** f is a morphism form R to T *)
+            .
+
+  Theorem bar_relmap l m : Forall2 f l m → bar R l → bar T m.
+  Proof.
+    intros H1 H2; revert H2 m H1 T HRT.
+    induction 1 as [ l Hl | l Hl IHl ]; intros m H1 T HRT.
+    * constructor 1; revert Hl; apply HRT; auto.
+    * constructor 2; intros y.
+      destruct (Hf y) as (x & Hx).
+      apply (IHl x); auto.
+  Qed.
+
+End bar_relmap.
 
 Section bar_nc.
 

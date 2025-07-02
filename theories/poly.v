@@ -383,6 +383,9 @@ Section polynomial_ring.
 
   Fact poly_i_length l : ⌊poly_i l⌋ = ⌊l⌋.
   Proof. apply poly_s_length. Qed.
+  
+  Fact poly_i_app l m : poly_i (l++m) = poly_i l++poly_i m.
+  Proof. apply map_app. Qed.
 
   Fact poly_shift_poly_m n q : repeat 0ᵣ n++q ∼ₚ (repeat 0ᵣ n++[1ᵣ]) *ₚ q.
   Proof.
@@ -452,41 +455,36 @@ Section polynomial_ring.
      head coefficient by linear combination,
      which is critical in the HBT *)
 
-  (* Elimination of the head coefficient:
-     given a linear combination x of their head coefficients,
-     we can form a linear combination the representations of
-     polynomials q₁,...,qₙ with head being x and of arbitrary 
-     length provided it is greater than (all) the length 
-     of q₁,...,qₙ:
+  (* Linear combination of head coefficients:
 
-       if * the length ⌊q₁⌋,...,⌊qₙ⌋ are lesser than 1+d
-          * [a₁;...;aₙ] are the head coefficients of [q₁;...;qₙ]
-          * x is a linear combination of a₁;...;aₙ (in R)
-       then there is a polynomial p with
-          * ⌊p⌋ = 1+d
+       if * the length ⌊v₁⌋,...,⌊vₙ⌋ are lesser than 1+d
+          * v₁,...,vₙ have head coefficients a₁,...,aₙ  (in poly_ring)
+          * x is a linear combination of a₁,...,aₙ      (in R)
+       then there is a representation of a polynomial p with
+          * p is a linear combination of v₁,...,vₙ      (in poly_ring)
+          * the length ⌊p⌋ of p is 1+d
           * x is the head coefficient of p
-          * p is a linear combination of q₁,...,qₙ (in poly R)
  
-       Idea, multiply/shift each qᵢ with i in [1;...;n]
-       so that the degre matches 1+d and use the same
-       coefficients as the original linear combination
+     Idea: multiply with Xʰ/shift each vᵢ with i in 1,...,n
+           so that the degre matches 1+d and use the same
+           coefficients as the original linear combination, ie
 
-        if x = r₁a₁ + ... + rₙaₙ then
-           p = r₁q₁.Xᵖ¹ + ... + rₙqₙ.Xᵖⁿ 
+            if x = r₁a₁ + ... + rₙaₙ then
+               p := r₁q₁.ʰ¹ + ... + rₙqₙ.Xʰⁿ 
 
-        where pᵢ = 1+d-⌊qᵢ⌋ for i in [1;...;n] *)
+               where hᵢ = 1+d-⌊vᵢ⌋ for i in 1,...,n *)
 
-  Lemma lc_lead_coef d (a : list R) x (q : list poly_ring) :
+  Lemma lc_lead_coef d (a : list R) x (v : list poly_ring) :
       lc a x                       (* x is a linear combination of [a₁;...;aₙ] *)
-    → Forall2 is_last a q          (* [a₁;...;aₙ] are the heads of [q₁;...;qₙ] *) 
-    → Forall (λ l, ⌊l⌋ ≤ 1+d) q    (* 1+d is greater the all the length ⌊q₁⌋,...,⌊qₙ⌋ *)
+    → Forall2 is_last a v          (* [a₁;...;aₙ] are the heads of [v₁;...;vₙ] *) 
+    → Forall (λ q, ⌊q⌋ ≤ 1+d) v    (* 1+d is greater the all the length ⌊v₁⌋,...,⌊vₙ⌋ *)
     → ∃ p y, 
          ⌊p⌋ = 1+d                 (* p has length 1+d *)
        ∧ is_last y p ∧ x ∼ᵣ y      (* p has head y ~ᵣ x *)
-       ∧ lc q p                    (* p is a linear combination of [q₁;...;qₙ] *)
+       ∧ lc v p                    (* p is a linear combination of [v₁;...;vₙ] *)
     .
   Proof.
-    induction 1 as [ x H1 | a x l c r H1 H2 IH2 ] in q |- *.
+    induction 1 as [ x H1 | a x l c r H1 H2 IH2 ] in v |- *.
     + intros ->%Forall2_nil_inv_l _.
       exists (repeat un_a d++[x]), x; repeat split; auto.
       * rewrite length_app, repeat_length; simpl; lia.
@@ -498,7 +496,7 @@ Section polynomial_ring.
              (H4 & H5)%Forall_cons_iff.
       destruct (IH2 _ H3 H5) as (p & y & G1 & G2 & G3 & G4).
       exists ((repeat un_a (d-⌊u⌋) ++ (poly_s a (u++[x]))) +ₚ p), (op_a (op_m a x) y).
-      assert (⌊repeat un_a (d-⌊u⌋) ++ poly_s a (u ++ [x])⌋ = 1+d) as E.
+      assert (⌊repeat un_a (d-⌊u⌋) ++ poly_s a (u++[x])⌋ = 1+d) as E.
       1:{ rewrite length_app, poly_s_length, repeat_length.
           rewrite length_app in H4 |- *; simpl in *; lia. }
       repeat split.
@@ -512,33 +510,37 @@ Section polynomial_ring.
         rewrite poly_shift_scal; auto.
   Qed.
 
-  Theorem update_lead_coef (a : list R) x v p :
-      lc a x                           (* x is a linear combination of [a₁;...;aₙ] *)
-    → Forall2 is_last a v              (* [a₁;...;aₙ] are the heads of [v₁;...;vₙ] *) 
-    → Forall (λ q, ⌊q⌋ ≤ 1+⌊p⌋) v      (* ⌊p++[x]⌋ longer than ⌊v₁⌋,...,⌊vₙ⌋       *)
+  Theorem update_lead_coef (a : list R) (x : R) (v : list poly_ring) (p : poly_ring) :
+      lc a x                               (* x is a linear combination of [a₁;...;aₙ]   *)
+    → is_last x p                          (* x is head of p                             *)
+    → Forall2 is_last a v                  (* [a₁;...;aₙ] are the heads of [v₁;...;vₙ]   *)
+    → Forall (λ q, ⌊q⌋ ≤ ⌊p⌋) v            (* ⌊p⌋ longer than ⌊v₁⌋,...,⌊vₙ⌋              *)
     → ∃q : poly_ring,
-         ⌊q⌋ ≤ ⌊p⌋                     (* q is strictly shorter than p++[x]             *)
-       ∧ update (q::v) ((p++[x])::v)   (* replacing p++[x] with q constitutes an update *)
+         ⌊q⌋ < ⌊p⌋                         (* q is strictly shorter than p               *)
+       ∧ lc v (p −ᵣ q)                     (* p-q is a linear combination of [v₁;...;vₙ] *)
     .
   Proof.
-    intros H1 H2 H3.
+    intros H1 Hp H2 H3.
+    induction Hp as [ p ].
     destruct lc_lead_coef
-      with (1 := H1) (2 := H2) (3 := H3)
+      with (1 := H1) (2 := H2) (d := ⌊p⌋)
       as (q & y & G1 & G2 & G3 & G4).
+    1: revert H3; apply Forall_impl; intro; rewrite length_app; simpl; lia.
     destruct G2 as [q].
     rewrite length_app in G1; simpl in G1.
-    exists (poly_a p (poly_i q)).
-    assert (⌊p +ₚ poly_i q⌋ = ⌊p⌋) as E.
+    exists ((p : poly_ring) +ᵣ (poly_i q)).
+    assert (⌊(p : poly_ring) +ᵣ poly_i q⌋ = ⌊p⌋) as E.
     1: rewrite poly_a_length, poly_i_length; lia.
-    split; try lia.
-    constructor 1 with (1 := G4).
+    split; [ simpl in *; rewrite length_app; simpl; lia | ].
+    revert G4; apply lc_req_closed.
     unfold op_a; simpl.
-    rewrite <- (app_nil_r (p +ₚ _)),
-             poly_a_app__length; try lia.
-    apply poly_eq_app__length; simpl; auto.
-    + rewrite !poly_a_length, poly_i_length; lia.
-    + change ((@op_a poly_ring p (@iv_a poly_ring q)) +ᵣ q ∼ᵣ p).
-      ring.
+    rewrite <- (app_nil_r (poly_i _)).
+    rewrite poly_a_app__length.
+    2: now rewrite poly_i_length.
+    apply poly_eq_app__length; auto.
+    + rewrite poly_a_length, poly_i_length; simpl in E; rewrite E; lia.
+    + change ((q : poly_ring) ∼ᵣ (p : poly_ring) −ᵣ ((p : poly_ring) −ᵣ (q : poly_ring))); ring.
+    + simpl; split; auto.
   Qed.
 
   (** Now we show that initiality of R[X], that it is

@@ -35,7 +35,6 @@ Section Good_and_bar.
 
   Hint Constructors Good : core.
 
-  (* Typical inversion lemma *)
   Fact Good_inv P l :
       Good P l
     → match l with
@@ -52,7 +51,7 @@ Section Good_and_bar.
 
   Hint Resolve Good_app_left : core.
 
-  (* Another characterization (FO) *)
+  (* Another characterization (in FOL) *)
   Lemma Good_split P m : Good P m ↔ ∃ l x r, m = l++x::r ∧ P r x.
   Proof.
     split.
@@ -69,17 +68,19 @@ Section Good_and_bar.
   
   Section Good_app_middle.
 
-    Variables (P : list X → X → Prop)
-              (P_app_middle : ∀ l m r x, P (l++r) x → P (l++m++r) x).
+    Variables (P : list X → X → Prop) (m : list X)
+              (P_app_middle : ∀ l r x, P (l++r) x → P (l++m++r) x).
 
-    Fact Good_app_middle l m r : Good P (l++r) → Good P (l++m++r).
+    Fact Good_app_middle l r : Good P (l++r) → Good P (l++m++r).
     Proof. induction l; simpl; eauto; intros []%Good_inv; auto. Qed.
 
-    Fact bar_Good_app_middle l m r : bar (Good P) (l++r) → bar (Good P) (l++m++r).
-    Proof. apply bar_app_middle, Good_app_middle. Qed.
+    Hint Resolve Good_app_middle bar_app_middle : core.
+
+    Fact bar_Good_app_middle l r : bar (Good P) (l++r) → bar (Good P) (l++m++r).
+    Proof. eauto. Qed.
 
   End Good_app_middle.
-  
+
 End Good_and_bar.
 
 #[local] Hint Constructors Good : core.
@@ -106,6 +107,22 @@ Definition linearly_dependent {R : ring} := Good (λ m : list R, Idl ⌞m⌟).
     it is bound to become LD after finitely many steps. *) 
     
 Definition noetherian (R : ring) := bar (@LD R) [].
+
+(** Noetherianess is invariant under surjective homomorphisms *)
+Lemma noetherian_surj_homo (R T : ring) :
+    (∃ f : R → T, ring_homo f ∧ ∀x, ∃y, f y ∼ᵣ x)
+  → noetherian R → noetherian T.
+Proof.
+  intros (f & H1 & H2).
+  apply bar_relmap with (f := λ x y, f x ∼ᵣ y); eauto.
+  intros l m Hlm H; revert H m Hlm.
+  induction 1 as [ x l Hx | x l _ IH ].
+  + intros ? (y & m & E & ? & ->)%Forall2_cons_inv_l.
+    constructor 1; rewrite <- E.
+    admit.
+  + intros ? (? & ? & ? & ? & ->)%Forall2_cons_inv_l.
+    constructor 2; now apply IH.
+Admitted.
 
 Section noetherian_finite.
 
@@ -258,7 +275,7 @@ Section quotient_noetherian.
   Proof.
     intros I.
     induction 1 as [ | x y H _ IH | | | ]; eauto.
-    + revert IH; now apply Idl_eq, rel_ovr.
+    + revert IH; now apply Idl_req, rel_ovr.
     + change (@un_a R) with (@un_a Q); auto.
     + change (@op_a R x (@iv_a R y)) with (@op_a Q x (@iv_a Q y)); auto.
     + change (@op_m R a x) with (@op_m Q a x); auto.
