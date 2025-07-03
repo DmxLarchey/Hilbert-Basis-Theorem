@@ -78,6 +78,9 @@ Section ring_utils.
 
   Implicit Type (x : R).
 
+  Fact ring_sub_a_id x : x −ᵣ x ∼ᵣ 0ᵣ.
+  Proof. ring. Qed.
+
   Fact ring_op_a_cancel x y z : x +ᵣ y ∼ᵣ x +ᵣ z → y ∼ᵣ z.
   Proof.
     intros E.
@@ -120,6 +123,20 @@ Section ring_homo.
     intros E.
     apply ring_op_a_cancel with (x := f un_a).
     rewrite <- E; ring.
+  Qed.
+
+  Fact ring_homo_iv_a x : f (-ᵣ x) ∼ᵣ -ᵣ f x.
+  Proof.
+    destruct Hf as (H1 & H2 & H3 & H4).
+    apply ring_op_a_cancel with (f x).
+    rewrite <- H2, ring_sub_a_id with (x := f x), <- ring_homo_un_a.
+    apply H1; ring.
+  Qed.
+
+  Fact ring_homo_sub_a x y : f (x −ᵣ y) ∼ᵣ (f x −ᵣ f y).
+  Proof.
+    destruct Hf as (H1 & H2 & H3 & H4).
+    rewrite H2, ring_homo_iv_a; ring.
   Qed.
 
 End ring_homo.
