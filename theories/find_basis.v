@@ -79,8 +79,6 @@ Proof.
   + intros ? ? ? ? -> ->; auto.
 Qed.
 
-Definition Idl_strict_incl (R : ring) (l m : list R) := Idl ⌞l⌟ ⊂₁ Idl ⌞m⌟.
-
 Theorem noetherian__wf_fin_Idl_strict_incl {R} :
     noetherian R
   → well_founded (λ l m : list R, Idl ⌞m⌟ ⊂₁ Idl ⌞l⌟).
@@ -120,20 +118,20 @@ Section find_basis.
 
   Variables (R : ring)
             (HR : noetherian R)
-            (P : R → Prop)
-            (HP1 : ring_ideal P)
-            (HP2 : ∀l, (∃x, P x ∧ ¬ Idl ⌞l⌟ x) ∨ P ⊆₁ Idl ⌞l⌟).
+            (I : R → Prop)
+            (HI1 : ring_ideal I)
+            (HI2 : ∀l, (∃x, I x ∧ ¬ Idl ⌞l⌟ x) ∨ I ⊆₁ Idl ⌞l⌟).
 
   Hint Resolve incl_tl incl_refl incl_tran : core.
 
   (* Any list contained in P can be expanded (as a list) into a basis of P *)
 
-  Lemma complete_basis l : ⌞l⌟ ⊆₁ P → ∃b, ⌞l⌟ ⊆₁ ⌞b⌟ ∧ P ≡₁ Idl ⌞b⌟.
+  Lemma complete_basis l : ⌞l⌟ ⊆₁ I → ∃b, ⌞l⌟ ⊆₁ ⌞b⌟ ∧ I ≡₁ Idl ⌞b⌟.
   Proof.
     induction l as [ l IH ]
       using (well_founded_induction_type (noetherian__wf_fin_Idl_strict_incl HR)).
     intros Hl.
-    destruct (HP2 l) as [ (x & H1 & H2) | H ].
+    destruct (HI2 l) as [ (x & H1 & H2) | H ].
     + destruct (IH (x::l)) as (b & []).
       * split.
         - apply Idl_mono; eauto.
@@ -145,7 +143,7 @@ Section find_basis.
       revert x; apply Idl_smallest; auto.
   Qed.
 
-  Theorem find_basis : ∃b, P ≡₁ Idl ⌞b⌟.
+  Theorem find_basis : ∃b, I ≡₁ Idl ⌞b⌟.
   Proof.
     destruct (complete_basis []) as (b & []).
     + intros _ [].
@@ -158,7 +156,7 @@ Section incl_witnessed_dec__XM.
 
   Hypothesis xm : ∀A, A ∨ ¬ A.
 
-  Fact incl_witnessed_dec__XM X (P Q : X -> Prop) : (∃x, P x ∧ ¬ Q x) ∨ P ⊆₁ Q.
+  Fact incl_witnessed_dec__XM X (P Q : X → Prop) : (∃x, P x ∧ ¬ Q x) ∨ P ⊆₁ Q.
   Proof. 
     destruct xm with (A := ∃x, P x ∧ ¬ Q x); auto.
     right.

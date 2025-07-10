@@ -23,15 +23,14 @@ Section principal__finitely_generated.
 
   Implicit Type (I : R → Prop).
 
- (* Definition principal_ideal I := ∃g, I ≡₁ λ y, g |ᵣ y. *) (* defined in ideal.v *)
+ (* Definition principal_ideal I := ∃g, I ≡₁ λ y, g |ᵣ y. *) (* defined in principal.v *)
 
   Fact fingen__ring_ideal : fingen_ideal ⊆₁ @ring_ideal R.
   Proof.
-    intros P (b & Hb); repeat split.
-    + intros ? ? E ?%Hb; apply Hb; now rewrite <- E.
-    + apply Hb; constructor 3.
-    + intros ? ? ?%Hb ?%Hb; apply Hb; now constructor.
-    + intros ? ? ?%Hb; apply Hb; now constructor.
+    intros P (b & Hb).
+    generalize (Idl_ring_ideal _ ⌞b⌟).
+    apply ring_ideal_equiv.
+    intro; now rewrite Hb.
   Qed.
 
   Fact principal__fingen_ideal : principal_ideal ⊆₁ @fingen_ideal R.

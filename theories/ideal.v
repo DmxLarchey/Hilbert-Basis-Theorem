@@ -66,6 +66,13 @@ Section ring_ideal.
 
   Add Ring R_is_ring : (is_ring R).
 
+  Fact ring_ideal_equiv P Q : P ≡₁ Q → ring_ideal P → ring_ideal Q.
+  Proof.
+    intros E (H1 & H2 & H3 & H4); split right.
+    2: now apply E.
+    all: intros ? ?; rewrite <- !E; eauto.
+  Qed.
+
   Fact ring_ideal_eq P x y : ring_ideal P → x ∼ᵣ y → P x → P y.
   Proof. intros (H & _); apply H. Qed.
 

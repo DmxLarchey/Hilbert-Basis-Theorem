@@ -270,7 +270,7 @@ Section quotient_noetherian.
            (rel : R → R → Prop)
            (rel_ovr : req ⊆₂ rel) 
            (rel_eqv : Equivalence rel)
-           (rel_ext : @ring_eq_ext R op_a op_m iv_a rel).
+           (rel_ext : ring_eq_ext op_a op_m iv_a rel).
 
   Notation Q := (@quotient_ring R rel rel_ovr rel_eqv rel_ext).
 
