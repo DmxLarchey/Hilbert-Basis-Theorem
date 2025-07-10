@@ -6,10 +6,12 @@ measure.v
 php.v
 ring.v
 ideal.v
+principal.v
+noetherian.v
+field.v
 category.v
 poly.v
 hbt.v
-noetherian.v
 find_basis.v
 noetherian_nc.v
 

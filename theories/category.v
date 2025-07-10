@@ -23,14 +23,22 @@ Section characteristic_property_of_the_polynomial_ring.
       it is initial in the category of pointed rings which extend R *)
 
   (** A pointed extension of R is ring T, a homomorphism R → T and
-      a singled-out value in T *)
+      a singled-out value in T 
+
+      Beware that what we call pe_embed is not necessarily an
+      embedding of rings (ie injective): it is just a homomorphism.
+      But for the initial object in the category of pointed extensions,
+      by definition, the polynomial ring, pe_embed is actually injective. *)
   Record ring_pointed_ext := 
     { pe_ring :> ring;
       pe_embed : R → pe_ring;
       pe_embed_homo : ring_homo pe_embed;
       pe_point : pe_ring }.
 
-  (** A homomorphism of pointed extensions *)
+  (** A homomorphism of pointed extensions is:
+      - is a homomorphism of rings
+      - preserves the pe_point
+      - commutes with pe_embed *)
   Definition pe_homo {Rx Tx : ring_pointed_ext} (γ : Rx → Tx) :=
       ring_homo γ
     ∧ γ (pe_point Rx) ∼ᵣ pe_point Tx
@@ -51,7 +59,7 @@ Section characteristic_property_of_the_polynomial_ring.
 
   Hint Resolve pe_homo_id pe_homo_comp : core.
 
-  (** And "the" poly(nomial) over R is the initial
+  (** And "the" poly(nomial) ring over R is the initial
       object in the category of pointed extensions of R *)
   Definition is_poly_ring (Rx : ring_pointed_ext) :=
     ∀ Tx : ring_pointed_ext, 
@@ -62,16 +70,16 @@ Section characteristic_property_of_the_polynomial_ring.
 
   (** The poly(nomial) ring is unique up to isomorphism 
 
-      This should allow an easy proof of isomorphism of 
+      This should allow an easy proof of isomorphism of
           (R{X})[x] and R{option X}
 
-      where R{X} is the polynomial extension over 
-      an arbitrary type X of undeterminates.
+      where R{X} is the polynomial extension over
+      an arbitrary type X of undeterminates (see below).
 
       But we need to build the arbitrary polynomial
       extension and its own characteristic property.
       For this, consider the quotient (in the setoid
-      sense) of polynomial expressions by and inductively
+      sense) of polynomial expressions by an inductively
       defined ring congruence.
 
       Then we can show that
@@ -120,8 +128,8 @@ Arguments pe_point {_}.
 
 Section characteristic_property_of_multivariate_rings.
 
-  (** The categorical notion of polynomial ring can be easily 
-      extended to multivariate rings, where unknowns are
+  (** The categorical notion of polynomial ring can be easily
+      generalized to multivariate rings, where unknowns are
       indexed by an arbitrary type X *)
 
   (** We define what it is to be isomorphic to R{X}
@@ -267,8 +275,9 @@ Qed.
 Definition bijection {U V} (f : U → V) (g : V → U) :=
     (∀v, f (g v) = v) ∧ (∀u, g (f u) = u).
 
-(** if R{U} and U is in bijection with V then R{V} and iso ? 
-    to be used to show that R{X}[x] is R{X}{unit} and then R{option X} *)
+(** If R{U} and U is in bijection with V then R{V}.
+    To be used to show that R{X}[x] is R{X}{unit}
+    and then R{option X} *)
 Fact multi_ring_bijection U V f g R RU :
     @bijection U V f g 
   → @is_multi_ring U R RU
@@ -280,12 +289,12 @@ Fact multi_ring_bijection U V f g R RU :
       |}. 
 Proof.
   intros (H1 & H2).
-  destruct RU as [ RU phi Hphi h ]; simpl. 
+  destruct RU as [ RU phi Hphi h ]; simpl.
   intros G RV.
   destruct (G {| me_ring := RV; 
                  me_embed := me_embed RV; 
                  me_embed_homo := me_embed_homo RV; 
-                 me_points := (λ u, me_points RV (f u)) 
+                 me_points := (λ u, me_points RV (f u))
               |})
     as ((a & G1 & G2 & G3) & H); split; simpl in *.
   + exists a; split right; auto.

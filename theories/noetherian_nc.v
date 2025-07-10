@@ -11,7 +11,7 @@ From Stdlib Require Import List Arith Lia Wellfounded Relations Setoid Utf8.
 
 Import ListNotations.
 
-Require Import utils bar ring ideal noetherian find_basis.
+Require Import utils bar ring ideal principal noetherian find_basis.
 
 Arguments principal_ideal {R}.
 

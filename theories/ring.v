@@ -7,7 +7,7 @@
 (*        Mozilla Public License Version 2.0, MPL-2.0         *)
 (**************************************************************)
 
-From Stdlib Require Import Ring Setoid Utf8.
+From Stdlib Require Import Ring ZArith Setoid Utf8.
 
 Require Import utils.
 
@@ -35,6 +35,8 @@ Arguments op_m {_}.
 Arguments iv_a {_}.
 Arguments req  {_}.
 
+(** Generic notations for rings *)
+
 Notation "0ᵣ" := un_a.
 Notation "1ᵣ" := un_m.
 
@@ -43,6 +45,8 @@ Notation "x +ᵣ y" := (op_a x y) (at level 31, left associativity, format "x  +
 Notation "-ᵣ x" := (iv_a x) (at level 25, right associativity, format "-ᵣ x").
 Notation "x −ᵣ y" := (x +ᵣ -ᵣ y) (at level 31, left associativity, format "x  −ᵣ  y").
 Notation "x *ᵣ y" := (op_m x y) (at level 29, left associativity, format "x  *ᵣ  y").
+
+(** req/∼ᵣ is a equivalence relation, defining a setoid *)
 
 Fact ring_eq_refl (R : ring) (x : R) : x ∼ᵣ x.
 Proof. apply eq_equiv. Qed.
@@ -56,10 +60,12 @@ Proof. apply eq_equiv. Qed.
 Hint Resolve ring_eq_refl ring_eq_sym ring_eq_trans : core.
 
 Add Parametric Relation (R : ring) : R req 
-     reflexivity proved by (ring_eq_refl _)
-     symmetry proved by (ring_eq_sym _)
-     transitivity proved by (ring_eq_trans _)
-   as ring_eq_is_equivalence.
+    reflexivity proved by (ring_eq_refl _)
+    symmetry proved by (ring_eq_sym _)
+    transitivity proved by (ring_eq_trans _)
+  as ring_eq_is_equivalence.
+
+(** ring operations are morphisms wrt. req/∼ᵣ *)
 
 Add Parametric Morphism (R : ring) : (@op_a R) with signature (req) ==> (req) ==> (req) as ring_op_a_morph.
 Proof. apply eq_ext. Qed.
@@ -70,13 +76,15 @@ Proof. apply eq_ext. Qed.
 Add Parametric Morphism (R : ring) : (@iv_a R) with signature (req) ==> (req) as ring_iv_a_morph.
 Proof. apply eq_ext. Qed.
 
+(** Some obvious derived equations for rings *)
+
 Section ring_utils.
 
   Variable (R : ring).
 
-  Add Ring R_is_ring : (is_ring R).
-
   Implicit Type (x : R).
+
+  Add Ring R_is_ring : (is_ring R).
 
   Fact ring_sub_a_id x : x −ᵣ x ∼ᵣ 0ᵣ.
   Proof. ring. Qed.
@@ -84,7 +92,7 @@ Section ring_utils.
   Fact ring_op_a_cancel x y z : x +ᵣ y ∼ᵣ x +ᵣ z → y ∼ᵣ z.
   Proof.
     intros E.
-    setoid_replace y with (op_a (op_a x y) (iv_a x)) by ring.
+    setoid_replace y with (x +ᵣ y −ᵣ x) by ring.
     rewrite E; ring.
   Qed.
 
@@ -95,9 +103,9 @@ Section ring_utils.
 
 End ring_utils.
 
-Section ring_homo.
+(** The notion of ring homorphism *)
 
-  (** The notion of ring homomorphism *)
+Section ring_homo.
 
   Variables (R K : ring) (f : R → K).
 
@@ -109,35 +117,39 @@ Section ring_homo.
 
   Add Ring R_is_ring : (is_ring R).
   Add Ring K_is_ring : (is_ring K).
-  
+
   Hypothesis Hf : ring_homo.
-  
+
+  Fact ring_homo_congr x y : x ∼ᵣ y → f x ∼ᵣ f y.
+  Proof. apply Hf. Qed.
+
+  Fact ring_homo_op_a x y : f (x +ᵣ y) ∼ᵣ f x +ᵣ f y.
+  Proof. apply Hf. Qed.
+
+  Fact ring_homo_op_m x y : f (x *ᵣ y) ∼ᵣ f x *ᵣ f y.
+  Proof. apply Hf. Qed.
+
   Fact ring_homo_un_m : f 1ᵣ ∼ᵣ 1ᵣ.
   Proof. apply Hf. Qed.
 
   Fact ring_homo_un_a : f 0ᵣ ∼ᵣ 0ᵣ.
   Proof.
-    destruct Hf as (H1 & H2 & H3 & H4).
-    generalize (H2 un_a un_a).
-    rewrite H1 with (y := un_a); try ring.
+    generalize (ring_homo_op_a un_a un_a).
+    rewrite ring_homo_congr with (y := 0ᵣ); try ring.
     intros E.
-    apply ring_op_a_cancel with (x := f un_a).
+    apply ring_op_a_cancel with (x := f 0ᵣ).
     rewrite <- E; ring.
   Qed.
 
   Fact ring_homo_iv_a x : f (-ᵣ x) ∼ᵣ -ᵣ f x.
   Proof.
-    destruct Hf as (H1 & H2 & H3 & H4).
     apply ring_op_a_cancel with (f x).
-    rewrite <- H2, ring_sub_a_id with (x := f x), <- ring_homo_un_a.
-    apply H1; ring.
+    rewrite <- ring_homo_op_a, ring_sub_a_id with (x := f x), <- ring_homo_un_a.
+    apply ring_homo_congr; ring.
   Qed.
 
   Fact ring_homo_sub_a x y : f (x −ᵣ y) ∼ᵣ (f x −ᵣ f y).
-  Proof.
-    destruct Hf as (H1 & H2 & H3 & H4).
-    rewrite H2, ring_homo_iv_a; ring.
-  Qed.
+  Proof. rewrite ring_homo_op_a, ring_homo_iv_a; ring. Qed.
 
 End ring_homo.
 
@@ -150,8 +162,16 @@ Fact ring_homo_id (R : ring) : @ring_homo R R (λ x, x).
 Proof. split right; eauto. Qed.
 
 Fact ring_homo_compose {R T K : ring} {f g} :
-     @ring_homo R T f → @ring_homo T K g → ring_homo (λ x, g (f x)).
+  @ring_homo R T f → @ring_homo T K g → ring_homo (λ x, g (f x)).
 Proof. intros (? & ? & ? & ?) (? & ? & ? & ?); split right; eauto. Qed.
+
+(** The notion of ring isomorphism *)
+
+Definition ring_isomorphism {R T : ring} (f : R → T) (g : T → R) :=
+    ring_homo f
+  ∧ ring_homo g
+  ∧ (∀p, f (g p) ∼ᵣ p)
+  ∧ (∀p, g (f p) ∼ᵣ p).
 
 Section quotient_ring.
 
@@ -169,10 +189,20 @@ Section quotient_ring.
     abstract (constructor; intros; apply rel_maj; ring).
   Defined.
 
+  Fact quotient_homo : @ring_homo R quotient_ring (λ x, x).
+  Proof. split right; ring || auto. Qed.
+
 End quotient_ring.
 
-Definition ring_isomorphism {R T : ring} (f : R → T) (g : T → R) :=
-    ring_homo f
-  ∧ ring_homo g
-  ∧ (∀p, f (g p) ∼ᵣ p)
-  ∧ (∀p, g (f p) ∼ᵣ p).
+(** The ring of relative integers *)
+
+Definition Z_ring : ring.
+Proof.
+  exists Z 0%Z Z.add Z.opp 1%Z Z.mul (@eq Z).
+  + apply eq_equivalence.
+  + apply Zth.
+  + abstract (split; intros ? ? []; auto; intros ? ? []; auto).
+Defined.
+
+
+

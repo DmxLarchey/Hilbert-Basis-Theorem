@@ -7,11 +7,11 @@
 (*        Mozilla Public License Version 2.0, MPL-2.0         *)
 (**************************************************************)
 
-From Stdlib Require Import List Ring ZArith Lia Lia Setoid Utf8.
+From Stdlib Require Import List Ring ZArith Lia Setoid Utf8.
 
 Import ListNotations.
 
-Require Import utils bar ring ideal php.
+Require Import utils bar ring ideal principal php.
 
 #[local] Hint Resolve
            incl_refl incl_nil_l incl_cons incl_tl 
@@ -92,7 +92,7 @@ Arguments Good {_}.
     Idl ⌞r⌟ does not increase, ie Idl ⌞x::r⌟ ⊆ Idl ⌞r⌟
 
     see LD_split below
-    
+
     Notice that (λ m, Idl ⌞m⌟) ignores the order of the list m *)
 
 Definition linearly_dependent {R : ring} := Good (λ m : list R, Idl ⌞m⌟).
@@ -289,85 +289,22 @@ Section quotient_noetherian.
     + change (@op_m R a x) with (@op_m Q a x); auto.
   Qed.
 
+  Hint Resolve quotient_Idl : core.
+  Hint Constructors Good : core.
+
   Fact quotient_linearly_dependent l : @LD R l → @LD Q l.
-  Proof.
-    induction 1 as [ x l H | x l H IH ].
-    + constructor 1; apply quotient_Idl, H.
-    + now constructor 2. 
-  Qed.
+  Proof. unfold linearly_dependent; induction 1; eauto. Qed.
 
-  Hypothesis HR : noetherian R.  
+  Hint Resolve quotient_linearly_dependent : core.
+  Hint Constructors bar : core.
 
-  Theorem quotient_noetherian: noetherian (@quotient_ring R rel rel_ovr rel_eqv rel_ext).
+  Theorem quotient_noetherian : noetherian R → noetherian Q.
   Proof.
-    revert HR.
     unfold noetherian, quotient_ring; simpl.
     generalize ([] : list R).
-    induction 1 as [ l Hl | l Hl IHl ].
-    + constructor 1; now apply quotient_linearly_dependent.
-    + constructor 2; intros x. 
-      apply IHl; auto.
+    induction 1; eauto.
   Qed.
 
 End quotient_noetherian.
 
 Check quotient_noetherian.
-
-(** How can we show that Q (the field of rationals) is
-    Noetherian. Trivial because Idl ⌞l⌟ is either {0} or the whole Q *)
-
-Section fields.
-
-  Variables (F : ring)
-            (HF : ∀x : F, x ∼ᵣ 0ᵣ ∨ ∃y, y *ᵣ x ∼ᵣ 1ᵣ).
-
-  Add Ring R_is_ring : (is_ring F).
-
-  Local Fact req_list_choose l : (∃ x y : F, x ∈ l ∧ y *ᵣ x ∼ᵣ 1ᵣ) ∨ ∀x, x ∈ l → x ∼ᵣ 0ᵣ.
-  Proof.
-    destruct list_choice
-      with (Q := fun x : F => ∃y, op_m y x ∼ᵣ un_m)
-           (P := fun x : F => x ∼ᵣ un_a)
-           (l := l)
-      as [ | (? & ? & []) ]; eauto.
-  Qed.
-
-  Theorem field_principal : principal F.
-  Proof.
-    intros l.
-    destruct (req_list_choose l)
-      as [ (x & y & H1 & Hy) | H ].
-    + exists un_m; intros z; split.
-      * exists z; ring.
-      * intros (k & ->).
-        constructor 2 with (op_m (op_m k y) x).
-        1: rewrite <- Hy; ring.
-        constructor 5. 
-        now constructor 1.
-    + exists un_a; intros z; split.
-      * apply Idl_smallest.
-        - apply ring_div_ideal.
-        - intros ? ->%H; apply ring_div_refl.
-      * intros (k & ->).
-        constructor 2 with un_a; try ring.
-        constructor 3.
-  Qed.
-
-  Theorem field_noetherian : noetherian F.
-  Proof.
-    constructor 2; intros x.
-    destruct (HF x) as [ Hx | (z & Hz) ].
-    + constructor 1; constructor 1.
-      constructor 2 with un_a.
-      * now rewrite Hx.
-      * constructor 3.
-    + constructor 2; intros y.
-      constructor 1; constructor 1.
-      constructor 2 with (op_m (op_m y z) x).
-      * setoid_replace y with (op_m y un_m) at 2 by ring.
-        rewrite <- Hz; ring.
-      * constructor 5; constructor 1; auto.
-  Qed.
-
-End fields.
-

@@ -34,8 +34,8 @@ Tactic Notation "split" "right" := right_split_rec.
 
 Section list_double_rect.
 
-  Variables (X : Type)
-            (P : list X → list X → Type)
+  Variables (X Y : Type)
+            (P : list X → list Y → Type)
             (HP0 : ∀m, P [] m)
             (HP1 : ∀l, P l [])
             (HP2 : ∀ x l y m, P l m → P (x::l) (y::m)).
@@ -68,8 +68,8 @@ End list_mutual_rect.
 
 Section list_eq_length_rect.
 
-  Variables (X : Type)
-            (P : list X → list X → Type)
+  Variables (X Y : Type)
+            (P : list X → list Y → Type)
             (HP0 : P [] [])
             (HP1 : ∀ x l y m, P l m → P (x::l) (y::m)).
 
@@ -130,7 +130,7 @@ Proof.
 Qed.
 
 (** Reverse finite prefix of a sequence of type f : nat → X
-      pfx_rev f n = [f (n-1);...;f 0] *)
+      pfx_rev f n = [fₙ₋₁;...;f₀] *)
 
 Section pfx_rev.
 
@@ -151,21 +151,20 @@ Section pfx_rev.
     + split; [ easy | ]; now intros (? & ? & _).
     + rewrite IHn; split.
       * intros [ <- | (k & ? & <-) ]; [ exists n | exists k ]; split; auto; lia.
-      * intros (k & H1 & H2).
+      * intros (k & []).
         destruct (Nat.eq_dec n k) as [ <- | ]; auto; right; exists k; split; auto; lia.
   Qed.
-  
+
   Fact pfx_rev_ext f g n : (∀i, i < n → f i = g i) → pfx_rev f n = pfx_rev g n.
   Proof.
-    induction n as [ | n IHn ]; intros Hn; simpl; auto.
-    f_equal.
+    induction n as [ | n IHn ]; intros Hn; simpl; auto; f_equal.
     + apply Hn; lia.
     + apply IHn; intros; apply Hn; lia.
   Qed.
 
   Fact pfx_rev_add f a b : pfx_rev f (a+b) = pfx_rev (λ n, f (n+b)) a ++ pfx_rev f b.
   Proof. induction a; simpl; f_equal; auto. Qed.
-  
+
   Fact pfx_rev_S f n : pfx_rev f (1+n) = pfx_rev (λ n, f (1+n)) n ++ [f 0].
   Proof.
     rewrite Nat.add_comm, pfx_rev_add; f_equal; auto.
@@ -199,7 +198,7 @@ Section extends.
 
   Fact hd_extends {l m} : extends l m → { x : X | m = x::l }.
   Proof.
-    destruct m as [ | x m ]; intros H%extends_inv.
+    destruct m as [ | x ]; intros H%extends_inv.
     + easy.
     + now exists x; subst.
   Qed.
@@ -237,26 +236,6 @@ Arguments extends {X}.
 Arguments pfx_rev {X}.
 Arguments extends {X}.
 Arguments extends_pfx_rev {X}.
-
-(** repeat x n = [x;...;x] where x is repeated n times *)
-
-Section repeat.
-
-  Variables (X : Type).
-
-  Definition repeat x : nat → list X :=
-    fix loop n :=
-      match n with
-      | 0   => []
-      | S n => x::loop n
-      end.
-
-  Fact repeat_length x n : ⌊repeat x n⌋ = n.
-  Proof. induction n; simpl; f_equal; auto. Qed.
-
-End repeat.
-
-Arguments repeat {_}.
 
 (** The last member of a list 
 
@@ -304,6 +283,26 @@ Fact is_last_map X Y (f : X → Y) x l :
   is_last x l → is_last (f x) (map f l).
 Proof. intros []; rewrite map_app; simpl; auto. Qed.
 
+(** repeat x n = [x;...;x] where x is repeated n times *)
+
+Section repeat.
+
+  Variables (X : Type).
+
+  Definition repeat x : nat → list X :=
+    fix loop n :=
+      match n with
+      | 0   => []
+      | S n => x::loop n
+      end.
+
+  Fact repeat_length x n : ⌊repeat x n⌋ = n.
+  Proof. induction n; simpl; f_equal; auto. Qed.
+
+End repeat.
+
+Arguments repeat {_}.
+
 (** Extra results for Forall2, ie finitary conjunction over two lists *)
 
 Fact Forall2_right_Forall X Y (P : Y → Prop) (l : list X) m :
@@ -318,7 +317,7 @@ Qed.
 Section Forall2_extra.
 
   Variables (X Y : Type).
-  
+
   Implicit Types (R T : X → Y → Prop).
 
   Fact reif_Forall2 R l : (∀x, x ∈ l → ∃y, R x y) → ∃m, Forall2 R l m.
