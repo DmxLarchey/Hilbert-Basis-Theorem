@@ -17,26 +17,26 @@ Section bar.
 
   (** Code partly imported/inspired from Kruskal-AlmostFull in https://dmxlarchey.github.io/Coq-Kruskal/ *)
 
-  Variables (X : Type).
+  Variables (A : Type).
 
-  Implicit Type (R : list X → list X → Prop) (P : list X → Prop) (m : list X).
+  Implicit Type (R : list A → list A → Prop) (P : list A → Prop) (m : list A).
 
   Inductive bar P l : Prop :=
     | bar_stop : P l → bar P l
-    | bar_next : (∀x, bar P (x::l)) → bar P l.
+    | bar_next : (∀a, bar P (a::l)) → bar P l.
 
   Hint Constructors bar : core.
 
   Fact bar_mono P Q : P ⊆₁ Q → bar P ⊆₁ bar Q.
   Proof. induction 2; eauto. Qed.
 
-  Local Fact bar_app_rec P m r : bar P m → ∀l, m = l++r → bar (λ x, P (x++r)) l.
+  Local Fact bar_app_rec P m r : bar P m → ∀l, m = l++r → bar (λ p, P (p++r)) l.
   Proof.
     induction 1 as [ | v _ IHv ]; intros ? ->; eauto.
     constructor 2; intro x; now apply IHv with x.
   Qed.
 
-  Fact bar_app_iff P l r : bar P (l++r) ↔ bar (λ x, P (x++r)) l.
+  Fact bar_app_iff P l r : bar P (l++r) ↔ bar (λ p, P (p++r)) l.
   Proof.
     split.
     + intro; now apply bar_app_rec with (2 := eq_refl).
@@ -55,12 +55,12 @@ Section bar.
 
   (** This results subsumes bar_app_middle, bar_permutation below *) 
   Lemma bar_rel_closed R P :
-      (∀ x l m, R l m → R (x::l) (x::m))
+      (∀ a l m, R l m → R (a::l) (a::m))
     → (∀ l m, R l m → P l → P m)
     →  ∀ l m, R l m → bar P l → bar P m.
   Proof. intros ? ? l m H1 H2; revert H2 m H1; induction 1; eauto. Qed.
   
-  Inductive list_insert m : list X → list X → Prop :=
+  Inductive list_insert m : list A → list A → Prop :=
     | list_insert_intro l r : list_insert m (l++r) (l++m++r).
 
   Hint Constructors list_insert : core.
@@ -80,7 +80,7 @@ Section bar.
     → (∀ l m, l ≈ₚ m → bar P l → bar P m).
   Proof. apply bar_rel_closed; now constructor. Qed.
 
-  Notation monotone P := (∀ x l, P l → P (x::l)).
+  Notation monotone P := (∀ a l, P l → P (a::l)).
 
   Fact bar_monotone P : monotone P → monotone (bar P).
   Proof. induction 2; eauto. Qed.
@@ -112,10 +112,10 @@ Arguments bar {_}.
 
 Section bar_relmap.
 
-  Variables (X Y : Type) (f : X → Y → Prop)
-            (R : list X → Prop)
-            (T : list Y → Prop)
-            (Hf : ∀y, ∃x, f x y)                     (** f is surjective *)
+  Variables (A B : Type) (f : A → B → Prop)
+            (R : list A → Prop)
+            (T : list B → Prop)
+            (Hf : ∀b, ∃a, f a b)                       (** f is surjective *)
             (HRT : ∀ l m, Forall2 f l m → R l → T m)   (** f is a morphism form R to T *)
             .
 
@@ -124,9 +124,9 @@ Section bar_relmap.
     intros H1 H2; revert H2 m H1 T HRT.
     induction 1 as [ l Hl | l Hl IHl ]; intros m H1 T HRT.
     * constructor 1; revert Hl; apply HRT; auto.
-    * constructor 2; intros y.
-      destruct (Hf y) as (x & Hx).
-      apply (IHl x); auto.
+    * constructor 2; intros b.
+      destruct (Hf b) as (a & ?).
+      apply (IHl a); auto.
   Qed.
 
 End bar_relmap.
@@ -135,36 +135,36 @@ Section bar_nc.
 
   (** This section is about bar in "non-constructive" settings *)
 
-  Variables (X : Type) (P : list X → Prop).
+  Variables (A : Type) (Q : list A → Prop).
 
-  Local Fact not_bar_1 l : ¬ bar P l → ¬ P l.
+  Local Fact not_bar_1 l : ¬ bar Q l → ¬ Q l.
   Proof. intros H ?; apply H; now constructor 1. Qed.
 
-  Hypothesis xm : ∀A, A ∨ ¬ A.
+  Hypothesis xm : ∀P, P ∨ ¬ P.
 
-  Local Fact not_bar_2__XM l : ¬ bar P l → ∃x, ¬ bar P (x::l).
+  Local Fact not_bar_2__XM l : ¬ bar Q l → ∃a, ¬ bar Q (a::l).
   Proof.
     intros H.
-    destruct (xm (∃x, ¬ bar P (x::l))) as [ | C ]; auto.
+    destruct (xm (∃a, ¬ bar Q (a::l))) as [ | C ]; auto.
     destruct H; constructor 2.
-    intros x.
-    destruct (xm (bar P (x::l))) as [ | D ]; auto.
+    intros a.
+    destruct (xm (bar Q (a::l))) as [ | D ]; auto.
     destruct C; eauto.
   Qed.
 
-  Hypothesis dc : ∀ A (R : A → A → Prop), (∀a, ∃b, R a b) → ∀a, ∃ρ, ρ 0 = a ∧ ∀n, R (ρ n) (ρ (1+n)).
+  Hypothesis dc : ∀ B (R : B → B → Prop), (∀a, ∃b, R a b) → ∀a, ∃ρ, ρ 0 = a ∧ ∀n, R (ρ n) (ρ (1+n)).
 
   (** This is a form of dependent choice over Σ-types *)
-  Fact dc_sigma A (Q : A → Prop) R : 
-      (∀a, Q a → ∃b, Q b ∧ R a b)
-     → ∀a, Q a → ∃ρ, ρ 0 = a ∧ (∀n, Q (ρ n) ∧ R (ρ n) (ρ (S n))).
+  Fact dc_sigma B (P : B → Prop) R : 
+      (∀a, P a → ∃b, P b ∧ R a b)
+     → ∀a, P a → ∃ρ, ρ 0 = a ∧ (∀n, P (ρ n) ∧ R (ρ n) (ρ (S n))).
   Proof.
-    intros HQ a Ha.
-    set (B := sig Q).
-    set (T (x y : B) := R (proj1_sig x) (proj1_sig y)).
+    intros HP a Ha.
+    set (C := sig P).
+    set (T (x y : C) := R (proj1_sig x) (proj1_sig y)).
     destruct (dc _ T) with (a := exist _ a Ha) as (f & H1 & H2).
     + intros (c & Hc).
-      destruct (HQ _ Hc) as (b & Hb & ?).
+      destruct (HP _ Hc) as (b & Hb & ?).
       exists (exist _ b Hb); auto.
     + exists (λ n, proj1_sig (f n)); split.
       * now rewrite H1.
@@ -175,16 +175,16 @@ Section bar_nc.
 
   Hint Constructors extends bar : core.
 
-  Lemma not_bar_nil__XM_DC : ¬ bar P [] → ∃ρ, ∀n, ¬ P (pfx_rev ρ n).
+  Lemma not_bar_nil__XM_DC : ¬ bar Q [] → ∃ρ, ∀n, ¬ Q (pfx_rev ρ n).
   Proof.
     intros H0.
     destruct dc_sigma
-      with (Q := λ x, ¬ bar P x)
-           (R := @extends X)
-           (a := @nil X)
+      with (P := λ x, ¬ bar Q x)
+           (R := @extends A)
+           (a := @nil A)
       as (f & H1 & H2); auto.
-    + intros l (x & Hx)%not_bar_2__XM.
-      exists (x::l); auto.
+    + intros l (a & ?)%not_bar_2__XM.
+      exists (a::l); auto.
     + destruct (extends_pfx_rev f) as (g & Hg); auto.
       * intro; apply H2.
       * exists g.
@@ -194,7 +194,7 @@ Section bar_nc.
 
   (** Reminder of the bar theorem (under XM + DC of course), see also
            https://github.com/DmxLarchey/Constructive-Konig *)
-  Theorem bar_theorem__XM_DC : bar P [] ↔ ∀ρ, ∃n, P (pfx_rev ρ n).
+  Theorem bar_theorem__XM_DC : bar Q [] ↔ ∀ρ, ∃n, Q (pfx_rev ρ n).
   Proof.
     split.
     + intros H rho.
@@ -202,7 +202,7 @@ Section bar_nc.
       destruct H as (n & Hn).
       exists n; now rewrite app_nil_r in Hn.
     + intros H.
-      destruct (xm (bar P [])) as [ | C ]; auto.
+      destruct (xm (bar Q [])) as [ | C ]; auto.
       apply not_bar_nil__XM_DC in C as (rho & Hrho).
       now destruct (H rho) as (n & Hn%Hrho).
   Qed.

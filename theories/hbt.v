@@ -19,13 +19,13 @@ Require Import utils bar ring ideal poly category noetherian.
 
 Section lex.
 
-  Variables (X : Type) (R : X → X → Prop).
+  Variables (A : Type) (R : A → A → Prop).
 
   (** This order is stronger that shortlex, ie either shorter
       or of equal length and lexicographically smaller *)
-  Inductive lex : list X → list X → Prop :=
-    | lex_stop p q m : R p q   → lex (p::m) (q::m)
-    | lex_next x l m : lex l m → lex l (x::m).
+  Inductive lex : list A → list A → Prop :=
+    | lex_stop a b m : R a b   → lex (a::m) (b::m)
+    | lex_next a l m : lex l m → lex l (a::m).
 
   Hint Constructors lex : core.
 
@@ -33,7 +33,7 @@ Section lex.
       lex l m
     → match m with
       | []   => False
-      | y::m => (∃x, R x y ∧ l = x::m) ∨ lex l m
+      | b::m => (∃a, R a b ∧ l = a::m) ∨ lex l m
       end.
   Proof. destruct 1; eauto. Qed.
 
@@ -48,11 +48,11 @@ Section lex.
   Proof.
     intros l.
     (* first induction, structural on l *)
-    induction l as [ | q l IH ].
+    induction l as [ | b l IH ].
     + (* when l = [], it has no predecessors *)
       constructor; now intros ? ?%lex_inv.
     + (* second induction on the head of q::l, using R_wf as an induction principle *)
-      induction q using (well_founded_induction R_wf) in l, IH |- *.
+      induction b using (well_founded_induction R_wf) in l, IH |- *.
       constructor.
       intros ? [ (? & ? & ->) | ]%lex_inv; eauto.
       now apply Acc_inv with (1 := IH).
@@ -65,24 +65,24 @@ Section lex.
 
   Section lex_special_wf.
 
-    (** Given "fixed" m and P, to show ∀x, P (x::m) it is enough to show:
+    (** Given "fixed" m and P, to show ∀a, P (a::m) it is enough to show:
         - the base case: P l holds for any l <lex m
-        - the recursive case: P (x:m) holds further assuming P l for any l <lex x::m *)
+        - the recursive case: P (a:m) holds further assuming P l for any l <lex a::m *)
 
-    Variables (m : list X)
-              (P : list X → Prop)
+    Variables (m : list A)
+              (P : list A → Prop)
               (HP0 : ∀l, lex l m → P l)                        (* The base case *)
-              (HP1 : ∀x, (∀l, lex l (x::m) → P l) → P (x::m))  (* The recursive case *)
+              (HP1 : ∀a, (∀l, lex l (a::m) → P l) → P (a::m))  (* The recursive case *)
               .
 
-    Notation T := (λ x y, lex (x::m) (y::m)).
+    Notation T := (λ a b, lex (a::m) (b::m)).
 
     Local Fact lex_special_T_wf : well_founded T.
     Proof. apply wf_inverse_image, lex_wf. Qed.
 
-    Theorem lex_special_wf x : P (x::m).
+    Theorem lex_special_wf a : P (a::m).
     Proof.
-      induction x using (well_founded_induction lex_special_T_wf).
+      induction a using (well_founded_induction lex_special_T_wf).
       apply HP1; intros ? [(? & ? & ->)|]%lex_inv; eauto.
     Qed.
 
@@ -96,11 +96,11 @@ Arguments lex {_}.
 
 Section linearly_dependent.
 
-  Variables (R : ring).
+  Variables (𝓡 : ring).
 
-  Add Ring ring_is_ring : (is_ring R).
+  Add Ring 𝓡_is_ring : (is_ring 𝓡).
 
-  Implicit Type (l m : list R).
+  Implicit Type (l m : list 𝓡).
 
   Local Remark LD_split m : LD m ↔ ∃ l x r, m = l++x::r ∧ Idl ⌞r⌟ x.
   Proof. apply Good_split. Qed.
@@ -145,13 +145,13 @@ End linearly_dependent.
 
 Section HTB.
 
-  (** Beware that LD is used for two rings below, both R and R[X] !! *)
+  (** Beware that LD is used for two rings below, both 𝓡 and 𝓡[X] !! *)
 
-  Variable (R : ring).
+  Variable (𝓡 : ring).
 
-  Implicit Type (h : list R)
-                (p q : poly_ring R) 
-                (l k : list (poly_ring R)).
+  Implicit Type (h : list 𝓡)
+                (p q : poly_ring 𝓡) 
+                (l k : list (poly_ring 𝓡)).
 
   Hint Constructors lex bar : core.
 
@@ -188,8 +188,8 @@ Section HTB.
       (* either all polynomials in m have degree less than ⌊p⌋
          or one of them, say q, has degree strictly greater than ⌊p⌋ *)
       destruct list_choice 
-        with (P := λ q : list R, ⌊q⌋ ≤ ⌊p⌋) 
-             (Q := λ q : list R, ⌊p⌋ < ⌊q⌋)
+        with (P := λ q : list 𝓡, ⌊q⌋ ≤ ⌊p⌋) 
+             (Q := λ q : list 𝓡, ⌊p⌋ < ⌊q⌋)
              (l := m)
         as [ Hm' | (q & H3 & H4) ].
       * intros; lia.
@@ -198,7 +198,7 @@ Section HTB.
            such that p-q is a linear combination of m *)
         rewrite <- Forall_forall in Hm'.
         destruct update_lead_coef
-          with (R := R) (1 := Hx) (2 := Hp) (3 := Hm) (4 := Hm')
+          with (𝓡 := 𝓡) (1 := Hx) (2 := Hp) (3 := Hm) (4 := Hm')
           as (q & H3 & H4).
         (* We update p by q *)
         apply bar_LD_update_closed with (q::m); auto.
@@ -225,7 +225,7 @@ Section HTB.
         apply (IHh x); auto.
   Qed.
 
-  Theorem HBT : noetherian R → noetherian (poly_ring R).
+  Theorem HBT : noetherian 𝓡 → noetherian (poly_ring 𝓡).
   Proof.
     intros H; apply HBT_main with (h := []); auto.
     now intros ? ?%lex_inv.
@@ -237,11 +237,11 @@ Section Hilbert_Basis_Theorem.
 
   Notation idx := Fin.t.
 
-  (* Recall that idx n = {1,...,n} and here
-     we show that R[X₁,...,Xₙ] is Noetherian.
+  (** Recall that idx n = {1,...,n} and here
+      we show that 𝓡[X₁,...,Xₙ] is Noetherian.
 
-     Formally this is the multivariate ring generated
-     by (idx n) over R *)
+      Formally this is the multivariate ring generated
+      by (idx n) over 𝓡 *)
 
   (* idx 0 is an empty type *)
   Local Fact idx0_rect : ∀ (P : idx 0 → Type) (p : idx 0), P p.
@@ -266,26 +266,26 @@ Section Hilbert_Basis_Theorem.
 
   Hint Resolve ring_homo_id ring_homo_compose : core.
 
-  Variable (R : ring).
+  Variable (𝓡 : ring).
 
   (** By induction on n, one can compute a multi-extension 
-      over unknowns in {1,...,n} of a ring R, ie a tupple
-      (Rₙ,φₙ,𝓧ₙ) with  
-         - Rₙ : ring
-         - φₙ : R → Rₙ (ring embedding)
-         - 𝓧ₙ : {1,...,n} → Rₙ (unknowns)
-      such that Rₙ is Noetherian when R is 
+      over unknowns in {1,...,n} of a ring 𝓡, ie a tupple
+      (𝓡ₙ,φₙ,Xₙ) with  
+         - 𝓡ₙ : ring
+         - φₙ : 𝓡 → 𝓡ₙ (ring embedding)
+         - Xₙ : {1,...,n} → 𝓡ₙ (unknowns)
+      such that 𝓡ₙ is Noetherian when 𝓡 is 
 
       Notice that multi-ring extensions are
       unique up to isomorphism *)
 
   Local Lemma HTB_rec n :
-    { Rₙ | is_multi_ring (idx n) R Rₙ ∧ (noetherian R → noetherian Rₙ) }.
+    { 𝓡ₙ | is_multi_ring (idx n) 𝓡 𝓡ₙ ∧ (noetherian 𝓡 → noetherian 𝓡ₙ) }.
   Proof.
     induction n as [ | n (Rn & Hn1 & Hn2) ].
-    + exists {| me_ring := R;
+    + exists {| me_ring := 𝓡;
                 me_embed := λ x, x;
-                me_embed_homo := ring_homo_id R;
+                me_embed_homo := ring_homo_id 𝓡;
                 me_points := idx0_rect _ |}; simpl; split; auto.
       intros [ T f Hf h ]; simpl; split.
       * exists f; split right; simpl; auto.
@@ -304,7 +304,7 @@ Section Hilbert_Basis_Theorem.
   Theorem multi_ring_correct n : is_multi_ring _ _ (multi_ring n).
   Proof. apply (proj2_sig (HTB_rec n)). Qed.
 
-  Theorem Hilbert_Basis_Theorem n : noetherian R → noetherian (multi_ring n).
+  Theorem Hilbert_Basis_Theorem n : noetherian 𝓡 → noetherian (multi_ring n).
   Proof. apply (proj2_sig (HTB_rec n)). Qed.
 
 End Hilbert_Basis_Theorem.

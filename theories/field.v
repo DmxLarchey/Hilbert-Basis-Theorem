@@ -20,21 +20,21 @@ Require Import utils bar ring ideal principal noetherian.
 
 Section fields.
 
-  Variables (F : ring)
-            (HF : ∀x : F, x ∼ᵣ 0ᵣ ∨ ∃y, y *ᵣ x ∼ᵣ 1ᵣ).
+  Variables (𝓕 : ring)
+            (H𝓕 : ∀x : 𝓕, x ∼ᵣ 0ᵣ ∨ ∃y, y *ᵣ x ∼ᵣ 1ᵣ).
 
-  Add Ring R_is_ring : (is_ring F).
+  Add Ring 𝓕_is_ring : (is_ring 𝓕).
 
-  Local Fact req_list_choose l : (∃ x y : F, x ∈ l ∧ y *ᵣ x ∼ᵣ 1ᵣ) ∨ ∀x, x ∈ l → x ∼ᵣ 0ᵣ.
+  Local Fact req_list_choose l : (∃ x y : 𝓕, x ∈ l ∧ y *ᵣ x ∼ᵣ 1ᵣ) ∨ ∀x, x ∈ l → x ∼ᵣ 0ᵣ.
   Proof.
     destruct list_choice
-      with (Q := λ x : F, ∃y, op_m y x ∼ᵣ un_m)
-           (P := λ x : F, x ∼ᵣ un_a)
+      with (Q := λ x : 𝓕, ∃y, op_m y x ∼ᵣ un_m)
+           (P := λ x : 𝓕, x ∼ᵣ un_a)
            (l := l)
       as [ | (? & ? & []) ]; eauto.
   Qed.
 
-  Theorem field_principal : principal F.
+  Theorem field_principal : principal 𝓕.
   Proof.
     intros l.
     destruct (req_list_choose l)
@@ -55,10 +55,10 @@ Section fields.
         constructor 3.
   Qed.
 
-  Theorem field_noetherian : noetherian F.
+  Theorem field_noetherian : noetherian 𝓕.
   Proof.
     constructor 2; intros x.
-    destruct (HF x) as [ Hx | (z & Hz) ].
+    destruct (H𝓕 x) as [ Hx | (z & Hz) ].
     + constructor 1; constructor 1.
       constructor 2 with un_a.
       * now rewrite Hx.

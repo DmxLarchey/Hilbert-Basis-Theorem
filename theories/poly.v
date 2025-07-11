@@ -17,11 +17,13 @@ Import ListNotations.
 
 Section polynomial_ring.
 
-  Variable (R : ring).
+  Variable (𝓡 : ring).
 
-  Add Ring ring_is_ring : (is_ring R).
+  Add Ring 𝓡_is_ring : (is_ring 𝓡).
 
-  Implicit Type (x : R).
+  Notation poly := (list 𝓡).
+
+  Implicit Types (x : 𝓡) (l : poly).
 
   (* We use this non-canonical representation
      of polynomials:
@@ -44,10 +46,6 @@ Section polynomial_ring.
      aₙ ~ᵣ 0ᵣ 
 
      degree [a -ᵣ b] is < 0 iff a ~ᵣ b *)
-
-  Notation poly := (list R).
-
-  Implicit Type l : poly.
 
   Notation poly_zero := (Forall (req un_a)).
 
@@ -356,7 +354,7 @@ Section polynomial_ring.
     rewrite !poly_s_poly_a_distr, <- !poly_a_assoc.
     apply poly_a_morph; auto.
     rewrite poly_a_comm, IH.
-    setoid_replace (@un_a R) with (@op_a R un_a un_a) at 1 by ring.
+    setoid_replace (@un_a 𝓡) with (@op_a 𝓡 un_a un_a) at 1 by ring.
     change (op_a un_a un_a :: k *ₚ l +ₚ k *ₚ m) with ((un_a::k *ₚ l) +ₚ (un_a::k *ₚ m)).
     rewrite <- poly_a_assoc.
     apply poly_a_morph; auto.
@@ -449,7 +447,7 @@ Section polynomial_ring.
       head coefficients of polynomials representations
       to diminish the length by updating *)
 
-  Add Ring poly_ring : (is_ring poly_ring).
+  Add Ring poly_ring_s_ring : (is_ring poly_ring).
 
   (* Now we establish the eliminating of the
      head coefficient by linear combination,
@@ -474,7 +472,7 @@ Section polynomial_ring.
 
                where hᵢ = 1+d-⌊vᵢ⌋ for i in 1,...,n *)
 
-  Lemma lc_lead_coef d (a : list R) x (v : list poly_ring) :
+  Lemma lc_lead_coef d (a : list 𝓡) x (v : list poly_ring) :
       lc a x                       (* x is a linear combination of [a₁;...;aₙ] *)
     → Forall2 is_last a v          (* [a₁;...;aₙ] are the heads of [v₁;...;vₙ] *) 
     → Forall (λ q, ⌊q⌋ ≤ 1+d) v    (* 1+d is greater the all the length ⌊v₁⌋,...,⌊vₙ⌋ *)
@@ -510,7 +508,7 @@ Section polynomial_ring.
         rewrite poly_shift_scal; auto.
   Qed.
 
-  Theorem update_lead_coef (a : list R) (x : R) (v : list poly_ring) (p : poly_ring) :
+  Theorem update_lead_coef (a : list 𝓡) (x : 𝓡) (v : list poly_ring) (p : poly_ring) :
       lc a x                               (* x is a linear combination of [a₁;...;aₙ]   *)
     → is_last x p                          (* x is head of p                             *)
     → Forall2 is_last a v                  (* [a₁;...;aₙ] are the heads of [v₁;...;vₙ]   *)
@@ -548,32 +546,32 @@ Section polynomial_ring.
       extensions of the ring R. *)
 
   Definition poly_unknown : poly_ring := [0ᵣ;1ᵣ].
-  Definition poly_embed (x : R) := [x].
-  
-  Notation 𝓧 := poly_unknown.
+  Definition poly_embed (x : 𝓡) := [x].
+
+  Notation X := poly_unknown.
   Notation φ := poly_embed. 
 
-  Fact poly_embed_homo : @ring_homo R poly_ring φ.
+  Fact poly_embed_homo : @ring_homo 𝓡 poly_ring φ.
   Proof.
     split right; auto.
     + simpl; constructor; auto.
     + simpl; constructor; auto; ring.
   Qed.
 
-  Fact poly_m_poly_unknown l : 𝓧 *ₚ l ∼ₚ 0ᵣ::l.
+  Fact poly_m_poly_unknown l : X *ₚ l ∼ₚ 0ᵣ::l.
   Proof.
     simpl.
     rewrite poly_s_poly_zero_l; auto.
     simpl; split; auto.
     rewrite poly_a_comm, poly_s_neutral.
-    rewrite poly_zero_left with (l := [@un_a R]); auto.
+    rewrite poly_zero_left with (l := [@un_a 𝓡]); auto.
   Qed.
 
   Section poly_ring_rect.
 
     Variables (P : poly_ring → Type)
               (HP0 : ∀ p q, p ∼ᵣ q → P p → P q)
-              (HP1 : P 𝓧)
+              (HP1 : P X)
               (HP2 : ∀ x, P (φ x))
               (HP3 : ∀ p q, P p → P q → P (p +ᵣ q))
               (HP4 : ∀ p q, P p → P q → P (p *ᵣ q)).
@@ -593,15 +591,15 @@ Section polynomial_ring.
 
   Section poly_extends.
 
-    Variables (K : ring)
-              (f : R → K) (Hf : ring_homo f)
-              (k : K).
+    Variables (𝓚 : ring)
+              (f : 𝓡 → 𝓚) (Hf : ring_homo f)
+              (k : 𝓚).
 
-    Add Ring K_is_ring : (is_ring K).
+    Add Ring 𝓚_is_ring : (is_ring 𝓚).
 
     (* We proceed by induction on the list, ie
        the canonical repr. of the polynomial *) 
-    Fixpoint poly_extends (l : poly_ring) : K :=
+    Fixpoint poly_extends (l : poly_ring) : 𝓚 :=
       match l with
       | []   => 0ᵣ
       | x::l => f x +ᵣ k *ᵣ (poly_extends l)
@@ -691,7 +689,7 @@ Section polynomial_ring.
       + exact poly_extends_un_m.
     Qed.
 
-    Theorem poly_extends_unknown : ψ 𝓧 ∼ᵣ k.
+    Theorem poly_extends_unknown : ψ X ∼ᵣ k.
     Proof.
       destruct Hf as (_ & _ & _ & Hf4).
       unfold poly_extends; simpl.
@@ -702,9 +700,9 @@ Section polynomial_ring.
     Theorem poly_extends_poly_embed x : ψ (φ x) ∼ᵣ f x.
     Proof. simpl; ring. Qed.
 
-    Hypothesis (h : poly_ring → K)
+    Hypothesis (h : poly_ring → 𝓚)
                (h_homo : ring_homo h)
-               (h_k : h 𝓧 ∼ᵣ k)
+               (h_k : h X ∼ᵣ k)
                (h_embed : ∀x, h (φ x) ∼ᵣ f x).
 
     (* By induction on the ring structure of p *)
@@ -729,7 +727,7 @@ Section polynomial_ring.
   (** We show that the poly_ring extension satisfies its
       characteristic property. *)
   Theorem poly_ring_correct :
-    is_poly_ring R 
+    is_poly_ring 𝓡
       {| pe_ring := poly_ring;
          pe_embed := poly_embed;
          pe_embed_homo := poly_embed_homo;

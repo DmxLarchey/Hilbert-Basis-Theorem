@@ -15,15 +15,15 @@ Require Import utils ring.
 
 Section characteristic_property_of_the_polynomial_ring.
 
-  Variable (R : ring).
+  Variable (𝓡 : ring).
 
-  Add Ring R_is_ring : (is_ring R).
+  Add Ring 𝓡_is_ring : (is_ring 𝓡).
 
   (** This is the initiality property for the polynomial ring:
-      it is initial in the category of pointed rings which extend R *)
+      it is initial in the category of pointed rings which extend 𝓡 *)
 
-  (** A pointed extension of R is ring T, a homomorphism R → T and
-      a singled-out value in T 
+  (** A pointed extension of 𝓡 is ring 𝓣, a homomorphism 𝓡 → 𝓣 and
+      a singled-out value in 𝓣 
 
       Beware that what we call pe_embed is not necessarily an
       embedding of rings (ie injective): it is just a homomorphism.
@@ -31,7 +31,7 @@ Section characteristic_property_of_the_polynomial_ring.
       by definition, the polynomial ring, pe_embed is actually injective. *)
   Record ring_pointed_ext := 
     { pe_ring :> ring;
-      pe_embed : R → pe_ring;
+      pe_embed : 𝓡 → pe_ring;
       pe_embed_homo : ring_homo pe_embed;
       pe_point : pe_ring }.
 
@@ -39,17 +39,17 @@ Section characteristic_property_of_the_polynomial_ring.
       - is a homomorphism of rings
       - preserves the pe_point
       - commutes with pe_embed *)
-  Definition pe_homo {Rx Tx : ring_pointed_ext} (γ : Rx → Tx) :=
+  Definition pe_homo {𝓡x 𝓣x : ring_pointed_ext} (γ : 𝓡x → 𝓣x) :=
       ring_homo γ
-    ∧ γ (pe_point Rx) ∼ᵣ pe_point Tx
-    ∧ ∀r, γ (pe_embed Rx r) ∼ᵣ pe_embed Tx r.
+    ∧ γ (pe_point 𝓡x) ∼ᵣ pe_point 𝓣x
+    ∧ ∀r, γ (pe_embed 𝓡x r) ∼ᵣ pe_embed 𝓣x r.
 
-  (** Pointed extensions of R form a category *)
-
-  Fact pe_homo_id (Rx : ring_pointed_ext) : pe_homo (λ p : Rx, p).
+  (** Pointed extensions of 𝓡 form a category *)
+  
+  Fact pe_homo_id (𝓡x : ring_pointed_ext) : pe_homo (λ p : 𝓡x, p).
   Proof. split right; auto. Qed. 
 
-  Fact pe_homo_comp (Rx Tx Kx : ring_pointed_ext) (f : Rx → Tx) (g : Tx → Kx) :
+  Fact pe_homo_comp (𝓡x 𝓣x 𝓚x : ring_pointed_ext) (f : 𝓡x → 𝓣x) (g : 𝓣x → 𝓚x) :
     pe_homo f → pe_homo g → pe_homo (λ p, g (f p)).
   Proof.
     intros (H1 & H2 & H3) (G1 & G2 & G3); split right; auto.
@@ -59,21 +59,21 @@ Section characteristic_property_of_the_polynomial_ring.
 
   Hint Resolve pe_homo_id pe_homo_comp : core.
 
-  (** And "the" poly(nomial) ring over R is the initial
-      object in the category of pointed extensions of R *)
-  Definition is_poly_ring (Rx : ring_pointed_ext) :=
-    ∀ Tx : ring_pointed_ext, 
-        (∃α : Rx → Tx, pe_homo α)
-      ∧ (∀ α β : Rx → Tx, pe_homo α → pe_homo β → ∀p, α p ∼ᵣ β p).
+  (** And "the" poly(nomial) ring over 𝓡 is the initial
+      object in the category of pointed extensions of 𝓡  *)
+  Definition is_poly_ring (𝓡x : ring_pointed_ext) :=
+    ∀ 𝓣x : ring_pointed_ext, 
+        (∃α : 𝓡x → 𝓣x, pe_homo α)
+      ∧ (∀ α β : 𝓡x → 𝓣x, pe_homo α → pe_homo β → ∀p, α p ∼ᵣ β p).
 
   Section unicity.
 
   (** The poly(nomial) ring is unique up to isomorphism 
 
       This should allow an easy proof of isomorphism of
-          (R{X})[x] and R{option X}
+          (𝓡{X})[x] and 𝓡{option X}
 
-      where R{X} is the polynomial extension over
+      where 𝓡{X} is the polynomial extension over
       an arbitrary type X of undeterminates (see below).
 
       But we need to build the arbitrary polynomial
@@ -82,31 +82,29 @@ Section characteristic_property_of_the_polynomial_ring.
       sense) of polynomial expressions by an inductively
       defined ring congruence.
 
-      Then we can show that
-        R[fin (S n)} is isomorphic to
-        R{option (fin n)} isomorphic to
-        R{fin n}[x]
+      Then we can show that 𝓡[fin (S n)} is isomorphic
+      to 𝓡{option (fin n)} isomorphic to 𝓡{fin n}[x]
       and then generalize the HBT
       by induction on n:
 
-      if R is Noetherian then R{fin n} is Noetherian for any n *)
+      if 𝓡 is Noetherian then 𝓡{fin n} is Noetherian for any n *)
 
-    Variables (Rx₁ Rx₂ : ring_pointed_ext).
+    Variables (𝓡x₁ 𝓡x₂ : ring_pointed_ext).
 
-    Add Ring Rx1_ring : (is_ring Rx₁).
-    Add Ring Rx2_ring : (is_ring Rx₂).
+    Add Ring 𝓡x1_ring : (is_ring 𝓡x₁).
+    Add Ring 𝓡x2_ring : (is_ring 𝓡x₂).
 
     Theorem poly_ring_unique :
-         is_poly_ring Rx₁
-       → is_poly_ring Rx₂
-       → ∃ (f : Rx₁ → Rx₂) (g : Rx₂ → Rx₁),
+         is_poly_ring 𝓡x₁
+       → is_poly_ring 𝓡x₂
+       → ∃ (f : 𝓡x₁ → 𝓡x₂) (g : 𝓡x₂ → 𝓡x₁),
              ring_isomorphism f g
-           ∧ f (pe_point Rx₁) ∼ᵣ pe_point Rx₂
-           ∧ g (pe_point Rx₂) ∼ᵣ pe_point Rx₁.
+           ∧ f (pe_point 𝓡x₁) ∼ᵣ pe_point 𝓡x₂
+           ∧ g (pe_point 𝓡x₂) ∼ᵣ pe_point 𝓡x₁.
     Proof.
       intros H1 H2.
-      destruct (H1 Rx₂) as ((f & Hf) & H3).
-      destruct (H2 Rx₁) as ((g & Hg) & H4).
+      destruct (H1 𝓡x₂) as ((f & Hf) & H3).
+      destruct (H2 𝓡x₁) as ((g & Hg) & H4).
       exists f, g; split right.
       + split right.
         * apply Hf.
@@ -130,41 +128,41 @@ Section characteristic_property_of_multivariate_rings.
 
   (** The categorical notion of polynomial ring can be easily
       generalized to multivariate rings, where unknowns are
-      indexed by an arbitrary type X *)
+      indexed by an arbitrary type A *)
 
-  (** We define what it is to be isomorphic to R{X}
-      which is the ring of multi(nomials) over R with
-      indeterminates in the type X *)
+  (** We define what it is to be isomorphic to 𝓡{A}
+      which is the ring of multi(nomials) over 𝓡 with
+      indeterminates in the type A *)
 
-  Variables (X : Type) (R : ring).
+  Variables (A : Type) (𝓡 : ring).
 
-  Add Ring R_is_ring : (is_ring R).
+  Add Ring 𝓡_is_ring : (is_ring 𝓡).
 
-  (** A multi-extension of a ring R *)
+  (** A multi-extension of a ring 𝓡 *)
   Record ring_multi_ext := 
     { me_ring :> ring;
-      me_embed : R → me_ring;
+      me_embed : 𝓡 → me_ring;
       me_embed_homo : ring_homo me_embed;
-      me_points : X → me_ring }.
+      me_points : A → me_ring }.
 
   (** A homomorphism of multi-extensions *)
-  Definition me_homo {RX TX : ring_multi_ext} (γ : RX → TX) :=
+  Definition me_homo {𝓡A 𝓣A : ring_multi_ext} (γ : 𝓡A → 𝓣A) :=
       ring_homo γ
-    ∧ (∀x, γ (me_points RX x) ∼ᵣ me_points TX x)
-    ∧ (∀r, γ (me_embed RX r) ∼ᵣ me_embed TX r).
+    ∧ (∀a, γ (me_points 𝓡A a) ∼ᵣ me_points 𝓣A a)
+    ∧ (∀r, γ (me_embed 𝓡A r) ∼ᵣ me_embed 𝓣A r).
 
   (** This is the initiality property for the polynomial ring:
       it is initial in the category of pointed rings which extend R *)
 
-  Definition is_multi_ring (RX : ring_multi_ext) :=
-    ∀ TX : ring_multi_ext, 
-        (∃α : RX → TX, me_homo α)
-      ∧ (∀ α β : RX → TX, me_homo α → me_homo β → ∀p, α p ∼ᵣ β p).
+  Definition is_multi_ring (𝓡A : ring_multi_ext) :=
+    ∀ 𝓣A : ring_multi_ext, 
+        (∃α : 𝓡A → 𝓣A, me_homo α)
+      ∧ (∀ α β : 𝓡A → 𝓣A, me_homo α → me_homo β → ∀p, α p ∼ᵣ β p).
 
-  Fact me_homo_id (RX : ring_multi_ext) : me_homo (λ p : RX, p).
+  Fact me_homo_id (𝓡A : ring_multi_ext) : me_homo (λ p : 𝓡A, p).
   Proof. split right; auto. Qed.
 
-  Fact me_homo_comp (RX TX KX : ring_multi_ext) (f : RX → TX) (g : TX → KX) :
+  Fact me_homo_comp (𝓡A 𝓣A 𝓚A : ring_multi_ext) (f : 𝓡A → 𝓣A) (g : 𝓣A → 𝓚A) :
     me_homo f → me_homo g → me_homo (λ p, g (f p)).
   Proof.
     intros (H1 & H2 & H3) (G1 & G2 & G3); split right; auto.
@@ -176,22 +174,22 @@ Section characteristic_property_of_multivariate_rings.
 
   Section unicity.
 
-    Variables (RX₁ RX₂ : ring_multi_ext).
+    Variables (𝓡A₁ 𝓡A₂ : ring_multi_ext).
 
-    Add Ring RX1_ring : (is_ring RX₁).
-    Add Ring RX2_ring : (is_ring RX₂).
+    Add Ring 𝓡A1_ring : (is_ring 𝓡A₁).
+    Add Ring 𝓡A2_ring : (is_ring 𝓡A₂).
 
     Theorem multi_ring_unique :
-         is_multi_ring RX₁
-       → is_multi_ring RX₂
-       → ∃ (f : RX₁ → RX₂) (g : RX₂ → RX₁),
+         is_multi_ring 𝓡A₁
+       → is_multi_ring 𝓡A₂
+       → ∃ (f : 𝓡A₁ → 𝓡A₂) (g : 𝓡A₂ → 𝓡A₁),
              ring_isomorphism f g
-           ∧ (∀x, f (me_points RX₁ x) ∼ᵣ me_points RX₂ x)
-           ∧ (∀x, g (me_points RX₂ x) ∼ᵣ me_points RX₁ x).
+           ∧ (∀x, f (me_points 𝓡A₁ x) ∼ᵣ me_points 𝓡A₂ x)
+           ∧ (∀x, g (me_points 𝓡A₂ x) ∼ᵣ me_points 𝓡A₁ x).
     Proof.
       intros H1 H2.
-      destruct (H1 RX₂) as ((f & Hf) & H3).
-      destruct (H2 RX₁) as ((g & Hg) & H4).
+      destruct (H1 𝓡A₂) as ((f & Hf) & H3).
+      destruct (H2 𝓡A₁) as ((g & Hg) & H4).
       exists f, g; split right.
       + split right.
         * apply Hf.
@@ -211,16 +209,16 @@ Arguments me_embed {_ _}.
 Arguments me_embed_homo {_ _}.
 Arguments me_points {_ _}.
 
-(** R[X] is (isomorphic to) R{unit} *)
-Fact poly_ring__multi_ring R (Rx : ring_pointed_ext R) :
-    is_poly_ring R Rx
-  → is_multi_ring unit R 
-          {| me_ring := Rx; 
-             me_embed := pe_embed Rx; 
-             me_embed_homo := pe_embed_homo Rx; 
-             me_points := (λ _ : unit, pe_point Rx) |}.
+(** 𝓡[X] is (isomorphic to) 𝓡{unit} *)
+Fact poly_ring__multi_ring 𝓡 (𝓡x : ring_pointed_ext 𝓡) :
+    is_poly_ring 𝓡 𝓡x
+  → is_multi_ring unit 𝓡 
+          {| me_ring := 𝓡x; 
+             me_embed := pe_embed 𝓡x; 
+             me_embed_homo := pe_embed_homo 𝓡x; 
+             me_points := (λ _ : unit, pe_point 𝓡x) |}.
 Proof.
-  destruct Rx as [ Rx f Hf x ]; simpl.
+  destruct 𝓡x as [ Rx f Hf x ]; simpl.
   intros H TX.
   destruct (H {| pe_ring := TX; 
                  pe_embed := me_embed TX; 
@@ -234,19 +232,19 @@ Proof.
     * split right; apply Hb.
 Qed.
 
-(** (R{U}){V} is R{U+V} *)
-Fact multi_ring_compose {U V R RU RUV} :
-    @is_multi_ring U R RU
-  → @is_multi_ring V RU RUV
-  → @is_multi_ring (U+V) R 
-       {| me_ring := RUV; 
-          me_embed := λ x, me_embed RUV (me_embed RU x); 
-          me_embed_homo := ring_homo_compose (me_embed_homo RU) (me_embed_homo RUV); 
-          me_points := λ x, match x with inl u => me_embed RUV (me_points RU u) | inr v => me_points RUV v end
+(** (𝓡{U}){V} is 𝓡{U+V} *)
+Fact multi_ring_compose {U V 𝓡 𝓡U 𝓡UV} :
+    @is_multi_ring U 𝓡 𝓡U
+  → @is_multi_ring V 𝓡U 𝓡UV
+  → @is_multi_ring (U+V) 𝓡 
+       {| me_ring := 𝓡UV; 
+          me_embed := λ x, me_embed 𝓡UV (me_embed 𝓡U x); 
+          me_embed_homo := ring_homo_compose (me_embed_homo 𝓡U) (me_embed_homo 𝓡UV); 
+          me_points := λ x, match x with inl u => me_embed 𝓡UV (me_points 𝓡U u) | inr v => me_points 𝓡UV v end
        |}.
 Proof.
-  destruct RU as [ RU phi Hphi f ];
-    destruct RUV as [ RUV psi Hpsi g ]; simpl in *.
+  destruct 𝓡U as [ RU phi Hphi f ];
+    destruct 𝓡UV as [ RUV psi Hpsi g ]; simpl in *.
   intros HU HUV TUV.
   destruct (HU {| me_ring := TUV; 
                   me_embed := me_embed TUV;
@@ -275,21 +273,21 @@ Qed.
 Definition bijection {U V} (f : U → V) (g : V → U) :=
     (∀v, f (g v) = v) ∧ (∀u, g (f u) = u).
 
-(** If R{U} and U is in bijection with V then R{V}.
-    To be used to show that R{X}[x] is R{X}{unit}
-    and then R{option X} *)
-Fact multi_ring_bijection U V f g R RU :
+(** If 𝓡{U} and U is in bijection with V then 𝓡{V}.
+    To be used to show that 𝓡{X}[x] is 𝓡{X}{unit}
+    and then 𝓡{option X} *)
+Fact multi_ring_bijection U V f g 𝓡 𝓡U :
     @bijection U V f g 
-  → @is_multi_ring U R RU
-  → @is_multi_ring V R
-      {| me_ring := RU; 
-         me_embed := me_embed RU; 
-         me_embed_homo := me_embed_homo RU; 
-         me_points := (λ v, me_points RU (g v)) 
+  → @is_multi_ring U 𝓡 𝓡U
+  → @is_multi_ring V 𝓡
+      {| me_ring := 𝓡U; 
+         me_embed := me_embed 𝓡U; 
+         me_embed_homo := me_embed_homo 𝓡U; 
+         me_points := (λ v, me_points 𝓡U (g v)) 
       |}. 
 Proof.
   intros (H1 & H2).
-  destruct RU as [ RU phi Hphi h ]; simpl.
+  destruct 𝓡U as [ RU phi Hphi h ]; simpl.
   intros G RV.
   destruct (G {| me_ring := RV; 
                  me_embed := me_embed RV; 

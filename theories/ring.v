@@ -48,18 +48,18 @@ Notation "x *ᵣ y" := (op_m x y) (at level 29, left associativity, format "x  *
 
 (** req/∼ᵣ is a equivalence relation, defining a setoid *)
 
-Fact ring_eq_refl (R : ring) (x : R) : x ∼ᵣ x.
+Fact ring_eq_refl (𝓡 : ring) (x : 𝓡) : x ∼ᵣ x.
 Proof. apply eq_equiv. Qed.
 
-Fact ring_eq_sym (R : ring) (x y : R) : x ∼ᵣ y → y ∼ᵣ x.
+Fact ring_eq_sym (𝓡 : ring) (x y : 𝓡) : x ∼ᵣ y → y ∼ᵣ x.
 Proof. apply eq_equiv. Qed.
 
-Fact ring_eq_trans (R : ring) (x y z : R) : x ∼ᵣ y → y ∼ᵣ z → x ∼ᵣ z.
+Fact ring_eq_trans (𝓡 : ring) (x y z : 𝓡) : x ∼ᵣ y → y ∼ᵣ z → x ∼ᵣ z.
 Proof. apply eq_equiv. Qed.
 
 Hint Resolve ring_eq_refl ring_eq_sym ring_eq_trans : core.
 
-Add Parametric Relation (R : ring) : R req 
+Add Parametric Relation (𝓡 : ring) : 𝓡 req
     reflexivity proved by (ring_eq_refl _)
     symmetry proved by (ring_eq_sym _)
     transitivity proved by (ring_eq_trans _)
@@ -67,24 +67,24 @@ Add Parametric Relation (R : ring) : R req
 
 (** ring operations are morphisms wrt. req/∼ᵣ *)
 
-Add Parametric Morphism (R : ring) : (@op_a R) with signature (req) ==> (req) ==> (req) as ring_op_a_morph.
+Add Parametric Morphism (𝓡 : ring) : (@op_a 𝓡) with signature (req) ==> (req) ==> (req) as ring_op_a_morph.
 Proof. apply eq_ext. Qed.
 
-Add Parametric Morphism (R : ring) : (@op_m R) with signature (req) ==> (req) ==> (req) as ring_op_m_morph.
+Add Parametric Morphism (𝓡 : ring) : (@op_m 𝓡) with signature (req) ==> (req) ==> (req) as ring_op_m_morph.
 Proof. apply eq_ext. Qed.
 
-Add Parametric Morphism (R : ring) : (@iv_a R) with signature (req) ==> (req) as ring_iv_a_morph.
+Add Parametric Morphism (𝓡 : ring) : (@iv_a 𝓡) with signature (req) ==> (req) as ring_iv_a_morph.
 Proof. apply eq_ext. Qed.
 
 (** Some obvious derived equations for rings *)
 
 Section ring_utils.
 
-  Variable (R : ring).
+  Variable (𝓡 : ring).
 
-  Implicit Type (x : R).
+  Implicit Type (x : 𝓡).
 
-  Add Ring R_is_ring : (is_ring R).
+  Add Ring 𝓡_is_ring : (is_ring 𝓡).
 
   Fact ring_sub_a_id x : x −ᵣ x ∼ᵣ 0ᵣ.
   Proof. ring. Qed.
@@ -107,7 +107,7 @@ End ring_utils.
 
 Section ring_homo.
 
-  Variables (R K : ring) (f : R → K).
+  Variables (𝓡 𝓚 : ring) (f : 𝓡 → 𝓚).
 
   Definition ring_homo :=
       (∀ x y, x ∼ᵣ y → f x ∼ᵣ f y)
@@ -115,8 +115,8 @@ Section ring_homo.
     ∧ (∀ x y, f (x *ᵣ y) ∼ᵣ f x *ᵣ f y)
     ∧ f 1ᵣ ∼ᵣ 1ᵣ.
 
-  Add Ring R_is_ring : (is_ring R).
-  Add Ring K_is_ring : (is_ring K).
+  Add Ring 𝓡_is_ring : (is_ring 𝓡).
+  Add Ring 𝓚_is_ring : (is_ring 𝓚).
 
   Hypothesis Hf : ring_homo.
 
@@ -155,19 +155,19 @@ End ring_homo.
 
 Arguments ring_homo {_ _}.
 
-#[global] Add Parametric Morphism R K f (H : @ring_homo R K f) : f with signature (req) ==> (req) as ring_homo_morph.
+#[global] Add Parametric Morphism 𝓡 𝓚 f (H : @ring_homo 𝓡 𝓚 f) : f with signature (req) ==> (req) as ring_homo_morph.
 Proof. apply H. Qed.
 
-Fact ring_homo_id (R : ring) : @ring_homo R R (λ x, x).
+Fact ring_homo_id (𝓡 : ring) : @ring_homo 𝓡 𝓡 (λ x, x).
 Proof. split right; eauto. Qed.
 
-Fact ring_homo_compose {R T K : ring} {f g} :
-  @ring_homo R T f → @ring_homo T K g → ring_homo (λ x, g (f x)).
+Fact ring_homo_compose {𝓡 𝓣 𝓚 : ring} {f g} :
+  @ring_homo 𝓡 𝓣 f → @ring_homo 𝓣 𝓚 g → ring_homo (λ x, g (f x)).
 Proof. intros (? & ? & ? & ?) (? & ? & ? & ?); split right; eauto. Qed.
 
 (** The notion of ring isomorphism *)
 
-Definition ring_isomorphism {R T : ring} (f : R → T) (g : T → R) :=
+Definition ring_isomorphism {𝓡 𝓣 : ring} (f : 𝓡 → 𝓣) (g : 𝓣 → 𝓡) :=
     ring_homo f
   ∧ ring_homo g
   ∧ (∀p, f (g p) ∼ᵣ p)
@@ -175,21 +175,21 @@ Definition ring_isomorphism {R T : ring} (f : R → T) (g : T → R) :=
 
 Section quotient_ring.
 
-  Variable (R : ring)
-           (rel : R → R → Prop)
+  Variable (𝓡 : ring)
+           (rel : 𝓡 → 𝓡 → Prop)
            (rel_maj : req ⊆₂ rel) 
            (rel_equiv : Equivalence rel)
-           (rel_ext : @ring_eq_ext R op_a op_m iv_a rel).
+           (rel_ext : @ring_eq_ext _ op_a op_m iv_a rel).
  
-  Add Ring R_is_ring : (is_ring R).
+  Add Ring 𝓡_is_ring : (is_ring 𝓡).
 
   Definition quotient_ring : ring.
   Proof.
-    exists R un_a op_a iv_a un_m op_m rel; auto.
+    exists 𝓡 un_a op_a iv_a un_m op_m rel; auto.
     abstract (constructor; intros; apply rel_maj; ring).
   Defined.
 
-  Fact quotient_homo : @ring_homo R quotient_ring (λ x, x).
+  Fact quotient_homo : @ring_homo 𝓡 quotient_ring (λ x, x).
   Proof. split right; ring || auto. Qed.
 
 End quotient_ring.
