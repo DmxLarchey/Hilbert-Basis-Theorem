@@ -67,12 +67,12 @@ where `poly_ring 𝓡` is (isomorphic to) `𝓡[X]` and `multivariate_ring 𝓡 
 As explained in the previous paragraph, the classical definition of _principal ring_ (as having only mono-generated/principal ideals) is not suited in anti-classical settins
 because again, the ring of integers `Z` would not be principal. Instead we define principal rings as:
 ```coq
-Definition principal 𝓡 := ∃g, Idl R ⌞l⌟ = { x*ᵣg | x ∈ 𝓡 }.
+Definition principal (𝓡 : ring) := ∃g, Idl 𝓡 ⌞l⌟ = { x*ᵣg | x ∈ 𝓡 }.
 ```
 i.e. every finitely generated ideal is a principal ideal. Notice that this definition of principality __does not__ implies Noetherianess but however 
 the two properties are linked in some way, e.g. we show:
 ```coq
-Theorem wf_principal_noetherian (R : ring) :
+Theorem wf_principal_noetherian (𝓡 : ring) :
     principal 𝓡
   → (∀ x y : 𝓡, x |ᵣ y ∨ ¬ x |ᵣ y)
   → well_founded (λ x y : 𝓡, x |ᵣ y ∧ ¬ y |ᵣ x)
