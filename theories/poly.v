@@ -9,282 +9,43 @@
 
 From Stdlib Require Import List Arith Lia Wellfounded Setoid Utf8.
 
-Require Import utils ring ideal measure.
+Require Import utils ring ideal category measure.
 
 Import ListNotations.
 
-#[local] Hint Resolve ring_homo_id ring_homo_compose : core.
-
-Section characteristic_property_of_the_polynomial_ring.
-
-  Variable (R : ring).
-
-  Add Ring R_is_ring : (is_ring R).
-
-  (** This is the initiality property for the polynomial ring:
-      it is initial in the category of pointed rings which extend R *)
-
-  Definition is_polynomial_ring (Rx : ring) (φ : R → Rx) (x : Rx) :=
-      ring_homo φ
-   ∧ (∀ (T : ring) (γ : R → T) (t : T),
-          ring_homo γ 
-       → (∃ α : Rx → T, ring_homo α ∧ α x ∼ᵣ t ∧ ∀r, α (φ r) ∼ᵣ γ r)
-       ∧ (∀ α β : Rx → T,
-              ring_homo α → α x ∼ᵣ t → (∀r, α (φ r) ∼ᵣ γ r)
-            → ring_homo β → β x ∼ᵣ t → (∀r, β (φ r) ∼ᵣ γ r)
-            → ∀p, α p ∼ᵣ β p)).
-
-  (** unicity up to isomorphism *)
-
-  Variables (Rx₁ : ring) (φ₁ : R → Rx₁) (x₁ : Rx₁)
-            (Rx₂ : ring) (φ₂ : R → Rx₂) (x₂ : Rx₂).
-
-  Add Ring Rx1_ring : (is_ring Rx₁).
-  Add Ring Rx2_ring : (is_ring Rx₂).
-
-  (** The polynomial ring is unique up to isomorphism 
-
-      This should allow an easy proof of isomorphism of 
-          (R{X})[x] and R{option X}
-
-      where R{X} is the polynomial extension over 
-      an arbitrary type X of undeterminates.
-
-      But we need to build the arbitrary polynomial
-      extension and its own characteristic property.
-      For this, consider the quotient (in the setoid
-      sense) of polynomial expressions by and inductively
-      defined ring congruence.
-
-      Then we can show that
-        R[fin (S n)} is isomorphic to
-        R{option (fin n)} isomorphic to
-        R{fin n}[x]
-      and then generalize the HBT
-      by induction on n:
-
-      if R is Noetherian then R{fin n} is Noetherian for any n *)
-
-  Theorem poly_ring_unique :
-       is_polynomial_ring Rx₁ φ₁ x₁
-     → is_polynomial_ring Rx₂ φ₂ x₂
-     → ∃ (f : Rx₁ → Rx₂) (g : Rx₂ → Rx₁),
-         ring_isomorphism f g ∧ f x₁ ∼ᵣ x₂ ∧ g x₂ ∼ᵣ x₁.
-  Proof.
-    intros (H1 & H2) (H3 & H4).
-    destruct (H2 _ _ x₂ H3) as ((f & Hf1 & Hf2 & Hf3) & G1).
-    destruct (H4 _ _ x₁ H1) as ((g & Hg1 & Hg2 & Hg3) & G2).
-    exists f, g; repeat (split; auto).
-    + intros p.
-      apply (proj2 (H4 _ _ x₂ H3) (λ p, f (g p)) (λ p, p)); auto.
-      * rewrite <- Hf2 at 2; now apply Hf1.
-      * intro; rewrite <- Hf3 at 2; apply Hf1; auto.
-    + intros p.
-      apply (proj2 (H2 _ _ x₁ H1) (λ p, g (f p)) (λ p, p)); auto.
-      * rewrite <- Hg2 at 2; now apply Hg1.
-      * intro; rewrite <- Hg3 at 2; apply Hg1; auto.
-  Qed.
-
-End characteristic_property_of_the_polynomial_ring.
-
-Section characteristic_property_of_multivariate_rings.
-
-  (** We define what it is to be isomorphic to R{X}
-      which is the ring of polynomials over R with
-      indeterminates in the type X *)
-
-  Variables (X : Type) (R : ring).
-
-  Add Ring R_is_ring : (is_ring R).
-
-  (** This is the initiality property for the polynomial ring:
-      it is initial in the category of pointed rings which extend R *)
-
-  Definition is_multivariate_ring (RX : ring) (φ : R → RX) (f : X → RX) :=
-      ring_homo φ
-   ∧ (∀ (T : ring) (γ : R → T) (g : X → T),
-          ring_homo γ 
-       → (∃ α : RX → T, ring_homo α ∧ (∀k, α (f k) ∼ᵣ g k) ∧ ∀r, α (φ r) ∼ᵣ γ r)
-       ∧ (∀ α β : RX → T,
-              ring_homo α → (∀k, α (f k) ∼ᵣ g k) → (∀r, α (φ r) ∼ᵣ γ r)
-            → ring_homo β → (∀k, β (f k) ∼ᵣ g k) → (∀r, β (φ r) ∼ᵣ γ r)
-            → ∀p, α p ∼ᵣ β p)).
-
-  (** unicity up to isomorphism *)
-
-  Variables (RX₁ : ring) (φ₁ : R → RX₁) (f₁ : X → RX₁)
-            (RX₂ : ring) (φ₂ : R → RX₂) (f₂ : X → RX₂).
-
-  Add Ring RX1_ring : (is_ring RX₁).
-  Add Ring RX2_ring : (is_ring RX₂).
-
-  (** The multivariate ring is unique up to isomorphism *)
-
-  Theorem multivariate_ring_unique :
-       is_multivariate_ring RX₁ φ₁ f₁
-     → is_multivariate_ring RX₂ φ₂ f₂
-     → ∃ (f : RX₁ → RX₂) (g : RX₂ → RX₁),
-         ring_isomorphism f g 
-       ∧ (∀k, f (f₁ k) ∼ᵣ f₂ k) 
-       ∧ (∀k, g (f₂ k) ∼ᵣ f₁ k).
-  Proof.
-    intros (H1 & H2) (H3 & H4).
-    destruct (H2 _ _ f₂ H3) as ((f & Hf1 & Hf2 & Hf3) & G1).
-    destruct (H4 _ _ f₁ H1) as ((g & Hg1 & Hg2 & Hg3) & G2).
-    exists f, g; repeat (split; auto).
-    + intros p.
-      apply (proj2 (H4 _ _ f₂ H3) (λ p, f (g p)) (λ p, p)); auto.
-      * intros; rewrite <- Hf2 at 2; now apply Hf1.
-      * intros; rewrite <- Hf3 at 2; apply Hf1; auto.
-    + intros p.
-      apply (proj2 (H2 _ _ f₁ H1) (λ p, g (f p)) (λ p, p)); auto.
-      * intros; rewrite <- Hg2 at 2; now apply Hg1.
-      * intros; rewrite <- Hg3 at 2; apply Hg1; auto.
-  Qed.
-
-End characteristic_property_of_multivariate_rings.
-
-(** R[X] is R{unit} *)
-Fact poly_ring__multivariate_ring R Rx φ x :
-    @is_polynomial_ring R Rx φ x
-  → @is_multivariate_ring unit R Rx φ (λ _ : unit, x).
-Proof.
-  intros (H1 & H2); split; auto.
-  intros T ga g Hga.
-  destruct (H2 T ga (g tt) Hga)
-    as ((al & H3 & H4 & H5) & H6).
-  split; eauto.
-  exists al; split right; auto.
-  now intros [].
-Qed.
-
-(** R{U}{V} is R{U+V} *)
-Fact multivariate_ring_compose {U V R RU φ f RUV γ g} :
-    @is_multivariate_ring U R RU φ f
-  → @is_multivariate_ring V RU RUV γ g
-  → @is_multivariate_ring (U+V) R RUV (λ x, γ (φ x)) (λ x, match x with inl u => γ (f u) | inr v => g v end).
-Proof.
-  intros (H1 & H2) (H3 & H4); split; auto.
-  intros T ga h Hga.
-  destruct (H2 T ga (λ u, h (inl u)))
-    as ((al & F1 & F2 & F3) & F4); auto.
-  destruct (H4 _ al (λ v, h (inr v)))
-    as ((be & G1 & G2 & G3) & G4); auto.
-  split.
-  + exists be; split right; auto.
-    * intros []; auto; rewrite G3, F2; auto.
-    * intros; now rewrite G3.
-  + intros p q K1 K2 K4 K5 K6 K8 r.
-    generalize (λ u, K2 (inl u)) (λ v, K2 (inr v)); clear K2; intros K2 K3.
-    generalize (λ u, K6 (inl u)) (λ v, K6 (inr v)); clear K6; intros K6 K7.
-    apply G4; auto; apply F4; auto.
-Qed.
-
-Definition bijection {U V} (f : U → V) (g : V → U) :=
-  (∀v, f (g v) = v)
-∧ (∀u, g (f u) = u).
-
-(** if R{U} and V is in bijection with V then R{V} and iso ? 
-    to be used to show that R{X}[x] is R{X}{unit} and then R{option X} *)
-Fact multivariate_ring_bijection U V f g R RU φ h :
-    @bijection U V f g 
-  → @is_multivariate_ring U R RU φ h
-  → @is_multivariate_ring V R RU φ (λ v, h (g v)).
-Proof.
-  intros (H1 & H2) (G1 & G2); split; auto.
-  intros T ga k Hga.
-  destruct (G2 _ _ (fun u => k (f u)) Hga)
-    as ((al & F1 & F2 & F3) & F4); split.
-  + exists al; split right; auto.
-    intro; rewrite F2, H1; auto.
-  + clear al F1 F2 F3.
-    intros al be P1 P2 P3 P4 P5 P6.
-    apply F4; auto.
-    * intro; rewrite <- P2, H2; auto.
-    * intro; rewrite <- P5, H2; auto.
-Qed.
-
-Section list_utils.
-
-  Variables (X : Type).
-
-  Implicit Type l : list X.
-
-  Definition list_repeat x : nat → list X :=
-    fix loop n :=
-      match n with
-      | 0   => []
-      | S n => x::loop n
-      end.
-
-  Fact list_repeat_length x n : ⌊list_repeat x n⌋ = n.
-  Proof. induction n; simpl; f_equal; auto. Qed.
-
-  (** This allows to isolate the lead coefficient of a polynomial
-      a₀+...+aₙXⁿ = [a₀;...;aₙ] *)
-  Inductive is_last x : list X → Prop :=
-    is_last_intro l : is_last x (l++[x]).
-
-  Fact is_last_inv x l :
-      is_last x l
-    → match l with
-      | []   => False
-      | y::m => 
-        match m with 
-        | [] => x = y
-        | _  => is_last x m
-        end
-      end.
-  Proof.
-    destruct 1 as [ [ | ? l ] ]; simpl; auto.
-    destruct l; constructor.
-  Qed.
-
-  Fact is_last_cons x y l : is_last x l → is_last x (y::l).
-  Proof. intros []; constructor 1 with (l := _::_). Qed.
-
-  Fact is_last_app l r x : is_last x r → is_last x (l++r).
-  Proof. intros [ r' ]; rewrite app_assoc; constructor. Qed.
-
-End list_utils.
-
-Arguments list_repeat {_}.
-
-Hint Constructors is_last : core.
-
-Arguments is_last {_}.
-
-Fact is_last_map X Y (f : X → Y) x l :
-  is_last x l → is_last (f x) (map f l).
-Proof. intros []; rewrite map_app; simpl; auto. Qed.
+#[local] Hint Constructors is_last : core.
 
 Section polynomial_ring.
 
-  Variable (R : ring).
+  Variable (𝓡 : ring).
 
-  Add Ring ring_is_ring : (is_ring R).
+  Add Ring 𝓡_is_ring : (is_ring 𝓡).
 
-  Implicit Type (x : R).
+  Notation poly := (list 𝓡).
+
+  Implicit Types (x : 𝓡) (l : poly).
 
   (* We use this non-canonical representation
      of polynomials:
      a₀+...+aₙXⁿ = [a₀;...;aₙ]
      X = 0+1.X = [0ᵣ;1ᵣ] 
 
-     Notice that [] = [un_a] = [un_a;...;un_a] !!
+     Notice that several representations might
+     be equivalent for the same polynomial, ie
+         [] ~ₚ [0ᵣ] ~ₚ [0ᵣ;...;0ᵣ]
 
-     The degree of a polynomial is not computable
-     unless one can computably decide inequality
-     over the base ring R 
+     Hence polynomials are equivalence classes
+     of representations.
+
+     Representations have a computable length but 
+     the notion of degree of a polynomial is not 
+     computable unless one can computably decide 
+     inequality over the base ring R
 
      Indeed, degree [a₀;...;aₙ] < n iff
      aₙ ~ᵣ 0ᵣ 
 
      degree [a -ᵣ b] is < 0 iff a ~ᵣ b *)
-
-  Notation poly := (list R).
-
-  Implicit Type l : poly.
 
   Notation poly_zero := (Forall (req un_a)).
 
@@ -298,6 +59,7 @@ Section polynomial_ring.
 
   Reserved Notation "l ∼ₚ m" (at level 70, no associativity, format "l  ∼ₚ  m").
 
+  (* Equivalence between two poly *)
   Fixpoint poly_eq (l m : poly) :=
     match l, m with
     | [], _      => poly_zero m
@@ -319,6 +81,8 @@ Section polynomial_ring.
 
   Section poly_eq_ind.
 
+    (* Induction principle for the poly-equivalence *)
+
     Variables (P : poly → poly → Prop)
               (HP0 : ∀m, poly_zero m → P [] m)
               (HP1 : ∀l, poly_zero l → P l [])
@@ -335,10 +99,10 @@ Section polynomial_ring.
   Add Parametric Morphism: cons with signature (req) ==> (poly_eq) ==> (poly_eq) as cons_morph.
   Proof. now constructor. Qed.
 
-  Fact poly_eq_app__length l1 l2 m1 m2 :
-     ⌊l1⌋ = ⌊l2⌋ → l1 ∼ₚ l2 → m1 ∼ₚ m2 → l1++m1 ∼ₚ l2++m2.
+  Fact poly_eq_app__length l₁ l₂ m₁ m₂ :
+     ⌊l₁⌋ = ⌊l₂⌋ → l₁ ∼ₚ l₂ → m₁ ∼ₚ m₂ → l₁++m₁ ∼ₚ l₂++m₂.
   Proof.
-    double length induction l1 l2 as x y IH; simpl; auto.
+    double length induction l₁ l₂ as x y IH; simpl; auto.
     intros []; split; auto.
   Qed.
 
@@ -370,10 +134,10 @@ Section polynomial_ring.
   Proof.
     revert m k; induction l as [ | x l IHl ]; intros [ | y m ] [ | z k ];
         simpl; auto.
-    + intros (<- & H)%poly_zero_inv (E & G); constructor; auto.
+    + intros (<- & H)%poly_zero_inv []; constructor; auto.
       revert H; now apply poly_zero_poly_eq_closed.
     + intros []%poly_zero_inv []%poly_zero_inv; split; eauto.
-    + intros (E & H) (F & G)%poly_zero_inv; constructor; auto.
+    + intros (E & ?) (? & G)%poly_zero_inv; constructor; auto.
       * now rewrite E.
       * revert G; apply poly_zero_poly_eq_closed; auto.
     + intros [] []; split; eauto.
@@ -394,8 +158,9 @@ Section polynomial_ring.
 
   (** We define 
           [a₀;...;aₙ] +ₚ [b₀;...;bₙ] = [a₀+b₀;...;aₙ+bₙ]
-      If the list have different length, simply ignore
-      the addition *)
+      by pattern matching on l and m. Notice that they
+      might have unequal length. If one of those is the empty 
+      list, the other one serves as the result *)
   Fixpoint poly_a l m :=
     match l with
     | []      => m
@@ -414,11 +179,12 @@ Section polynomial_ring.
      ⌊l₁⌋ = ⌊l₂⌋ → poly_a (l₁++m₁) (l₂++m₂) = poly_a l₁ l₂ ++ poly_a m₁ m₂.
   Proof. double length induction l₁ l₂ as ? ? ?; simpl; f_equal; auto. Qed.
 
+  (* The value of the head coefficient, assuming equal length *)
   Fact is_last_poly_a__length l m a b :
       ⌊l⌋ = ⌊m⌋
     → is_last a l
     → is_last b m
-    → is_last (op_a a b) (l +ₚ m).
+    → is_last (a +ᵣ b) (l +ₚ m).
   Proof.
     revert m; induction l as [ | x [] IHl ]; intros [ | y [] ]; simpl; try discriminate.
     + now intros _ ?%is_last_inv.
@@ -480,9 +246,11 @@ Section polynomial_ring.
         rewrite E, F; ring.
   Qed.
 
-  (** Scalar product 
-           a.[b₀;...;bₙ] = [a.b₀;...;a.bₙ] *)
-  Definition poly_s a l := map (fun x => a *ᵣ x) l.
+  (** Before we define multiplication of representations
+      of polynomials, we define the scalar product *)
+
+  (* Scalar product: a.[b₀;...;bₙ] = [a.b₀;...;a.bₙ] *)
+  Definition poly_s a l := map (λ x, a *ᵣ x) l.
 
   Fact poly_s_length a l : ⌊poly_s a l⌋ = ⌊l⌋.
   Proof. apply length_map. Qed.
@@ -511,11 +279,13 @@ Section polynomial_ring.
   Fact poly_s_comp a b l : poly_s (a *ᵣ b) l ∼ₚ poly_s a (poly_s b l).
   Proof. induction l; simpl; constructor; auto; ring. Qed.
 
+  (** We can now define multiplication *)
+
   Reserved Notation "l *ₚ m" (at level 28, right associativity, format "l  *ₚ  m").
 
   (** Definition using the identities 
-      - 0*m = m
-      - (x+Xl)*m = x*m + X(lm) *)
+                  0*m = 0
+        and  (x+Xl)*m = x*m + X(lm) *)
   Fixpoint poly_m (l m : poly) : poly :=
     match l with
     | []   => []
@@ -528,21 +298,12 @@ Section polynomial_ring.
 
   Hint Resolve poly_m_poly_zero_r : core.
 
-  (* This one involves a stronger induction.
-     This is a bit odd *)
+  (* This one involves a mutual induction on l and m *)
   Lemma poly_m_comm l m : l *ₚ m ∼ₚ m *ₚ l.
   Proof.
-    induction on l m as IH with measure (@length R l + @length R m).
-    revert l m IH; intros [ | x l ] [ | y m ] IH; simpl; constructor; auto; try ring.
-    rewrite IH; simpl; try lia.
-    rewrite poly_a_assoc,
-           (poly_a_comm (poly_s x _)),
-         <- poly_a_assoc.
-    apply poly_a_morph; auto.
-    rewrite <- IH; simpl; try lia.
-    change (poly_a (poly_s x m) (un_a :: poly_m l m))
-      with (poly_m (x::l) m).
-    apply IH; simpl; lia.
+    revert l m; apply list_mutual_rect; simpl; auto.
+    intros x l y m IH0 IH1 IH2; simpl; constructor; try ring.
+    now rewrite <- IH1, IH2, IH0, !poly_a_assoc, (poly_a_comm (poly_s x m)).
   Qed.
 
   Fact poly_zero_poly_m l m : poly_zero l → poly_zero (l *ₚ m).
@@ -593,7 +354,7 @@ Section polynomial_ring.
     rewrite !poly_s_poly_a_distr, <- !poly_a_assoc.
     apply poly_a_morph; auto.
     rewrite poly_a_comm, IH.
-    setoid_replace (@un_a R) with (@op_a R un_a un_a) at 1 by ring.
+    setoid_replace (@un_a 𝓡) with (@op_a 𝓡 un_a un_a) at 1 by ring.
     change (op_a un_a un_a :: k *ₚ l +ₚ k *ₚ m) with ((un_a::k *ₚ l) +ₚ (un_a::k *ₚ m)).
     rewrite <- poly_a_assoc.
     apply poly_a_morph; auto.
@@ -604,7 +365,7 @@ Section polynomial_ring.
   Proof. induction l; simpl; rewrite poly_s_poly_zero_l; auto. Qed.
 
   Fact poly_m_assoc l m k : l *ₚ (m *ₚ k) ∼ₚ (l *ₚ m) *ₚ k.
-  Proof. 
+  Proof.
     revert m k; induction l as [ | x l IH ]; intros m k; simpl; auto.
     rewrite (poly_m_comm (_ +ₚ _)  k),
              poly_m_poly_a_distr,
@@ -614,10 +375,37 @@ Section polynomial_ring.
     + rewrite IH, cons_un_a_poly_m; auto.
   Qed.
 
+  (** The polynomial inverse for addition *)
+
   Definition poly_i := poly_s (iv_a 1ᵣ).
 
   Fact poly_i_length l : ⌊poly_i l⌋ = ⌊l⌋.
   Proof. apply poly_s_length. Qed.
+  
+  Fact poly_i_app l m : poly_i (l++m) = poly_i l++poly_i m.
+  Proof. apply map_app. Qed.
+
+  Fact poly_shift_poly_m n q : repeat 0ᵣ n++q ∼ₚ (repeat 0ᵣ n++[1ᵣ]) *ₚ q.
+  Proof.
+    induction n as [ | n IHn ].
+    + simpl; rewrite poly_s_neutral, poly_a_comm, poly_a_neutral; auto.
+    + simpl repeat; simpl app.
+      rewrite cons_un_a_poly_m, IHn; auto.
+  Qed.
+
+  Fact poly_shift_scal a n p : (repeat 0ᵣ n++[a]) *ₚ p ∼ₚ repeat 0ᵣ n++poly_s a p.
+  Proof.
+    induction n as [ | n IHn ].
+    + simpl; rewrite poly_a_comm, poly_a_neutral; auto.
+    + simpl repeat; simpl app; simpl poly_m.
+      rewrite poly_s_poly_zero_l, poly_a_neutral; auto.
+      apply cons_morph; auto.
+  Qed.
+ 
+  Fact poly_zero_repeat n x : 0ᵣ ∼ᵣ x → poly_zero (repeat x n).
+  Proof. intro; induction n; simpl; auto. Qed.
+
+  Hint Resolve poly_zero_repeat : core.
 
   Theorem poly_is_ring : @ring_theory poly [] [un_m] poly_a poly_m (λ l m, poly_a l (poly_i m)) poly_i poly_eq.
   Proof.
@@ -638,10 +426,6 @@ Section polynomial_ring.
       induction l; simpl; constructor; auto; ring.
   Qed.
 
-  (* Construction of the polynomial ring R[X] is finished 
-     but we need to establish its initiality to confirm
-     that we have built the "right" ring, see below. *)
-
   Definition poly_ring : ring.
   Proof.
     exists poly [] poly_a poly_i [un_m] poly_m poly_eq.
@@ -653,69 +437,55 @@ Section polynomial_ring.
       * intros ? ? ?; apply poly_s_morph; auto.
   Defined.
 
-  Add Ring poly_ring : (is_ring poly_ring).
+  (** Construction of the polynomial ring R[X] is finished
+      but we need to establish its initiality to confirm
+      that we have built the "right" pointed extension 
+      of ring R, ie, the initial one in this category; see below. 
+
+      But before that, we show the critical theorem
+      "update_lead_coef" that allows to combine
+      head coefficients of polynomials representations
+      to diminish the length by updating *)
+
+  Add Ring poly_ring_s_ring : (is_ring poly_ring).
 
   (* Now we establish the eliminating of the
      head coefficient by linear combination,
      which is critical in the HBT *)
 
-  Fact poly_shift_poly_m n q :
-      list_repeat 0ᵣ n++q ∼ₚ (list_repeat 0ᵣ n++[1ᵣ]) *ₚ q.
-  Proof.
-    induction n as [ | n IHn ].
-    + simpl; rewrite poly_s_neutral, poly_a_comm, poly_a_neutral; auto.
-    + simpl list_repeat; simpl app.
-      rewrite cons_un_a_poly_m, IHn; auto.
-  Qed.
+  (* Linear combination of head coefficients:
 
-  Fact poly_shift_scal a n p :
-      (list_repeat 0ᵣ n ++ [a]) *ₚ p ∼ₚ list_repeat 0ᵣ n ++ poly_s a p.
-  Proof.
-    induction n as [ | n IHn ].
-    + simpl; rewrite poly_a_comm, poly_a_neutral; auto.
-    + simpl list_repeat; simpl app; simpl poly_m.
-      rewrite poly_s_poly_zero_l, poly_a_neutral; auto.
-      apply cons_morph; auto.
-  Qed.
- 
-  Fact poly_zero_list_repeat n x : 0ᵣ ∼ᵣ x → poly_zero (list_repeat x n).
-  Proof. intro; induction n; simpl; auto. Qed.
-
-  Hint Resolve poly_zero_list_repeat : core.
-
-  (* Elimination of the head coefficient:
-     given a linear combination x of their head coefficients,
-     we can form a linear combination the polynomials q₁,...,qₙ
-     with head being x and of arbitrary length/degree provided
-     it is greater than (all) the degrees of q₁,...,qₙ:
-
-       if * the "degrees" ⌊q₁⌋,...,⌊qₙ⌋ are lesser than 1+d
-          * [a₁;...;aₙ] are the head coefficients of [q₁;...;qₙ]
-          * x is a linear combination of a₁;...;aₙ (in R)
-       then there is a polynomial p with
-          * ⌊p⌋ = 1+d
+       if * the length ⌊v₁⌋,...,⌊vₙ⌋ are lesser than 1+d
+          * v₁,...,vₙ have head coefficients a₁,...,aₙ  (in poly_ring)
+          * x is a linear combination of a₁,...,aₙ      (in R)
+       then there is a representation of a polynomial p with
+          * p is a linear combination of v₁,...,vₙ      (in poly_ring)
+          * the length ⌊p⌋ of p is 1+d
           * x is the head coefficient of p
-          * p is a linear combination of q₁,...,qₙ (in poly R)
  
-       Idea, multiply/shift each qᵢ with i in [1;...;n]
-       so that the degre matches 1+d and use the same
-       coefficients as the original linear combination
+     Idea: multiply with Xʰ/shift each vᵢ with i in 1,...,n
+           so that the degre matches 1+d and use the same
+           coefficients as the original linear combination, ie
 
-        if x = r₁a₁ + ... + rₙaₙ then
-           p = r₁q₁.Xᵖ¹ + ... + rₙqₙ.Xᵖⁿ 
+            if x = r₁a₁ + ... + rₙaₙ then
+               p := r₁q₁.ʰ¹ + ... + rₙqₙ.Xʰⁿ 
 
-        where pᵢ = 1+d-⌊qᵢ⌋ for i in [1;...;n] *)
+               where hᵢ = 1+d-⌊vᵢ⌋ for i in 1,...,n *)
 
-  Lemma lc_lead_coef d (a : list R) x (q : list poly_ring) :
-      lc a x
-    → Forall2 is_last a q
-    → Forall (λ l, ⌊l⌋ ≤ 1+d) q
-    → ∃ p y, ⌊p⌋ = 1+d ∧ is_last y p ∧ x ∼ᵣ y ∧ lc q p.
+  Lemma lc_lead_coef d (a : list 𝓡) x (v : list poly_ring) :
+      lc a x                       (* x is a linear combination of [a₁;...;aₙ] *)
+    → Forall2 is_last a v          (* [a₁;...;aₙ] are the heads of [v₁;...;vₙ] *) 
+    → Forall (λ q, ⌊q⌋ ≤ 1+d) v    (* 1+d is greater the all the length ⌊v₁⌋,...,⌊vₙ⌋ *)
+    → ∃ p y, 
+         ⌊p⌋ = 1+d                 (* p has length 1+d *)
+       ∧ is_last y p ∧ x ∼ᵣ y      (* p has head y ~ᵣ x *)
+       ∧ lc v p                    (* p is a linear combination of [v₁;...;vₙ] *)
+    .
   Proof.
-    induction 1 as [ x H1 | a x l c r H1 H2 IH2 ] in q |- *.
+    induction 1 as [ x H1 | a x l c r H1 H2 IH2 ] in v |- *.
     + intros ->%Forall2_nil_inv_l _.
-      exists (list_repeat un_a d++[x]), x; repeat split; auto.
-      * rewrite length_app, list_repeat_length; simpl; lia.
+      exists (repeat un_a d++[x]), x; repeat split; auto.
+      * rewrite length_app, repeat_length; simpl; lia.
       * constructor 1.
         simpl.
         apply Forall_app.
@@ -723,9 +493,9 @@ Section polynomial_ring.
     + intros (_ & q' & [u] & H3 & ->)%Forall2_cons_inv_l
              (H4 & H5)%Forall_cons_iff.
       destruct (IH2 _ H3 H5) as (p & y & G1 & G2 & G3 & G4).
-      exists ((list_repeat un_a (d-⌊u⌋) ++ (poly_s a (u++[x]))) +ₚ p), (op_a (op_m a x) y).
-      assert (⌊list_repeat un_a (d-⌊u⌋) ++ poly_s a (u ++ [x])⌋ = 1+d) as E.
-      1:{ rewrite length_app, poly_s_length, list_repeat_length.
+      exists ((repeat un_a (d-⌊u⌋) ++ (poly_s a (u++[x]))) +ₚ p), (op_a (op_m a x) y).
+      assert (⌊repeat un_a (d-⌊u⌋) ++ poly_s a (u++[x])⌋ = 1+d) as E.
+      1:{ rewrite length_app, poly_s_length, repeat_length.
           rewrite length_app in H4 |- *; simpl in *; lia. }
       repeat split.
       * rewrite poly_a_length, E; lia.
@@ -733,68 +503,75 @@ Section polynomial_ring.
         - rewrite E; auto.
         - apply is_last_app, is_last_map; auto.
       * rewrite <- H1, <- G3; ring.
-      * constructor 2 with (list_repeat un_a (d-⌊u⌋)++[a]) p; auto.
+      * constructor 2 with (repeat un_a (d-⌊u⌋)++[a]) p; auto.
         unfold op_a, op_m, req; simpl.
         rewrite poly_shift_scal; auto.
   Qed.
 
-  Theorem update_lead_coef (a : list R) x v p :
-      lc a x
-    → Forall2 is_last a v
-    → Forall (λ q, ⌊q⌋ ≤ 1+⌊p⌋) v
-    → ∃q : poly_ring, ⌊q⌋ ≤ ⌊p⌋ ∧ update (q::v) ((p++[x])::v).
+  Theorem update_lead_coef (a : list 𝓡) (x : 𝓡) (v : list poly_ring) (p : poly_ring) :
+      lc a x                               (* x is a linear combination of [a₁;...;aₙ]   *)
+    → is_last x p                          (* x is head of p                             *)
+    → Forall2 is_last a v                  (* [a₁;...;aₙ] are the heads of [v₁;...;vₙ]   *)
+    → Forall (λ q, ⌊q⌋ ≤ ⌊p⌋) v            (* ⌊p⌋ longer than ⌊v₁⌋,...,⌊vₙ⌋              *)
+    → ∃q : poly_ring,
+         ⌊q⌋ < ⌊p⌋                         (* q is strictly shorter than p               *)
+       ∧ lc v (p −ᵣ q)                     (* p-q is a linear combination of [v₁;...;vₙ] *)
+    .
   Proof.
-    intros H1 H2 H3.
+    intros H1 Hp H2 H3.
+    induction Hp as [ p ].
     destruct lc_lead_coef
-      with (1 := H1) (2 := H2) (3 := H3)
+      with (1 := H1) (2 := H2) (d := ⌊p⌋)
       as (q & y & G1 & G2 & G3 & G4).
+    1: revert H3; apply Forall_impl; intro; rewrite length_app; simpl; lia.
     destruct G2 as [q].
     rewrite length_app in G1; simpl in G1.
-    exists (poly_a p (poly_i q)).
-    assert (⌊p +ₚ poly_i q⌋ = ⌊p⌋) as E.
+    exists ((p : poly_ring) +ᵣ (poly_i q)).
+    assert (⌊(p : poly_ring) +ᵣ poly_i q⌋ = ⌊p⌋) as E.
     1: rewrite poly_a_length, poly_i_length; lia.
-    split; try lia.
-    constructor 1 with (1 := G4).
+    split; [ simpl in *; rewrite length_app; simpl; lia | ].
+    revert G4; apply lc_req_closed.
     unfold op_a; simpl.
-    rewrite <- (app_nil_r (p +ₚ _)),
-             poly_a_app__length; try lia.
-    apply poly_eq_app__length; simpl; auto.
-    + rewrite !poly_a_length, poly_i_length; lia.
-    + change ((@op_a poly_ring p (@iv_a poly_ring q)) +ᵣ q ∼ᵣ p).
-      ring.
+    rewrite <- (app_nil_r (poly_i _)).
+    rewrite poly_a_app__length.
+    2: now rewrite poly_i_length.
+    apply poly_eq_app__length; auto.
+    + rewrite poly_a_length, poly_i_length; simpl in E; rewrite E; lia.
+    + change ((q : poly_ring) ∼ᵣ (p : poly_ring) −ᵣ ((p : poly_ring) −ᵣ (q : poly_ring))); ring.
+    + simpl; split; auto.
   Qed.
 
   (** Now we show that initiality of R[X], that it is
       the initial object in the category of pointed
-      rings embedding R. *)
+      extensions of the ring R. *)
 
   Definition poly_unknown : poly_ring := [0ᵣ;1ᵣ].
-  Definition poly_embed (x : R) := [x].
-  
-  Notation 𝓧 := poly_unknown.
+  Definition poly_embed (x : 𝓡) := [x].
+
+  Notation X := poly_unknown.
   Notation φ := poly_embed. 
 
-  Fact poly_embed_homo : @ring_homo R poly_ring φ.
+  Fact poly_embed_homo : @ring_homo 𝓡 poly_ring φ.
   Proof.
     split right; auto.
     + simpl; constructor; auto.
     + simpl; constructor; auto; ring.
   Qed.
 
-  Fact poly_m_poly_unknown l : 𝓧 *ₚ l ∼ₚ 0ᵣ::l.
+  Fact poly_m_poly_unknown l : X *ₚ l ∼ₚ 0ᵣ::l.
   Proof.
     simpl.
     rewrite poly_s_poly_zero_l; auto.
     simpl; split; auto.
     rewrite poly_a_comm, poly_s_neutral.
-    rewrite poly_zero_left with (l := [@un_a R]); auto.
+    rewrite poly_zero_left with (l := [@un_a 𝓡]); auto.
   Qed.
 
   Section poly_ring_rect.
 
     Variables (P : poly_ring → Type)
               (HP0 : ∀ p q, p ∼ᵣ q → P p → P q)
-              (HP1 : P 𝓧)
+              (HP1 : P X)
               (HP2 : ∀ x, P (φ x))
               (HP3 : ∀ p q, P p → P q → P (p +ᵣ q))
               (HP4 : ∀ p q, P p → P q → P (p *ᵣ q)).
@@ -814,15 +591,15 @@ Section polynomial_ring.
 
   Section poly_extends.
 
-    Variables (K : ring)
-              (f : R → K) (Hf : ring_homo f)
-              (k : K).
+    Variables (𝓚 : ring)
+              (f : 𝓡 → 𝓚) (Hf : ring_homo f)
+              (k : 𝓚).
 
-    Add Ring K_is_ring : (is_ring K).
+    Add Ring 𝓚_is_ring : (is_ring 𝓚).
 
     (* We proceed by induction on the list, ie
        the canonical repr. of the polynomial *) 
-    Fixpoint poly_extends (l : poly_ring) : K :=
+    Fixpoint poly_extends (l : poly_ring) : 𝓚 :=
       match l with
       | []   => 0ᵣ
       | x::l => f x +ᵣ k *ᵣ (poly_extends l)
@@ -912,7 +689,7 @@ Section polynomial_ring.
       + exact poly_extends_un_m.
     Qed.
 
-    Theorem poly_extends_unknown : ψ 𝓧 ∼ᵣ k.
+    Theorem poly_extends_unknown : ψ X ∼ᵣ k.
     Proof.
       destruct Hf as (_ & _ & _ & Hf4).
       unfold poly_extends; simpl.
@@ -923,9 +700,9 @@ Section polynomial_ring.
     Theorem poly_extends_poly_embed x : ψ (φ x) ∼ᵣ f x.
     Proof. simpl; ring. Qed.
 
-    Hypothesis (h : poly_ring → K)
+    Hypothesis (h : poly_ring → 𝓚)
                (h_homo : ring_homo h)
-               (h_k : h 𝓧 ∼ᵣ k)
+               (h_k : h X ∼ᵣ k)
                (h_embed : ∀x, h (φ x) ∼ᵣ f x).
 
     (* By induction on the ring structure of p *)
@@ -949,19 +726,25 @@ Section polynomial_ring.
 
   (** We show that the poly_ring extension satisfies its
       characteristic property. *)
-  Theorem poly_ring_correct : is_polynomial_ring R poly_ring poly_embed poly_unknown.
+  Theorem poly_ring_correct :
+    is_poly_ring 𝓡
+      {| pe_ring := poly_ring;
+         pe_embed := poly_embed;
+         pe_embed_homo := poly_embed_homo;
+         pe_point := poly_unknown |}.
   Proof.
-    split.
-    + apply poly_embed_homo.
-    + intros T ga t Hga; split.
-      * exists (poly_extends T ga t); split right.
-        - now apply poly_extends_homo.
-        - now apply poly_extends_unknown.
-        - apply poly_extends_poly_embed.
-      * intros al be H1 H2 H3 H4 H5 H6 p.
-        rewrite poly_extends_uniq with (h := be); eauto.
-        apply poly_extends_uniq; auto.
-  Qed. 
+    intros Tx.
+    split; simpl.
+    + exists (poly_extends Tx (pe_embed Tx) (pe_point Tx)); split right.
+      * apply poly_extends_homo, pe_embed_homo.
+      * destruct Tx as [ Tx f Hf x ]; simpl.
+        rewrite ring_homo_un_a, ring_homo_un_m, ring_op_m_un_a, ring_op_a_un_a, ring_un_a_op_a, ring_op_m_un_m; auto.
+      * intro; simpl; rewrite ring_op_m_un_a, ring_op_a_un_a; auto.
+    + intros al be (H1 & H2 & H3) (H4 & H5 & H6) p.
+      generalize (pe_embed_homo Tx).
+      intro; rewrite poly_extends_uniq with (h := be); eauto.
+      apply poly_extends_uniq; auto.
+  Qed.
 
 End polynomial_ring.
 

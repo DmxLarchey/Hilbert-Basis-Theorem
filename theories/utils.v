@@ -11,6 +11,8 @@ From Stdlib Require Import PeanoNat Lia List Permutation Utf8.
 
 Import ListNotations.
 
+Require Import measure.
+
 #[global] Notation "l ≈ₚ m" := (@Permutation _ l m) (at level 70).
 
 #[global] Notation "⌊ l ⌋" := (length l) (at level 1, format "⌊ l ⌋").   (* length *)
@@ -32,8 +34,8 @@ Tactic Notation "split" "right" := right_split_rec.
 
 Section list_double_rect.
 
-  Variables (X : Type)
-            (P : list X → list X → Type)
+  Variables (X Y : Type)
+            (P : list X → list Y → Type)
             (HP0 : ∀m, P [] m)
             (HP1 : ∀l, P l [])
             (HP2 : ∀ x l y m, P l m → P (x::l) (y::m)).
@@ -47,10 +49,27 @@ Tactic Notation "double" "list" "induction" hyp(l) hyp(m) "as" simple_intropatte
   pattern l, m; revert l m; apply list_double_rect;
     [ intros m | intros l | intros x l y m IH ].
 
+Section list_mutual_rect.
+
+  Variables (X Y : Type)
+            (P : list X → list Y → Type)
+            (HP0 : ∀m, P [] m)
+            (HP1 : ∀l, P l [])
+            (HP2 : ∀ x l y m, P l m → P (x::l) m → P l (y::m) → P (x::l) (y::m)).
+
+  Theorem list_mutual_rect l m : P l m.
+  Proof.
+    induction on l m as IH with measure (⌊l⌋ + ⌊m⌋).
+    revert l m IH; intros [] [] IH; auto.
+    apply HP2; apply IH; simpl; lia.
+  Qed.
+
+End list_mutual_rect.
+
 Section list_eq_length_rect.
 
-  Variables (X : Type)
-            (P : list X → list X → Type)
+  Variables (X Y : Type)
+            (P : list X → list Y → Type)
             (HP0 : P [] [])
             (HP1 : ∀ x l y m, P l m → P (x::l) (y::m)).
 
@@ -111,7 +130,7 @@ Proof.
 Qed.
 
 (** Reverse finite prefix of a sequence of type f : nat → X
-      pfx_rev f n = [f (n-1);...;f 0] *)
+      pfx_rev f n = [fₙ₋₁;...;f₀] *)
 
 Section pfx_rev.
 
@@ -132,21 +151,20 @@ Section pfx_rev.
     + split; [ easy | ]; now intros (? & ? & _).
     + rewrite IHn; split.
       * intros [ <- | (k & ? & <-) ]; [ exists n | exists k ]; split; auto; lia.
-      * intros (k & H1 & H2).
+      * intros (k & []).
         destruct (Nat.eq_dec n k) as [ <- | ]; auto; right; exists k; split; auto; lia.
   Qed.
-  
+
   Fact pfx_rev_ext f g n : (∀i, i < n → f i = g i) → pfx_rev f n = pfx_rev g n.
   Proof.
-    induction n as [ | n IHn ]; intros Hn; simpl; auto.
-    f_equal.
+    induction n as [ | n IHn ]; intros Hn; simpl; auto; f_equal.
     + apply Hn; lia.
     + apply IHn; intros; apply Hn; lia.
   Qed.
 
   Fact pfx_rev_add f a b : pfx_rev f (a+b) = pfx_rev (λ n, f (n+b)) a ++ pfx_rev f b.
   Proof. induction a; simpl; f_equal; auto. Qed.
-  
+
   Fact pfx_rev_S f n : pfx_rev f (1+n) = pfx_rev (λ n, f (1+n)) n ++ [f 0].
   Proof.
     rewrite Nat.add_comm, pfx_rev_add; f_equal; auto.
@@ -180,7 +198,7 @@ Section extends.
 
   Fact hd_extends {l m} : extends l m → { x : X | m = x::l }.
   Proof.
-    destruct m as [ | x m ]; intros H%extends_inv.
+    destruct m as [ | x ]; intros H%extends_inv.
     + easy.
     + now exists x; subst.
   Qed.
@@ -219,6 +237,72 @@ Arguments pfx_rev {X}.
 Arguments extends {X}.
 Arguments extends_pfx_rev {X}.
 
+(** The last member of a list 
+
+    This allows to isolate the head coefficient of 
+    a representation of a polynomial
+        a₀+...+aₙXⁿ = [a₀;...;aₙ] *)
+
+Section is_last.
+
+  Variables (X : Type).
+
+  Implicit Type l : list X.
+
+  Inductive is_last x : list X → Prop :=
+    | is_last_intro l : is_last x (l++[x]).
+
+  Fact is_last_inv x l :
+      is_last x l
+    → match l with
+      | []   => False
+      | y::m => 
+        match m with 
+        | [] => x = y
+        | _  => is_last x m
+        end
+      end.
+  Proof.
+    destruct 1 as [ [ | ? l ] ]; simpl; auto.
+    destruct l; constructor.
+  Qed.
+
+  Fact is_last_cons x y l : is_last x l → is_last x (y::l).
+  Proof. intros []; constructor 1 with (l := _::_). Qed.
+
+  Fact is_last_app l r x : is_last x r → is_last x (l++r).
+  Proof. intros [ r' ]; rewrite app_assoc; constructor. Qed.
+
+End is_last.
+
+Arguments is_last {_}.
+
+#[local] Hint Constructors is_last : core.
+
+Fact is_last_map X Y (f : X → Y) x l :
+  is_last x l → is_last (f x) (map f l).
+Proof. intros []; rewrite map_app; simpl; auto. Qed.
+
+(** repeat x n = [x;...;x] where x is repeated n times *)
+
+Section repeat.
+
+  Variables (X : Type).
+
+  Definition repeat x : nat → list X :=
+    fix loop n :=
+      match n with
+      | 0   => []
+      | S n => x::loop n
+      end.
+
+  Fact repeat_length x n : ⌊repeat x n⌋ = n.
+  Proof. induction n; simpl; f_equal; auto. Qed.
+
+End repeat.
+
+Arguments repeat {_}.
+
 (** Extra results for Forall2, ie finitary conjunction over two lists *)
 
 Fact Forall2_right_Forall X Y (P : Y → Prop) (l : list X) m :
@@ -233,7 +317,7 @@ Qed.
 Section Forall2_extra.
 
   Variables (X Y : Type).
-  
+
   Implicit Types (R T : X → Y → Prop).
 
   Fact reif_Forall2 R l : (∀x, x ∈ l → ∃y, R x y) → ∃m, Forall2 R l m.
