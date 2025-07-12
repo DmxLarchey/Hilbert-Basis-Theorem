@@ -99,6 +99,10 @@ Definition linearly_dependent {𝓡 : ring} := Good (λ m : list 𝓡, Idl ⌞m�
 
 #[local] Notation LD := linearly_dependent.
 
+(** FOL characterization of LD *)
+Fact LD_split (𝓡 : ring) (m : list 𝓡) : LD m ↔ ∃ l x r, m = l++x::r ∧ Idl ⌞r⌟ x.
+Proof. apply Good_split. Qed.
+
 (** bar LD l can be read as l is bound to become linearly dependent 
     after finitely many steps, however it is extended by adding 
     elements (on the lhs) 
@@ -130,6 +134,14 @@ Proof.
     * rewrite H4; auto.
   + intros ? (? & ? & ? & ? & ->)%Forall2_cons_inv_l.
     constructor 2; now apply IH.
+Qed.
+
+Corollary noetherian_isomorphism (𝓡 𝓣 : ring) :
+    (∃ (f : 𝓡 → 𝓣) (g : 𝓣 → 𝓡), ring_isomorphism f g)
+  → noetherian 𝓡 → noetherian 𝓣.
+Proof.
+  intros H; apply noetherian_surj_homo.
+  destruct H as (f & ? & ? & ? & []); eauto.
 Qed.
 
 Section noetherian_finite.

@@ -102,9 +102,6 @@ Section linearly_dependent.
 
   Implicit Type (l m : list 𝓡).
 
-  Local Remark LD_split m : LD m ↔ ∃ l x r, m = l++x::r ∧ Idl ⌞r⌟ x.
-  Proof. apply Good_split. Qed.
-
   (** Since we know that Idl _ is invariant under update
       We derive, in sequence, that:
         a) LD _ is invariant under update
@@ -191,8 +188,15 @@ Section HTB.
         with (P := λ q : list 𝓡, ⌊q⌋ ≤ ⌊p⌋) 
              (Q := λ q : list 𝓡, ⌊p⌋ < ⌊q⌋)
              (l := m)
-        as [ Hm' | (q & H3 & H4) ].
+        as [ (q & H3 & H4) | Hm' ].
       * intros; lia.
+      * (* Some polynomial in m, say q has a degree strictly greater than 
+           that of p. Then m = m'++[q]++r with ⌊p⌋ < ⌊q⌋.
+            By IH we get bar LD ([p]++r) and conclude *)
+        apply in_split in H3 as (m' & r & ->).
+        apply (bar_LD_app_middle (poly_ring _)) with (l := [_]).
+        apply (bar_LD_cons_middle (poly_ring _)) with (l := [_]).
+        apply IH, lex_app; simpl; eauto.
       * (* All polynomial in m have a degree lesser than that of p.
            We build a new polynomial q of degree strictly less than p
            such that p-q is a linear combination of m *)
@@ -202,13 +206,6 @@ Section HTB.
           as (q & H3 & H4).
         (* We update p by q *)
         apply bar_LD_update_closed with (q::m); auto.
-      * (* Some polynomial in m, say q has a degree strictly greater than 
-           that of p. Then m = m'++[q]++r with ⌊p⌋ < ⌊q⌋.
-            By IH we get bar LD ([p]++r) and conclude *)
-        apply in_split in H3 as (m' & r & ->).
-        apply (bar_LD_app_middle (poly_ring _)) with (l := [_]).
-        apply (bar_LD_cons_middle (poly_ring _)) with (l := [_]).
-        apply IH, lex_app; simpl; eauto.
     + (* h are the heads of k *)
       intros k Hhk IH.
       (* it is sufficient to show ∀p, bar LD (p::k) *)

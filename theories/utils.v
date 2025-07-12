@@ -100,13 +100,24 @@ Section list_choice.
 
   Fact list_choice l :
       (∀x, x ∈ l → P x ∨ Q x)
-    → (∀x, x ∈ l → P x) ∨ ∃ x, x ∈ l ∧ Q x.
+    → (∃ x, x ∈ l ∧ Q x) ∨ (∀x, x ∈ l → P x).
   Proof.
     induction l as [ | x l IHl ]; intros Hl.
-    + left; now simpl.
+    + right; now simpl.
     + destruct (Hl x) as []; eauto.
-      destruct IHl as [ | (? & []) ]; eauto.
-      left; intros ? [ <- | ]; eauto.
+      destruct IHl as [ (? & []) | ]; eauto.
+      right; intros ? [ <- | ]; eauto.
+  Qed.
+
+  Fact list_choice_strong l :
+      (∀x, x ∈ l → {P x} + {Q x})
+    → { x | x ∈ l ∧ Q x } + { ∀x, x ∈ l → P x }.
+  Proof.
+    induction l as [ | x l IHl ]; intros Hl.
+    + right; now simpl.
+    + destruct (Hl x) as []; eauto.
+      destruct IHl as [ (? & []) | ]; eauto.
+      right; intros ? [ <- | ]; eauto.
   Qed.
 
 End list_choice.

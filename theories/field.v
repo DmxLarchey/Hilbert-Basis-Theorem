@@ -31,7 +31,7 @@ Section fields.
       with (Q := λ x : 𝓕, ∃y, op_m y x ∼ᵣ un_m)
            (P := λ x : 𝓕, x ∼ᵣ un_a)
            (l := l)
-      as [ | (? & ? & []) ]; eauto.
+      as [ (? & ? & []) | ]; eauto.
   Qed.
 
   Theorem field_principal : principal 𝓕.

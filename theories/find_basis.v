@@ -114,16 +114,35 @@ Section fingen_ideal_wdec.
     destruct H𝓘 as (b & Hb).
     destruct list_choice
       with (P := Idl ⌞l⌟) (Q := λ x, ¬ Idl ⌞l⌟ x) (l := b)
-      as [ | (x & []) ]; auto.
+      as [ (x & []) | ]; auto.
+    + left; exists x; rewrite Hb; split; auto.
     + right.
       intros x.
       rewrite Hb.
       apply Idl_smallest; auto.
       apply Idl_ring_ideal.
-    + left; exists x; rewrite Hb; split; auto. 
   Qed.
 
 End fingen_ideal_wdec.
+
+Section fingen_ideal_dec.
+
+  Variables (𝓡 : ring) (b : list 𝓡).
+
+  Lemma fingen_ideal_dec (l : list 𝓡) :
+      (∀x, { Idl ⌞l⌟ x } + { ¬ Idl ⌞l⌟ x })
+    → { x | Idl ⌞b⌟ x ∧ ¬ Idl ⌞l⌟ x } + { Idl ⌞b⌟ ⊆₁ Idl ⌞l⌟ }.
+  Proof.
+    intros Hl.
+    destruct list_choice_strong
+      with (P := Idl ⌞l⌟) (Q := λ x, ¬ Idl ⌞l⌟ x) (l := b)
+      as [ (x & []) | ]; eauto.
+    right.
+    apply Idl_smallest; auto.
+    apply Idl_ring_ideal.
+  Qed.
+
+End fingen_ideal_dec.
 
 Section find_basis.
 
@@ -162,6 +181,49 @@ Section find_basis.
   Qed.
 
 End find_basis.
+
+Section compute_pause.
+
+  Variables (𝓡 : ring)
+            (𝓡_noetherian : noetherian 𝓡)
+            (𝓡_discrete_strong : ∀ l (x : 𝓡), { Idl ⌞l⌟ x } + { ¬ Idl ⌞l⌟ x }).
+ 
+  Hint Resolve incl_tl incl_refl incl_tran : core.
+
+  Variable ρ : nat → 𝓡.
+
+  Let R n m := Idl ⌞pfx_rev ρ m⌟ ⊂₁ Idl ⌞pfx_rev ρ n⌟.
+
+  Local Fact R_wf : well_founded R.
+  Proof.
+    generalize (noetherian__wf_Idl_strict_incl 𝓡_noetherian).
+    wf rel morph (fun P n => P = Idl ⌞pfx_rev ρ n⌟); eauto.
+    intros P Q n m -> ->.
+    unfold R.
+    intros (H1 & x & H2 & H3).
+    split.
+    + now apply Idl_mono.
+    + exists x; split.
+      * now constructor 1.
+      * contradict H3.
+        revert H3; apply Idl_idem.
+  Qed.
+
+  Local Lemma compute_pause_from n : { m | n ≤ m ∧ Idl ⌞pfx_rev ρ m⌟ (ρ m) }.
+  Proof.
+    induction n as [ n IHn ] using (well_founded_induction_type R_wf).
+    destruct (𝓡_discrete_strong (pfx_rev ρ n) (ρ n)) as [ H | H ]; eauto.
+    destruct (IHn (S n)) as (m & H1 & H2).
+    + split.
+      * apply Idl_mono; simpl; eauto.
+      * exists (ρ n); split; simpl; auto.
+    + exists m; split; auto; lia.
+  Qed.
+
+  Theorem compute_pause : { n | Idl ⌞pfx_rev ρ n⌟ (ρ n) }.
+  Proof. destruct (compute_pause_from 0) as (m & []); eauto. Qed.
+
+End compute_pause.
 
 Section incl_witnessed_dec__XM.
 
