@@ -194,6 +194,53 @@ Section quotient_ring.
 
 End quotient_ring.
 
+Section product_ring.
+
+  Variables (𝓡 𝓣 : ring).
+ 
+  Add Ring 𝓡_is_ring : (is_ring 𝓡).
+  Add Ring 𝓣_is_ring : (is_ring 𝓣).
+
+  Let PR := (𝓡 * 𝓣)%type.
+  Let pun_a : PR := (0ᵣ,0ᵣ).
+  Let pop_a (a b : PR) : PR := (fst a +ᵣ fst b,snd a +ᵣ snd b).
+  Let piv_a (a : PR) : PR := (-ᵣ fst a, -ᵣ snd a).
+  Let pun_m : PR := (1ᵣ,1ᵣ).
+  Let pop_m (a b : PR) : PR := (fst a *ᵣ fst b,snd a *ᵣ snd b).
+  Let prel (a b : PR) : Prop := fst a ∼ᵣ fst b ∧ snd a ∼ᵣ snd b.
+
+  Local Fact PR_equiv : Equivalence prel.
+  Proof.
+    split; unfold prel.
+    + intros []; simpl; auto.
+    + intros [] []; simpl; intros []; auto.
+    + intros [] [] []; simpl; intros [] []; eauto.
+  Qed.
+
+  Tactic Notation "solve" "PR" :=
+    repeat match goal with 
+    | |- forall _ : PR, _ => intros []
+    end; simpl; split; ring.
+
+  Local Fact PR_ring : ring_theory pun_a pun_m pop_a pop_m (λ x y : PR, pop_a x (piv_a y)) piv_a prel.
+  Proof. split; unfold prel; solve PR. Qed.
+
+  Local Fact PR_ring_ext : ring_eq_ext pop_a pop_m piv_a prel.
+  Proof.
+    split; unfold prel.
+    1,2: intros [] [] (E1 & E2) [] [] (E3 & E4); simpl in *; rewrite E1, E2, E3, E4; split; ring.
+    intros [] [] (E1 & E2); simpl in *; rewrite E1, E2; split; ring.
+  Qed.
+
+  Hint Resolve PR_equiv PR_ring PR_ring_ext : core.
+
+  Definition product_ring : ring.
+  Proof.
+    exists PR pun_a pop_a piv_a pun_m pop_m prel; abstract auto.
+  Defined.
+
+End product_ring.
+
 (** The ring of relative integers *)
 
 Definition Z_ring : ring.

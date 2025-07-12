@@ -321,3 +321,31 @@ Section quotient_noetherian.
 End quotient_noetherian.
 
 Check quotient_noetherian.
+
+Definition list_prod {X Y} (l : list X) (m : list Y) :=
+  flat_map (fun x => map (fun y => (x,y)) m) l.
+
+Section product_noetherian.
+
+  Variables (𝓡 𝓣 : ring).
+
+  Lemma bar_LD (l : list 𝓡) (m : list 𝓣) : bar LD l → bar LD m → bar (@LD (product_ring 𝓡 𝓣)) (list_prod l m).
+  Proof.
+    intros Hl Hm; revert l Hl m Hm.
+    induction 1 as [ l Hl | l Hl IHl ].
+    + induction 1 as [ m Hm | m Hm IHm ].
+      * (* xi in <x0,...,xi-1>
+           yj in <y0,...,yj-1>
+
+           (xi,xj) in <x0,...,xi-1>*<y0,...,yj-1> ?? *)
+         admit.
+      * constructor 2; intros (x,y).
+        specialize (IHm y).
+        (* l * (y::m) ~ l * m ++ l * [y] *)
+        admit.
+    + intros m Hm.
+      constructor 2.
+      intros (x,y).
+  Admitted.
+
+End product_noetherian.
