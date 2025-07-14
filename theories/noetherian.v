@@ -49,6 +49,11 @@ Section Good_and_bar.
   Fact Good_app_left P l r : Good P r → Good P (l++r).
   Proof. intro; induction l; simpl; eauto. Qed.
 
+  Fact Good_app_right P r : 
+      (∀ l x, P l x → P (l++r) x)
+    → (∀l, Good P l → Good P (l++r)).
+  Proof. induction 2; simpl; eauto. Qed.
+
   Hint Resolve Good_app_left : core.
 
   (* Another characterization (in FOL) *)
