@@ -198,8 +198,9 @@ Section ramsey.
     end.
 
   Let phi lx ly l := good R lx ∨ good S ly ∨ good T l
-                   ∨ (∃z, z ∈ l ∧ lowered R lx (fst z))  (** l ++ map inX lx ++ map inY ly is good *)
-                   ∨ (∃z, z ∈ l ∧ lowered S ly (snd z)).
+                   ∨ (∃z, z ∈ l ∧ lowered R lx (fst z))  (** there is a non-zero in Idl l cap Idl lx ?? *)
+                   ∨ (∃z, z ∈ l ∧ lowered S ly (snd z))  (** there is a non-zero in Idl l cap Idl ly ?? *)
+                   .
 
   Hint Resolve good_app_middle in_or_app : core.
 
@@ -253,7 +254,7 @@ Section ramsey.
   Section nested_induction.
 
     Variables (lx : list X) (ly : list Y) (z : X*Y).
-    
+
     Local Lemma lem_ramsey_1 h l :
         (∀u, R (fst z) (fst u) → bar (phi lx ly) (u::l++[z]))
       → bar (phi (fst z::lx) ly) h
@@ -269,7 +270,7 @@ Section ramsey.
       + destruct Hh as (u & Hu & []%lowered_cons_inv); eauto.
         * apply in_split in Hu as (? & ? & ->).
           rewrite <- app_assoc; simpl.
-          apply bar_phi_app_left, bar_phi_cons_middle; auto.
+          apply bar_phi_app_left, bar_phi_cons_middle. auto.
         * constructor 1; red.
           do 3 right; left; eauto.
     Qed.
@@ -277,18 +278,18 @@ Section ramsey.
     Hypothesis (B1 : bar (phi (fst z::lx) ly) []).
 
     Local Lemma lemma_ramsey_2 l :
-        bar (phi lx (snd z::ly)) l
-      → Forall (λ u, R (fst z) (fst u)) l
+        Forall (λ u, R (fst z) (fst u)) l
+      → bar (phi lx (snd z::ly)) l
       → bar (phi lx ly) (l++[z]).
     Proof.
+      intros H1 H2; revert H2 H1.
       induction 1 as [ l Hl | l _ IHl ].
-      + intros H1.
+      + intros H1; rewrite Forall_forall in H1.
         constructor 1.
         destruct Hl as [ | [ []%good_cons_inv | [ | [ (u & []) | (u & Hu & []%lowered_cons_inv) ] ] ] ]; red; eauto.
         * do 4 right; exists z; split right; eauto.
         * do 3 right; left; exists u; split right; eauto.
-        * rewrite Forall_forall in H1.
-          specialize (H1 _ Hu).
+        * specialize (H1 _ Hu).
           do 2 right; left.
           apply good_snoc_inv; right.
           exists u; split right; auto.
