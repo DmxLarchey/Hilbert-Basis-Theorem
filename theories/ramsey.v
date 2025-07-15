@@ -114,13 +114,17 @@ Section bar_good_middle.
     + intros [ | (y & ? & ?) ]; eauto.
       do 2 right; exists y; split; auto; red; eauto.
   Qed.
-
-  Fact bar_good_middle l m r : bar good (l++r) → bar good (l++m++r).
+  
+  Fact good_app_middle l m r : good (l++r) → good (l++m++r).
   Proof.
-    revert l r; apply bar_app_middle.
-    intros l r [ | [ | (x & y & ?  & [])] ]%good_app_inv; apply good_app_inv; eauto.
+    intros [ | [ | (x & y & ?  & [])] ]%good_app_inv; apply good_app_inv; eauto.
     do 2 right; exists x; split; auto; red; eauto.
   Qed.
+  
+  Hint Resolve good_app_middle : core.
+
+  Fact bar_good_middle l m r : bar good (l++r) → bar good (l++m++r).
+  Proof. revert l r; apply bar_app_middle; auto. Qed.
 
   Fact bar_good_app_head l r : bar good r → bar good (l++r).
   Proof. apply bar_good_middle with (l := []). Qed.
@@ -155,69 +159,6 @@ Proof.
   intros ? ? (? & ? & ? & ? & ? & (l & x & m & y & r & -> & <- & <- & <- & <- & <-)%map_split_pair_inv & ?)%good_iff_split.
   apply good_iff_split; exists l, x, m, y, r; auto.
 Qed.
-
-#[local] Reserved Notation "l '<sl' m" (at level 70, no associativity, format "l  <sl  m").
-
-Section sublist.
-
-  Variables (X : Type) (R : X → X → Prop).
-
-  Implicit Type (l : list X).
-
-  Hint Resolve incl_refl incl_cons incl_tl incl_appl incl_appr in_or_app incl_nil_l in_eq good_app_left : core.
-
-  Inductive sublist : list X → list X → Prop :=
-    | sublist_nil : [] <sl []
-    | sublist_hd x l m : l <sl m  → x::l <sl x::m
-    | sublist_tl x l m : l <sl m  → l <sl x::m
-  where "l <sl m" := (sublist l m).
-
-  Hint Constructors sublist : core.
-  
-  Fact sublist_nil_l l : [] <sl l.
-  Proof. induction l; eauto. Qed.
-
-  Fact sublist_mono l m : l <sl m → incl l m.
-  Proof. induction 1; eauto. Qed.
-
-  Fact sublist_app_l l h m : l <sl m → l <sl h++m.
-  Proof. induction h; simpl; eauto. Qed.
-  
-  Fact sublist_app l l' m m' : l <sl m → l' <sl m' → l++l' <sl m++m'.
-  Proof. induction 1; simpl; auto. Qed.
-  
-  Hint Resolve sublist_nil_l sublist_app_l : core.
-  
-  Fact In_sublist x l : x ∈ l → [x] <sl l.
-  Proof. intros (? & ? & ->)%in_split; eauto. Qed.
-  
-  Hint Resolve In_sublist sublist_app : core.
-  
-  Fact sublist_cons_app x m l r : x ∈ l → m <sl r → x::m <sl l++r.
-  Proof. intros; apply sublist_app with (l := [_]); eauto. Qed.
-  
-  Hint Resolve good_monotone in_cons in_eq : core.
-  Hint Constructors Good : core.
-  
-  Fact sublist_Good P :
-      (∀ l m x, l <sl m → P l x → P m x)
-    → (∀ l m, l <sl m → @Good X P l → Good P m).
-  Proof. induction 2; eauto; intros []%Good_inv; eauto. Qed.
-
-  Fact sublist_good l m : l <sl m → good R l → good R m.
-  Proof.
-    revert l m; apply sublist_Good.
-    intros l m x.
-    induction 1 as [ | y l m H IH | y l m H IH ]; eauto.
-    + intros (z & [ <- | Hz ] & ?); red; eauto.
-      destruct IH as (? & []); eauto; red; eauto.
-    + intros (? & [])%IH; red; eauto.
-  Qed.
-
-End sublist.
-
-Arguments sublist {_}.
-#[local] Infix "<sl" := sublist.
 
 Section bar_double_ind.
 
@@ -260,6 +201,26 @@ Section ramsey.
                    ∨ (∃z, z ∈ l ∧ lowered R lx (fst z))  (** l ++ map inX lx ++ map inY ly is good *)
                    ∨ (∃z, z ∈ l ∧ lowered S ly (snd z)).
 
+  Hint Resolve good_app_middle in_or_app : core.
+
+  Local Fact phi_app_middle lx ly l m r : phi lx ly (l++r) → phi lx ly (l++m++r).
+  Proof.
+    intros [ | [ | [ | [] ] ] ]; red; eauto.
+    + destruct H as (z & []%in_app_iff & ?); do 3 right; left; exists z; split; eauto.
+    + destruct H as (z & []%in_app_iff & ?); do 4 right; exists z; split; eauto.
+  Qed.
+  
+  Hint Resolve phi_app_middle : core.
+  
+  Local Fact bar_phi_middle lx ly l m r : bar (phi lx ly) (l++r) → bar (phi lx ly) (l++m++r).
+  Proof. apply bar_app_middle; auto. Qed.
+  
+  Local Fact bar_phi_app_left lx ly l r : bar (phi lx ly) r → bar (phi lx ly) (l++r).
+  Proof. apply bar_app_middle with (l := []); auto. Qed.
+  
+  Local Fact bar_phi_cons_middle lx ly x m r : bar (phi lx ly) (x::r) → bar (phi lx ly) (x::m++r).
+  Proof. apply bar_app_middle with (l := [x]); auto. Qed.
+
   Local Fact R_K x x' : R x x' → K (inX x) (inX x').   Proof. now simpl. Qed.
   Local Fact S_K y y' : S y y' → K (inY y) (inY y').   Proof. now simpl. Qed.
   Local Fact T_K a b : T a b → K (inXY a) (inXY b).    Proof. now simpl. Qed.
@@ -287,33 +248,30 @@ Section ramsey.
   Qed.
 
   Hint Resolve good_monotone good_app_right
-               in_or_app in_eq
-               sublist_good
-               sublist_mono
-               sublist_app_l : core.
+               in_or_app in_eq : core.
 
   Section nested_induction.
 
-    Hint Constructors sublist : core.
-
     Variables (lx : list X) (ly : list Y) (z : X*Y).
     
-    Local Lemma lem_ramsey_1 h m :
-         z ∈ m
-      → (∀ u h, R (fst z) (fst u) → u ∈ h → bar (phi lx ly) (h++m))
-      → bar (phi (fst z::lx) ly) h → bar (phi lx ly) (h++m).
+    Local Lemma lem_ramsey_1 h l :
+        (∀u, R (fst z) (fst u) → bar (phi lx ly) (u::l++[z]))
+      → bar (phi (fst z::lx) ly) h
+      → bar (phi lx ly) (h++l++[z]).
     Proof.
-      intros G3 G4.
+      intros G.
       induction 1 as [ h Hh | h _ IHh ].
       2: constructor 2; auto.
-      destruct Hh as [ []%good_cons_inv | [ | [ | [Hh|Hh] ] ] ].
+      destruct Hh as [ []%good_cons_inv | [ | [ | [Hh|(u & [])] ] ] ].
       1,2,3,4,6: constructor 1; red; auto.
-      + do 3 right; left; eauto.
-      + destruct Hh as (u & []).
-        do 4 right; eauto.
-      + destruct Hh as (u & ? & []%lowered_cons_inv); eauto.
-        constructor 1; red. 
-        do 3 right; left; eauto.
+      + do 3 right; left; eauto; exists z; rewrite !in_app_iff; simpl; eauto.
+      + do 4 right; eauto.
+      + destruct Hh as (u & Hu & []%lowered_cons_inv); eauto.
+        * apply in_split in Hu as (? & ? & ->).
+          rewrite <- app_assoc; simpl.
+          apply bar_phi_app_left, bar_phi_cons_middle; auto.
+        * constructor 1; red.
+          do 3 right; left; eauto.
     Qed.
 
     Hypothesis (B1 : bar (phi (fst z::lx) ly) []).
@@ -321,34 +279,21 @@ Section ramsey.
     Local Lemma lemma_ramsey_2 l :
         bar (phi lx (snd z::ly)) l
       → Forall (λ u, R (fst z) (fst u)) l
-      → ∀ m, l++[z] <sl m → bar (phi lx ly) m.
+      → bar (phi lx ly) (l++[z]).
     Proof.
       induction 1 as [ l Hl | l _ IHl ].
-      + intros H1 m H2.
+      + intros H1.
         constructor 1.
-        destruct Hl as [ Hl | [ Hl | [ Hl | [ Hl | Hl ] ] ] ]; red; eauto.
-        * apply good_cons_inv in Hl as []; eauto.
-          do 4 right; exists z; split right; eauto.
-          eapply sublist_mono; eauto.
-        * do 2 right; left; eauto.
-        * destruct Hl as (u & []).
-          do 3 right; left; exists u; split right; eauto.
-          eapply sublist_mono; eauto.
-        * destruct Hl as (u & Hu & []%lowered_cons_inv).
-          - rewrite Forall_forall in H1.
-            specialize (H1 _ Hu).
-            do 2 right; left.
-            apply sublist_good with (1 := H2).
-            apply good_snoc_inv; right.
-            exists u; split right; auto.
-          - do 4 right; exists u; split right; eauto.
-            eapply sublist_mono; eauto.
-      + intros H1 m H2.
-        apply lem_ramsey_1 with (h := []); eauto.
-        * eapply sublist_mono; eauto.
-        * intros u h Hu Hh.
-          apply (IHl u); auto. 
-          now apply sublist_cons_app.
+        destruct Hl as [ | [ []%good_cons_inv | [ | [ (u & []) | (u & Hu & []%lowered_cons_inv) ] ] ] ]; red; eauto.
+        * do 4 right; exists z; split right; eauto.
+        * do 3 right; left; exists u; split right; eauto.
+        * rewrite Forall_forall in H1.
+          specialize (H1 _ Hu).
+          do 2 right; left.
+          apply good_snoc_inv; right.
+          exists u; split right; auto.
+        * do 4 right; exists u; split right; eauto.
+      + intros H1; apply lem_ramsey_1 with (h := []); eauto.
     Qed.
 
     Hypothesis (B2 : bar (phi lx (snd z::ly)) []).
