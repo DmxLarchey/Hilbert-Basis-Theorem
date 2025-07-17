@@ -30,6 +30,38 @@ Require Import measure.
 Ltac right_split_rec := try (split; [ | right_split_rec ]).
 Tactic Notation "split" "right" := right_split_rec.
 
+(** List equality inversion lemmas *)
+
+Fact cons_inj X (x y : X) l m : x::l = y::m → x = y ∧ l = m.
+Proof. now inversion 1. Qed.
+
+Fact map_split_inv X Y (f : X → Y) ll l' y r' :
+    map f ll = l'++y::r'
+  → ∃ l x r,
+        ll = l++x::r
+      ∧ map f l = l' ∧ f x = y
+      ∧ map f r = r'.
+Proof.
+  intros H.
+  apply map_eq_app  in H as (l & mm & -> & ? & H).
+  apply map_eq_cons in H as (x & ll & -> & ? & H).
+  exists l, x, ll; auto.
+Qed.
+
+Fact map_split_pair_inv X Y (f : X → Y) ll l' y₁ m' y₂ r' :
+    map f ll = l'++y₁::m'++y₂::r'
+  → ∃ l x₁ m x₂ r,
+        ll = l++x₁::m++x₂::r
+      ∧ map f l = l' ∧ f x₁ = y₁
+      ∧ map f m = m' ∧ f x₂ = y₂
+      ∧ map f r = r'.
+Proof.
+  intros H.
+  apply map_split_inv in H as (l & x & mm & -> & <- & <- & H).
+  apply map_split_inv in H as (m & y & r & -> & <- & <- & H).
+  exists l, x, m, y, r; split; auto.
+Qed.
+
 (** Induction on two lists *)
 
 Section list_double_rect.

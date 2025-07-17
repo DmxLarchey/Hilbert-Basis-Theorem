@@ -316,3 +316,18 @@ End ring_ideal.
 
 Arguments ring_ideal {_}.
 Arguments update {_}.
+
+(*
+#[local] Hint Resolve ring_homo_congr ring_homo_un_a ring_homo_sub_a ring_homo_op_m : core.
+*)
+
+Definition ring_sub_homo {𝓡 𝓣 : ring} (f : 𝓡 → 𝓣) :=
+   (∀ x y, x ∼ᵣ y → f x ∼ᵣ f y)
+ ∧ (∀ x y, f (x −ᵣ y) ∼ᵣ f x −ᵣ f y)
+ ∧ (∀ x y, f (x *ᵣ y) ∼ᵣ f x *ᵣ f y)
+ ∧ (f 0ᵣ ∼ᵣ 0ᵣ).
+
+Fact Idl_sub_homo (𝓡 𝓣 : ring) (f : 𝓡 → 𝓣) :
+    ring_sub_homo f
+  → ∀ (P : 𝓡 → Prop) x, Idl P x → Idl (λ y, ∃x, y = f x ∧ P x) (f x).
+Proof. intros (? & ? & []); induction 1; eauto. Qed.

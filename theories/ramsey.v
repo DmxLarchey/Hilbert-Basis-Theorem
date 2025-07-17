@@ -13,25 +13,6 @@ Require Import utils bar noetherian.
 
 Import ListNotations.
 
-Fact cons_inj X (x y : X) l m : x::l = y::m → x = y ∧ l = m.
-Proof. now inversion 1. Qed.
-
-Fact map_split_pair_inv X Y (f : X → Y) ll l' y₁ m' y₂ r' :
-    map f ll = l'++y₁::m'++y₂::r'
-  → ∃ l x₁ m x₂ r,
-        ll = l++x₁::m++x₂::r
-      ∧ map f l = l' ∧ f x₁ = y₁
-      ∧ map f m = m' ∧ f x₂ = y₂
-      ∧ map f r = r'.
-Proof.
-  intros H.
-  apply map_eq_app  in H as (l & mm & -> & ? & H).
-  apply map_eq_cons in H as (x & ll & -> & ? & H).
-  apply map_eq_app  in H as (m & mm & -> & ? & H).
-  apply map_eq_cons in H as (y & r & -> & ? & H).
-  exists l, x, m, y, r; split; auto.
-Qed.
-
 Section bar_good_middle.
 
   Variables (X : Type) (R : X → X → Prop).
@@ -159,22 +140,6 @@ Proof.
   intros ? ? (? & ? & ? & ? & ? & (l & x & m & y & r & -> & <- & <- & <- & <- & <-)%map_split_pair_inv & ?)%good_iff_split.
   apply good_iff_split; exists l, x, m, y, r; auto.
 Qed.
-
-Section bar_double_ind.
-
-  Variables (X Y : Type) (P : list X → Prop) (Q : list Y → Prop) 
-            (K : list X → list Y → Prop)
-            (HPK : ∀ l m, P l → K l m) 
-            (HQK : ∀ l m, Q m → K l m)
-            (HPQK : ∀ l m, (∀x, K (x::l) m) → (∀y, K l (y::m)) → K l m).
-
-  Theorem bar_double_ind l m : bar P l → bar Q m → K l m.
-  Proof.
-    induction 1 in m |- *; auto.
-    induction 1 as [ | ? ?%bar_next ]; auto.
-  Qed.
-
-End bar_double_ind.
 
 Section ramsey.
 
