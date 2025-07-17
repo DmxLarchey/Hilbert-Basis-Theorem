@@ -58,15 +58,44 @@ Section ramsey.
   
   Local Fact bar_phi_cons_middle lx ly x m r : bar (phi lx ly) (x::r) → bar (phi lx ly) (x::m++r).
   Proof. apply bar_app_middle with (l := [x]); auto. Qed.
+  
+  Local Fact bar_phi_nil lx ly l : bar (phi lx ly) [] → bar (phi lx ly) l.
+  Proof. rewrite <- (app_nil_r l); apply bar_app_middle with (l := []); auto. Qed.
 
   Hint Resolve in_or_app in_eq : core.
 
   Section nested_induction.
 
     Variables (lx : _) (ly : _) (z : 𝓡*𝓣).
+    
+    Local Lemma lemma_ramsey_0 l :
+        Idl ⌞ly⌟ (snd z)
+      → bar (phi (fst z::lx) ly) l
+      → bar (phi lx ly) (l++[z]).
+    Proof.
+      intros Hz.
+      induction 1 as [ l Hl | l _ IHl ].
+      + red in Hl; simpl in Hl.
+        apply LD_special_inv in Hl as [ (h1 & k & h2 & -> & Hh)| [|] ].
+        * rewrite <- app_assoc; apply bar_phi_app_left.
+          constructor 1; red; simpl. constructor 1.
+          admit. (* use 0 for the fst of the coef of z *)
+        * (* we have Idl ⌞lx⌟ (fst z) (by projecting H) 
+                 and Idl ⌞ly⌟ (snd z) (Hz)
+                 hence Idl ⌞map shomo_x lx++map shomoe_y ly⌟ z *)
+          apply bar_phi_app_left.
+          constructor 1; red; simpl; constructor 1.
+          admit.
+        * apply bar_phi_nil; now constructor 1.
+      + now constructor 2.
+    Admitted. 
+    
+    Variables (P : list 𝓟 -> Prop) (Q : list 𝓟 -> 𝓟 -> Prop)
+              (HP0 : P [])
+              (HP1 : forall a l, Q l a -> P l -> P (a::l)).
 
     Local Lemma lem_ramsey_1 h l :
-        (∀u, Idl ⌞map fst l++fst z::lx⌟ (fst u) → bar (phi lx ly) (u::l++[z]))
+        (∀u, Q l u → bar (phi lx ly) (u::l++[z]))
       → bar (phi (fst z::lx) ly) h
       → bar (phi lx ly) (h++l++[z]).
     Proof.
@@ -89,8 +118,6 @@ Section ramsey.
  
     Hypothesis (B1 : bar (phi (fst z::lx) ly) []).
     
-    Variables (P : list 𝓟 -> Prop).
-
     Local Lemma lemma_ramsey_2 l :
         P l 
         (* seq (fun h u => Idl ⌞map fst h++fst z::lx⌟ (fst u)) l *)
@@ -100,27 +127,26 @@ Section ramsey.
       intros H1 H2; revert H2 H1.
       induction 1 as [ l Hl | l _ IHl ].
       + intros H1; red in Hl; simpl in Hl.
-        constructor 1.
         apply LD_app_inv in Hl as [ (l' & k & m' & -> & Hl) | Hl ].
-        * red; simpl; rewrite <- !app_assoc.
+        * constructor 1.
+          red; simpl; rewrite <- !app_assoc.
           apply LD_app_left; simpl; constructor 1.
           admit. (* use zero for the fst of the coefficient of z *)
         * apply LD_special_inv in Hl as [ (l1 & a1 & r1 & E & Hl) | [ Hl | Hl] ].
-          - red; simpl.
+          - constructor 1; red; simpl.
             apply map_split_inv in E as (l2 & a2 & r2 & -> & <- & <- & <-).
             rewrite map_app; simpl; rewrite <- !app_assoc.
             do 3 apply LD_app_left; simpl; constructor 1.
             admit. (* shomo_y (snd z) is 0 on the fst component and we do not care about the second *)
-          - red; simpl.
-           rewrite <- app_assoc; apply LD_app_left; simpl; constructor.
-            (* we need that fst z is linear combination of lx 
-               but we cannot assume a property linking z and lx
-               otherwise it will not vanish when l is [] *)
-            admit.
-          - admit
-      +
-      
-       admit. (* intros H1; apply lem_ramsey_1 with (h := []); eauto. *)
+          - apply lemma_ramsey_0.
+            ++ admit. (* projecting Hl *)
+            ++ now apply bar_phi_nil.
+          - constructor 1.
+            red.
+            now do 2 apply LD_app_left.
+      + intros Hl.
+        apply lem_ramsey_1 with (h := []); auto.
+        intros ? ?; apply IHl; auto.
     Admitted.
 
     Hypothesis (B2 : bar (phi lx (snd z::ly)) []).
