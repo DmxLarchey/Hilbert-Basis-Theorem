@@ -131,6 +131,22 @@ Section bar_relmap.
 
 End bar_relmap.
 
+Section bar_double_ind.
+
+  Variables (X Y : Type) (P : list X → Prop) (Q : list Y → Prop) 
+            (K : list X → list Y → Prop)
+            (HPK : ∀ l m, P l → K l m) 
+            (HQK : ∀ l m, Q m → K l m)
+            (HPQK : ∀ l m, (∀x, K (x::l) m) → (∀y, K l (y::m)) → K l m).
+
+  Theorem bar_double_ind l m : bar P l → bar Q m → K l m.
+  Proof.
+    induction 1 in m |- *; auto.
+    induction 1 as [ | ? ?%bar_next ]; auto.
+  Qed.
+
+End bar_double_ind.
+
 Section bar_nc.
 
   (** This section is about bar in "non-constructive" settings *)

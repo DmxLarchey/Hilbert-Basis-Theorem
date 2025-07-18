@@ -10,8 +10,12 @@ principal.v
 noetherian.v
 field.v
 category.v
+product.v
+product_noetherian.v
 poly.v
 hbt.v
 find_basis.v
 noetherian_nc.v
+ramsey.v
+
 

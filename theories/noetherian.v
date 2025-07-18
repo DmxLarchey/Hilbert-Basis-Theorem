@@ -43,11 +43,23 @@ Section Good_and_bar.
       end.
   Proof. destruct 1; eauto. Qed.
 
+  Fact Good_cons_inv P x l : Good P (x::l) ↔ P l x ∨ Good P l.
+  Proof.
+    split.
+    + apply Good_inv.
+    + intros []; eauto.
+  Qed.
+
   Fact Good_mono P Q : P ⊆₂ Q → Good P ⊆₁ Good Q.
   Proof. induction 2; eauto. Qed.
 
   Fact Good_app_left P l r : Good P r → Good P (l++r).
   Proof. intro; induction l; simpl; eauto. Qed.
+
+  Fact Good_app_right P r : 
+      (∀ l x, P l x → P (l++r) x)
+    → (∀l, Good P l → Good P (l++r)).
+  Proof. induction 2; simpl; eauto. Qed.
 
   Hint Resolve Good_app_left : core.
 
@@ -59,6 +71,18 @@ Section Good_and_bar.
       * now exists [], a, m.
       * now exists (a::l), b, r.
     + intros (? & ? & ? & -> & ?); auto.
+  Qed.
+  
+  Lemma Good_app_inv P l r : Good P (l++r) ↔ (∃ l' a m, l = l'++a::m ∧ P (m++r) a) ∨ Good P r.
+  Proof.
+    induction l as [ | x l IHl ]; simpl.
+    + split; auto; now intros [ ([] & ? & ? & ? & _) | ].
+    + rewrite Good_cons_inv, IHl; split.
+      * intros [ H1 | [ (l' & y & m & -> & ?) | H1 ] ]; eauto.
+        - left; now exists [], x, l.
+        - left; now exists (x::l'), y, m.
+      * intros [ ([ | z l'] & y & m & [=] & ?) | ]; subst; auto.
+        right; left; now exists l', y, m.
   Qed.
 
   Hint Resolve bar_monotone : core.
@@ -99,9 +123,98 @@ Definition linearly_dependent {𝓡 : ring} := Good (λ m : list 𝓡, Idl ⌞m�
 
 #[local] Notation LD := linearly_dependent.
 
-(** FOL characterization of LD *)
-Fact LD_split (𝓡 : ring) (m : list 𝓡) : LD m ↔ ∃ l x r, m = l++x::r ∧ Idl ⌞r⌟ x.
-Proof. apply Good_split. Qed.
+Section linearly_dependent.
+
+  Variables (𝓡 : ring).
+
+  Add Ring 𝓡_is_ring : (is_ring 𝓡).
+
+  Implicit Type (l m : list 𝓡).
+
+  (** Since we know that Idl _ is invariant under update
+      We derive, in sequence, that:
+        a) LD _ is invariant under update
+        b) bar LD _ is invariant under update *)
+
+  Hint Resolve Idl_update_closed
+               Idl_substract: core.
+  Hint Constructors Good : core.
+
+  (** FOL characterization of LD *)
+  Fact LD_split m : LD m ↔ ∃ l x r, m = l++x::r ∧ Idl ⌞r⌟ x.
+  Proof. apply Good_split. Qed.
+
+  Fact LD_cons_inv x m : LD (x::m) ↔ Idl ⌞m⌟ x ∨ LD m.
+  Proof. apply Good_cons_inv. Qed.
+
+  Fact LD_app_inv l r : LD (l++r) ↔ (∃ l' x m, l = l'++x::m ∧ Idl ⌞m++r⌟ x) ∨ LD r.
+  Proof. apply Good_app_inv. Qed.
+
+  Fact LD_middle_inv l x r : LD (l++x::r) ↔ (∃ l' y m, l = l'++y::m ∧ Idl ⌞m++x::r⌟ y) ∨ Idl ⌞r⌟ x ∨ LD r.
+  Proof. rewrite LD_app_inv, LD_cons_inv; tauto. Qed.
+
+  Fact LD_special_inv l m x r : LD (l++m++x::r) ↔ (∃ l₁ y l₂, l = l₁++y::l₂ ∧ Idl ⌞l₂++m++x::r⌟ y)
+                                                ∨ (∃ m₁ y m₂, m = m₁++y::m₂ ∧ Idl ⌞m₂++x::r⌟ y)
+                                                ∨ Idl ⌞r⌟ x
+                                                ∨ LD r.
+  Proof. rewrite !LD_app_inv, LD_cons_inv; tauto. Qed.
+
+  (* linear dependency is invariant under update *)
+  Lemma LD_update_closed l m : update l m → LD l → LD m.
+  Proof. unfold LD; induction 1 as [ ? ? ? ?%Idl_iff_lc__list |]; intros []%Good_inv; eauto. Qed.
+
+  Hint Constructors bar update : core.
+  Hint Resolve LD_update_closed : core.
+
+  (* bar LD is invariant under update *)
+  Theorem bar_LD_update_closed l m : update l m → bar LD l → bar LD m.
+  Proof. apply bar_rel_closed; eauto. Qed.
+
+  Fact LD_app_middle m : ∀ l r, LD (l++r) → LD (l++m++r).
+  Proof.
+    apply Good_app_middle.
+    intros ? ? ?; apply Idl_mono.
+    intros ?; rewrite !in_app_iff; tauto.
+  Qed.
+  
+  Fact LD_app_left l r : LD r → LD (l++r).
+  Proof. apply Good_app_left. Qed.
+  
+  Fact LD_app_right l r : LD l → LD (l++r).
+  Proof.
+    intros H.
+    rewrite <- app_nil_r, <- app_assoc.
+    apply LD_app_middle.
+    now rewrite app_nil_r.
+  Qed.
+
+   (** Three specializations of bar_Good_app_middle *)
+
+  (* bar LD is invariant under adding elements anywhere *)
+  Fact bar_LD_app_middle m : ∀ l r, bar LD (l++r) → bar LD (l++m++r).
+  Proof. apply bar_app_middle, LD_app_middle. Qed.
+
+  Fact bar_LD_app_left l r : bar LD r → bar LD (l++r).
+  Proof. apply bar_LD_app_middle with (l := []). Qed.
+
+  Fact bar_LD_cons_middle l x r : bar LD (l++r) → bar LD (l++x::r).
+  Proof. apply bar_LD_app_middle with (m := [_]). Qed.
+
+End linearly_dependent.
+
+#[local] Hint Resolve in_map : core.
+
+Fact LD_sub_homo (𝓡 𝓣 : ring) (f : 𝓡 → 𝓣) :
+    ring_sub_homo f
+  → ∀ l : list 𝓡, LD l → LD (map f l).
+Proof.
+  unfold LD.
+  induction 2 as [ x l Hl | ]; simpl; auto.
+  constructor 1.
+  apply Idl_sub_homo with (f := f) in Hl; auto.
+  revert Hl; apply Idl_mono.
+  intros ? (? & -> & ?); eauto.
+Qed. 
 
 (** bar LD l can be read as l is bound to become linearly dependent 
     after finitely many steps, however it is extended by adding 
@@ -322,30 +435,3 @@ End quotient_noetherian.
 
 Check quotient_noetherian.
 
-Definition list_prod {X Y} (l : list X) (m : list Y) :=
-  flat_map (fun x => map (fun y => (x,y)) m) l.
-
-Section product_noetherian.
-
-  Variables (𝓡 𝓣 : ring).
-
-  Lemma bar_LD (l : list 𝓡) (m : list 𝓣) : bar LD l → bar LD m → bar (@LD (product_ring 𝓡 𝓣)) (list_prod l m).
-  Proof.
-    intros Hl Hm; revert l Hl m Hm.
-    induction 1 as [ l Hl | l Hl IHl ].
-    + induction 1 as [ m Hm | m Hm IHm ].
-      * (* xi in <x0,...,xi-1>
-           yj in <y0,...,yj-1>
-
-           (xi,xj) in <x0,...,xi-1>*<y0,...,yj-1> ?? *)
-         admit.
-      * constructor 2; intros (x,y).
-        specialize (IHm y).
-        (* l * (y::m) ~ l * m ++ l * [y] *)
-        admit.
-    + intros m Hm.
-      constructor 2.
-      intros (x,y).
-  Admitted.
-
-End product_noetherian.

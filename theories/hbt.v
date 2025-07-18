@@ -94,52 +94,6 @@ Arguments lex {_}.
 
 #[local] Notation LD := linearly_dependent.
 
-Section linearly_dependent.
-
-  Variables (𝓡 : ring).
-
-  Add Ring 𝓡_is_ring : (is_ring 𝓡).
-
-  Implicit Type (l m : list 𝓡).
-
-  (** Since we know that Idl _ is invariant under update
-      We derive, in sequence, that:
-        a) LD _ is invariant under update
-        b) bar LD _ is invariant under update *)
-
-  Hint Resolve Idl_update_closed
-               Idl_substract: core.
-  Hint Constructors Good : core.
-
-  (* linear dependency is invariant under update *)
-  Local Lemma LD_update_closed l m : update l m → LD l → LD m.
-  Proof. unfold LD; induction 1 as [ ? ? ? ?%Idl_iff_lc__list |]; intros []%Good_inv; eauto. Qed.
-
-  Hint Constructors bar update : core.
-  Hint Resolve LD_update_closed : core.
-
-  (* bar LD is invariant under update *)
-  Local Theorem bar_LD_update_closed l m : update l m → bar LD l → bar LD m.
-  Proof. apply bar_rel_closed; eauto. Qed.
-
-  (** Three specializations of bar_Good_app_middle *)
-
-  (* bar LD is invariant under adding elements anywhere *)
-  Local Fact bar_LD_app_middle m : ∀ l r, bar LD (l++r) → bar LD (l++m++r).
-  Proof.
-    apply bar_Good_app_middle.
-    intros ? ? ?; apply Idl_mono.
-    intros ?; rewrite !in_app_iff; tauto.
-  Qed.
-
-  Local Fact bar_LD_app_left l r : bar LD r → bar LD (l++r).
-  Proof. apply bar_LD_app_middle with (l := []). Qed.
-
-  Local Fact bar_LD_cons_middle l x r : bar LD (l++r) → bar LD (l++x::r).
-  Proof. apply bar_LD_app_middle with (m := [_]). Qed.
-
-End linearly_dependent.
-
 Section HTB.
 
   (** Beware that LD is used for two rings below, both 𝓡 and 𝓡[X] !! *)
@@ -229,6 +183,10 @@ Section HTB.
   Qed.
 
 End HTB.
+
+Check is_poly_ring.
+Check poly_ring_correct.
+Check HBT.
 
 Section Hilbert_Basis_Theorem.
 
