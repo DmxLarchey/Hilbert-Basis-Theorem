@@ -86,6 +86,20 @@ In addition to the HBT above, with these definitions, we can show that:
 - finite rings are Noetherian (e.g `Z/nZ` for `n > 0`);
 - the quotient of a principal (resp. Noetherian) ring is principal (resp. Noetherian).
 
+## The direct product is Noetherian
+
+Additionally, we remarked classical proofs of the Noetherianess of the direct product of two rings was using Ramsey like arguments.
+Hence, we wondered whether a constructive form of Ramsey's theorem, based on `bar` inductive predicates, could be adapted to 
+derive the closure of Noetherianess under direct products, w/o assuming further properties on rings (such as e.g. strong discreteness).
+
+And indeed, it turnzs out that D. Fridlender's proof of Ramsey's theorem~[5], simplified and reworked Rocq, 
+what a good starting point, to derive the Noetherianess of the direct products:
+```coq
+Theorem product_noetherian 𝓡 𝓣 : noetherian 𝓡 → noetherian 𝓣 → noetherian (product_ring 𝓡 𝓣).
+```
+
+Further comments on that **new proof** will come later on.  
+
 ## Induction principles derived from Noetherianess
 
 We show that several instances of _witnessed strict reverse inclusion_ are 
@@ -128,3 +142,4 @@ The property `∀l, (∃x, x ∈ 𝓘 ∧ ¬ Idl 𝓡 ⌞l⌟ x) ∨ 𝓘 ⊆ Id
 - [2]. The following discussion is interesting (https://mathoverflow.net/questions/222923/alternate-proofs-of-hilberts-basis-theorem).
 - [3]. [Strongly Noetherian rings and constructive ideal theory](https://doi.org/10.1016/j.jsc.2003.02.001) by _Hervé Perdry_ 2004.
 - [4]. See also the [Buchberger](https://github.com/rocq-community/buchberger) repository.
+- [5]. [Higman's lemma in type theory](https://doi.org/10.1007/BFb0097789) by _Fridlender_ 1996.
