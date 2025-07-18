@@ -184,6 +184,10 @@ Section HTB.
 
 End HTB.
 
+Check is_poly_ring.
+Check poly_ring_correct.
+Check HBT.
+
 Section Hilbert_Basis_Theorem.
 
   Notation idx := Fin.t.

@@ -13,6 +13,63 @@ Require Import utils ring.
 
 #[local] Hint Resolve ring_homo_id ring_homo_compose : core.
 
+Section characteristic_property_of_the_product_ring.
+
+  Variables (𝓡 𝓣 : ring).
+ 
+  Add Ring 𝓡_is_ring : (is_ring 𝓡).
+  Add Ring 𝓣_is_ring : (is_ring 𝓣).
+
+  (** This is the terminal property for the product ring:
+      it is terminal in the category of product diagrams *)
+
+  Record ring_product_diag := 
+    { pd_ring :> ring;
+      pd_fst : pd_ring → 𝓡;
+      pd_snd : pd_ring → 𝓣;
+      pd_fst_homo : ring_homo pd_fst;
+      pd_snd_homo : ring_homo pd_snd;
+    }.
+
+  (** A homomorphism of product diagrams *)
+  Definition pd_homo {𝓟 𝓠	: ring_product_diag} (γ : 𝓟 → 𝓠) :=
+      ring_homo γ
+    ∧ (∀r, pd_fst 𝓠 (γ r) ∼ᵣ pd_fst 𝓟 r)
+    ∧ (∀r, pd_snd 𝓠 (γ r) ∼ᵣ pd_snd 𝓟 r)
+    .
+
+  (** Product diagrams of 𝓡 and 𝓣 form a category *)
+  Fact pd_homo_id (𝓟 : ring_product_diag) : pd_homo (λ p : 𝓟, p).
+  Proof. split right; auto. Qed. 
+
+  Fact pd_homo_comp (𝓟 𝓠 𝓞 : ring_product_diag) (f : 𝓟 → 𝓠) (g : 𝓠 → 𝓞) :
+    pd_homo f → pd_homo g → pd_homo (λ p, g (f p)).
+  Proof.
+    intros (H1 & H2 & H3) (G1 & G2 & G3); split right; auto.
+    + intro; now rewrite G2.
+    + intro; now rewrite G3.
+  Qed.
+
+  Hint Resolve pd_homo_id pd_homo_comp : core.
+
+  (** And "the" product ring for 𝓡 and 𝓣 is the terminal
+      object in the category of product diagrams  *)
+  Definition is_product_ring (𝓟 : ring_product_diag) :=
+    ∀ 𝓠 : ring_product_diag, 
+        (∃α : 𝓠 → 𝓟, pd_homo α)
+      ∧ (∀ α β : 𝓠 → 𝓟, pd_homo α → pd_homo β → ∀p, α p ∼ᵣ β p).
+
+  Section unicity.
+
+  End unicity.
+
+End characteristic_property_of_the_product_ring.
+
+Arguments pd_fst {_ _}.
+Arguments pd_snd {_ _}.
+Arguments pd_fst_homo {_ _}.
+Arguments pd_snd_homo {_ _}.
+
 Section characteristic_property_of_the_polynomial_ring.
 
   Variable (𝓡 : ring).
@@ -119,7 +176,6 @@ Section characteristic_property_of_the_polynomial_ring.
 
 End characteristic_property_of_the_polynomial_ring.
 
-Arguments pe_ring {_}.
 Arguments pe_embed {_}.
 Arguments pe_embed_homo {_}.
 Arguments pe_point {_}.

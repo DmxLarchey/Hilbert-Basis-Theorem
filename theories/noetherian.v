@@ -150,8 +150,14 @@ Section linearly_dependent.
   Fact LD_app_inv l r : LD (l++r) ↔ (∃ l' x m, l = l'++x::m ∧ Idl ⌞m++r⌟ x) ∨ LD r.
   Proof. apply Good_app_inv. Qed.
 
-  Fact LD_special_inv l x r : LD (l++x::r) ↔ (∃ l' y m, l = l'++y::m ∧ Idl ⌞m++x::r⌟ y) ∨ Idl ⌞r⌟ x ∨ LD r.
+  Fact LD_middle_inv l x r : LD (l++x::r) ↔ (∃ l' y m, l = l'++y::m ∧ Idl ⌞m++x::r⌟ y) ∨ Idl ⌞r⌟ x ∨ LD r.
   Proof. rewrite LD_app_inv, LD_cons_inv; tauto. Qed.
+
+  Fact LD_special_inv l m x r : LD (l++m++x::r) ↔ (∃ l₁ y l₂, l = l₁++y::l₂ ∧ Idl ⌞l₂++m++x::r⌟ y)
+                                                ∨ (∃ m₁ y m₂, m = m₁++y::m₂ ∧ Idl ⌞m₂++x::r⌟ y)
+                                                ∨ Idl ⌞r⌟ x
+                                                ∨ LD r.
+  Proof. rewrite !LD_app_inv, LD_cons_inv; tauto. Qed.
 
   (* linear dependency is invariant under update *)
   Lemma LD_update_closed l m : update l m → LD l → LD m.
@@ -429,30 +435,3 @@ End quotient_noetherian.
 
 Check quotient_noetherian.
 
-Definition list_prod {X Y} (l : list X) (m : list Y) :=
-  flat_map (fun x => map (fun y => (x,y)) m) l.
-
-Section product_noetherian.
-
-  Variables (𝓡 𝓣 : ring).
-
-  Lemma bar_LD (l : list 𝓡) (m : list 𝓣) : bar LD l → bar LD m → bar (@LD (product_ring 𝓡 𝓣)) (list_prod l m).
-  Proof.
-    intros Hl Hm; revert l Hl m Hm.
-    induction 1 as [ l Hl | l Hl IHl ].
-    + induction 1 as [ m Hm | m Hm IHm ].
-      * (* xi in <x0,...,xi-1>
-           yj in <y0,...,yj-1>
-
-           (xi,xj) in <x0,...,xi-1>*<y0,...,yj-1> ?? *)
-         admit.
-      * constructor 2; intros (x,y).
-        specialize (IHm y).
-        (* l * (y::m) ~ l * m ++ l * [y] *)
-        admit.
-    + intros m Hm.
-      constructor 2.
-      intros (x,y).
-  Admitted.
-
-End product_noetherian.
