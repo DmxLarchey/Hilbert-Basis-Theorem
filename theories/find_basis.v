@@ -182,6 +182,43 @@ Section find_basis.
 
 End find_basis.
 
+Section compute_basis.
+
+  Variables (𝓡 : ring)
+            (H𝓡 : noetherian 𝓡)
+            (𝓘 : 𝓡 → Prop)
+            (𝓘_ideal : ring_ideal 𝓘)
+            (𝓘_discrete : ∀l, {x | 𝓘 x ∧ ¬ Idl ⌞l⌟ x} + (𝓘 ⊆₁ Idl ⌞l⌟)).
+
+  Hint Resolve incl_tl incl_refl incl_tran : core.
+
+  (* Any list contained in P can be expanded (as a list) into a basis of P *)
+  Lemma grow_basis l : ⌞l⌟ ⊆₁ 𝓘 → {b | ⌞l⌟ ⊆₁ ⌞b⌟ ∧ 𝓘 ≡₁ Idl ⌞b⌟}.
+  Proof.
+    induction l as [ l IH ]
+      using (well_founded_induction_type (noetherian__wf_fin_Idl_strict_incl H𝓡)).
+    intros Hl.
+    destruct (𝓘_discrete l) as [ (x & H1 & H2) | H ].
+    + destruct (IH (x::l)) as (b & []).
+      * split.
+        - apply Idl_mono; eauto.
+        - exists x; simpl; eauto.
+      * intros ? [ <- | ]; auto.
+      * exists b; split; eauto.
+    + exists l; split; auto.
+      intros x; split; auto.
+      revert x; apply Idl_smallest; auto.
+  Qed.
+
+  Theorem compute_basis : {b | 𝓘 ≡₁ Idl ⌞b⌟}.
+  Proof.
+    destruct (grow_basis []) as (b & []).
+    + intros _ [].
+    + now exists b.
+  Qed.
+
+End compute_basis.
+
 Section compute_pause.
 
   Variables (𝓡 : ring)
