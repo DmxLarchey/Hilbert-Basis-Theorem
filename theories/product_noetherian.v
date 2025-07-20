@@ -39,46 +39,13 @@ Section product_noetherian.
   Local Fact ψ_sub_homo : ring_sub_homo ψ.
   Proof. split right; simpl; ring || split; (auto || ring). Qed.
 
-  Local Fact fst_shomo : @ring_sub_homo 𝓟 𝓡 fst.
+  Local Fact fst_sub_homo : @ring_sub_homo 𝓟 𝓡 fst.
   Proof. split right; simpl; ring || auto || tauto. Qed.
 
-  Local Fact snd_shomo : @ring_sub_homo 𝓟  𝓣 snd.
+  Local Fact snd_sub_homo : @ring_sub_homo 𝓟  𝓣 snd.
   Proof. split right; simpl; ring || auto || tauto. Qed.
 
-  Local Fact Idl_φ l x : Idl ⌞map fst l⌟ x → Idl ⌞l⌟ (φ x).
-  Proof.
-    induction 1 as [ ? ((x,y) & <- & Hz)%in_map_iff | x y | | x y | a x ].
-    + constructor 2 with (((1ᵣ,0ᵣ) : 𝓟) *ᵣ (x,y)).
-      * simpl; split; ring.
-      * constructor 5; now constructor 1.
-    + constructor 2 with (φ x); auto; split; auto.
-    + constructor 3.
-    + constructor 2 with (φ x +ᵣ φ y).
-      * simpl; split; ring.
-      * now constructor 4.
-    + constructor 2 with (φ a *ᵣ φ x).
-      * simpl; split; ring.
-      * now constructor 5.
-  Qed.
-  
-  Local Fact Idl_ψ l y : Idl ⌞map snd l⌟ y → Idl ⌞l⌟ (ψ y).
-  Proof.
-    induction 1 as [ ? ((x,y) & <- & Hz)%in_map_iff | x y | | x y | a x ].
-    + constructor 2 with (((0ᵣ,1ᵣ) : 𝓟) *ᵣ (x,y)).
-      * simpl; split; ring.
-      * constructor 5; now constructor 1.
-    + constructor 2 with (ψ x); auto.
-      simpl; split; auto.
-    + constructor 3.
-    + constructor 2 with (ψ x +ᵣ ψ y).
-      * simpl; split; ring.
-      * now constructor 4.
-    + constructor 2 with (ψ a *ᵣ ψ x).
-      * simpl; split; ring.
-      * now constructor 5.
-  Qed.
-
-  Local Fact Idl_fst_snd l x y : Idl ⌞map fst l⌟ x → Idl ⌞map snd l⌟ y → Idl ⌞l⌟ (x,y).
+  Local Lemma Idl_fst_snd l x y : Idl ⌞map fst l⌟ x → Idl ⌞map snd l⌟ y → Idl ⌞l⌟ (x,y).
   Proof.
     rewrite !Idl_iff_lc__list.
     induction l as [ | (u,v) l IHl ] in x, y |- *; simpl.
@@ -88,20 +55,37 @@ Section product_noetherian.
       constructor 2 with (a,b) (u',v'); auto.
       simpl; split; auto.
   Qed.
+
+  Local Corollary Idl_φ l x : Idl ⌞map fst l⌟ x → Idl ⌞l⌟ (φ x).
+  Proof. intro; apply Idl_fst_snd; auto. Qed.
   
+  Local Corollary Idl_ψ l y : Idl ⌞map snd l⌟ y → Idl ⌞l⌟ (ψ y).
+  Proof. intro; apply Idl_fst_snd; auto. Qed.
+ 
   Hint Resolve in_map : core.
 
-  Local Fact Idl_φ_ψ l z : Idl ⌞l⌟ (φ (fst z)) → Idl ⌞l⌟ (ψ (snd z)) → Idl ⌞l⌟ z.
+  Local Corollary Idl_φ_ψ l z : Idl ⌞l⌟ (φ (fst z)) → Idl ⌞l⌟ (ψ (snd z)) → Idl ⌞l⌟ z.
   Proof.
     intros H1 H2.
     destruct z as (x,y).
     apply Idl_fst_snd.
-    + apply Idl_sub_homo with (1 := fst_shomo) in H1.
+    + apply Idl_sub_homo with (1 := fst_sub_homo) in H1.
       revert H1; simpl; apply Idl_mono.
       intros ? (? & -> & ?); auto.
-    + apply Idl_sub_homo with (1 := snd_shomo) in H2.
+    + apply Idl_sub_homo with (1 := snd_sub_homo) in H2.
       revert H2; simpl; apply Idl_mono.
       intros ? (? & -> & ?); auto.
+  Qed.
+
+  Local Remark Idl_φ_ψ_iff l x y :Idl ⌞l⌟ (x,y) ↔ Idl ⌞l⌟ (φ x) ∧ Idl ⌞l⌟ (ψ y).
+  Proof.
+    split.
+    + split.
+      * constructor 2 with (x := ((1ᵣ,0ᵣ) : 𝓟) *ᵣ (x,y)); auto.
+        split; simpl; ring.
+      * constructor 2 with (x := ((0ᵣ,1ᵣ) : 𝓟) *ᵣ (x,y)); auto.
+        split; simpl; ring.
+    + intros []; now apply Idl_φ_ψ.
   Qed.
 
   Let θ lx ly l := LD (l++map φ lx++map ψ ly).
@@ -118,7 +102,7 @@ Section product_noetherian.
 
   Hint Resolve θ_app_middle : core.
 
-  (** Hence we can work smoolthy with bar (θ _ _) *)
+  (** Hence we can work as smoolthy with bar (θ _ _) as with bar LD _ *)
  
   Local Fact bar_θ_middle lx ly l m r : bar (θ lx ly) (l++r) → bar (θ lx ly) (l++m++r).
   Proof. apply bar_app_middle; auto. Qed.
@@ -201,14 +185,14 @@ Section product_noetherian.
           rewrite map_app; simpl; rewrite <- app_assoc; simpl.
           apply LD_app_left; constructor 1.
           apply Idl_φ.
-          apply Idl_sub_homo with (1 := fst_shomo) in Hv.
+          apply Idl_sub_homo with (1 := fst_sub_homo) in Hv.
           rewrite map_app, !map_map; simpl; rewrite map_id.
           revert p Hv; simpl; apply Idl_smallest; [ apply Idl_ring_ideal | ].
           intros ? (? & -> & [ (? & <- & ?)%in_map_iff | [ <- | (? & <- & ?)%in_map_iff ] ]%in_app_iff); simpl.
           2,3: constructor 3.
           constructor 1; auto.
         * apply Ramsey_1.
-          apply Idl_sub_homo with (1 := snd_shomo) in Hl.
+          apply Idl_sub_homo with (1 := snd_sub_homo) in Hl.
           revert Hl; simpl; apply Idl_mono.
           intros ? (? & -> & (? & <- & ?)%in_map_iff); auto.
         * intros _; apply bar_θ_nil.
