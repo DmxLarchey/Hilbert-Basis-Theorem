@@ -53,7 +53,7 @@ Section product_noetherian.
       * constructor 5; now constructor 1.
     + constructor 2 with (φ x); auto; split; auto.
     + constructor 3.
-    + constructor 2 with (φ x −ᵣ φ y).
+    + constructor 2 with (φ x +ᵣ φ y).
       * simpl; split; ring.
       * now constructor 4.
     + constructor 2 with (φ a *ᵣ φ x).
@@ -70,7 +70,7 @@ Section product_noetherian.
     + constructor 2 with (ψ x); auto.
       simpl; split; auto.
     + constructor 3.
-    + constructor 2 with (ψ x −ᵣ ψ y).
+    + constructor 2 with (ψ x +ᵣ ψ y).
       * simpl; split; ring.
       * now constructor 4.
     + constructor 2 with (ψ a *ᵣ ψ x).

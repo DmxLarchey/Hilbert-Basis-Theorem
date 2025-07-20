@@ -243,7 +243,7 @@ Proof.
     * apply Forall2_in_inv_l with (1 := H) in Hx as (? & ? & ->); auto.
     * trivial.
     * rewrite ring_homo_un_a; auto.
-    * rewrite H3, ring_homo_iv_a; auto.
+    * rewrite H3; auto.
     * rewrite H4; auto.
   + intros ? (? & ? & ? & ? & ->)%Forall2_cons_inv_l.
     constructor 2; now apply IH.
@@ -411,7 +411,7 @@ Section quotient_noetherian.
     induction 1 as [ | x y H _ IH | | | ]; eauto.
     + revert IH; now apply Idl_req, rel_ovr.
     + change (@un_a 𝓡) with (@un_a 𝓚); auto.
-    + change (@op_a 𝓡 x (@iv_a 𝓡 y)) with (@op_a 𝓚 x (@iv_a 𝓚 y)); auto.
+    + change (@op_a 𝓡 x y) with (@op_a 𝓚 x y); auto.
     + change (@op_m 𝓡 a x) with (@op_m 𝓚 a x); auto.
   Qed.
 
