@@ -119,7 +119,10 @@ Section ring_ideal.
   Hint Resolve Idl_op_a Idl_iv_a : core.
 
   Fact Idl_sub_a P x y : Idl P x → Idl P y → Idl P (x −ᵣ y).
-  Proof. auto. Qed. 
+  Proof. auto. Qed.
+
+  Fact Idl_substract P x y : Idl P x → Idl P (y −ᵣ x) → Idl P y.
+  Proof. intros H1 H2; apply Idl_req with (2 := Idl_op_a H1 H2); ring. Qed.
 
   (** Idl P is the smallest ideal containing P *)
   Fact Idl_smallest P : ∀𝓘, ring_ideal 𝓘 → P ⊆₁ 𝓘 → Idl P ⊆₁ 𝓘.
@@ -128,17 +131,17 @@ Section ring_ideal.
   Fact Idl_mono P Q : P ⊆₁ Q → Idl P ⊆₁ Idl Q.
   Proof. intro; apply Idl_smallest; auto. Qed.
 
-  Fact Idl_substract P x y : Idl P x → Idl P (y −ᵣ x) → Idl P y.
-  Proof. intros H1 H2; apply Idl_req with (2 := Idl_op_a H1 H2); ring. Qed.
-
   Hint Resolve Idl_mono : core.
   
   Fact Idl_idem P : Idl (Idl P) ⊆₁ Idl P.
   Proof. apply Idl_smallest; auto. Qed.
 
+  Fact Idl_closed P Q : P ⊆₁ Idl Q → Idl P ⊆₁ Idl Q.
+  Proof. apply Idl_smallest, Idl_ring_ideal. Qed.
+
   Fact Idl_stable x l : Idl ⌞l⌟ x → Idl ⌞x::l⌟ ⊆₁ Idl ⌞l⌟.
   Proof.
-    intros H; apply Idl_smallest; auto.
+    intros H; apply Idl_closed; auto.
     intros ? [ <- | ]; eauto.
   Qed.
 

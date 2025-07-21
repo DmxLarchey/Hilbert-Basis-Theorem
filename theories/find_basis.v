@@ -117,10 +117,8 @@ Section fingen_ideal_wdec.
       as [ (x & []) | ]; auto.
     + left; exists x; rewrite Hb; split; auto.
     + right.
-      intros x.
-      rewrite Hb.
-      apply Idl_smallest; auto.
-      apply Idl_ring_ideal.
+      intro; rewrite Hb.
+      now apply Idl_closed.
   Qed.
 
 End fingen_ideal_wdec.
@@ -138,8 +136,7 @@ Section fingen_ideal_dec.
       with (P := Idl ⌞l⌟) (Q := λ x, ¬ Idl ⌞l⌟ x) (l := b)
       as [ (x & []) | ]; eauto.
     right.
-    apply Idl_smallest; auto.
-    apply Idl_ring_ideal.
+    now apply Idl_closed.
   Qed.
 
 End fingen_ideal_dec.
@@ -168,9 +165,8 @@ Section find_basis.
         - exists x; simpl; eauto.
       * intros ? [ <- | ]; auto.
       * exists b; split; eauto.
-    + exists l; split; auto.
-      intros x; split; auto.
-      revert x; apply Idl_smallest; auto.
+    + exists l; split right; auto.
+      apply Idl_smallest; auto.
   Qed.
 
   Theorem find_basis : ∃b, 𝓘 ≡₁ Idl ⌞b⌟.
@@ -205,9 +201,8 @@ Section compute_basis.
         - exists x; simpl; eauto.
       * intros ? [ <- | ]; auto.
       * exists b; split; eauto.
-    + exists l; split; auto.
-      intros x; split; auto.
-      revert x; apply Idl_smallest; auto.
+    + exists l; split right; auto.
+      apply Idl_smallest; auto.
   Qed.
 
   Theorem compute_basis : {b | 𝓘 ≡₁ Idl ⌞b⌟}.
@@ -243,7 +238,7 @@ Section compute_pause.
     + exists x; split.
       * now constructor 1.
       * contradict H3.
-        revert H3; apply Idl_idem.
+        now apply Idl_idem.
   Qed.
 
   Local Lemma compute_pause_from n : { m | n ≤ m ∧ Idl ⌞pfx_rev ρ m⌟ (ρ m) }.
