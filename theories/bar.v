@@ -13,6 +13,8 @@ Require Import utils.
 
 Import ListNotations.
 
+#[global] Notation monotone P := (∀ a l, P l → P (a::l)).
+
 Section bar.
 
   (** Code partly imported/inspired from Kruskal-AlmostFull in https://dmxlarchey.github.io/Coq-Kruskal/ *)
@@ -80,8 +82,6 @@ Section bar.
     → (∀ l m, l ≈ₚ m → bar P l → bar P m).
   Proof. apply bar_rel_closed; now constructor. Qed.
 
-  Notation monotone P := (∀ a l, P l → P (a::l)).
-
   Fact bar_monotone P : monotone P → monotone (bar P).
   Proof. induction 2; eauto. Qed.
 
@@ -146,6 +146,14 @@ Section bar_double_ind.
   Qed.
 
 End bar_double_ind.
+
+Tactic Notation "double" "bar" "induction" "as" simple_intropattern(Hl) simple_intropattern(Hm) :=
+  let H1 := fresh in let H2 := fresh in
+  match goal with
+    | |- bar _ ?l → bar _ ?m → _ =>
+      intros H1 H2; pattern l, m; revert l m H1 H2; apply bar_double_ind;
+      [ intros l m Hl | intros l m Hm | intros l m Hl Hm ]
+  end.
 
 Section bar_nc.
 

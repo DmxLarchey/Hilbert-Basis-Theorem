@@ -147,6 +147,9 @@ Section linearly_dependent.
   Fact LD_cons_inv x m : LD (x::m) ↔ Idl ⌞m⌟ x ∨ LD m.
   Proof. apply Good_cons_inv. Qed.
 
+  Fact LD_monotone : monotone (@LD 𝓡).
+  Proof. now constructor 2. Qed.
+
   Fact LD_app_inv l r : LD (l++r) ↔ (∃ l' x m, l = l'++x::m ∧ Idl ⌞m++r⌟ x) ∨ LD r.
   Proof. apply Good_app_inv. Qed.
 
