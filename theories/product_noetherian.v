@@ -13,6 +13,14 @@ Require Import utils bar ring product category ideal principal noetherian.
 
 Import ListNotations.
 
+(** This proof was inspired by a Rocq rework of the proof 
+   of the constructive form of Ramsey's theorem 
+
+     [1] "Higman's lemma in Type theory", D. Fridlender 
+            in TYPES 1996
+
+   see file ramsey.v herein *)
+
 #[local] Notation LD := linearly_dependent.
 
 Section product_noetherian.
@@ -30,55 +38,26 @@ Section product_noetherian.
 
   Let φ (x : 𝓡) : 𝓟 := (x,0ᵣ).
   Let ψ (y : 𝓣) : 𝓟 := (0ᵣ,y).
-  
-  (* φψ *)
+
+  Let π₁ (z : 𝓟) : 𝓡 := fst z.
+  Let π₂ (z : 𝓟) : 𝓣 := snd z.
+
+  (** Mostly obvious observations about π₁, π₂, φ and ψ *)
 
   Local Fact φ_sub_homo : ring_sub_homo φ.
   Proof. split right; simpl; ring || split; (auto || ring). Qed.
-  
+
   Local Fact ψ_sub_homo : ring_sub_homo ψ.
   Proof. split right; simpl; ring || split; (auto || ring). Qed.
 
-  Local Fact fst_shomo : @ring_sub_homo 𝓟 𝓡 fst.
+  Local Fact π₁_sub_homo : ring_sub_homo π₁.
   Proof. split right; simpl; ring || auto || tauto. Qed.
 
-  Local Fact snd_shomo : @ring_sub_homo 𝓟  𝓣 snd.
+  Local Fact π₂_sub_homo : ring_sub_homo π₂.
   Proof. split right; simpl; ring || auto || tauto. Qed.
 
-  Local Fact Idl_φ l x : Idl ⌞map fst l⌟ x → Idl ⌞l⌟ (φ x).
-  Proof.
-    induction 1 as [ ? ((x,y) & <- & Hz)%in_map_iff | x y | | x y | a x ].
-    + constructor 2 with (((1ᵣ,0ᵣ) : 𝓟) *ᵣ (x,y)).
-      * simpl; split; ring.
-      * constructor 5; now constructor 1.
-    + constructor 2 with (φ x); auto; split; auto.
-    + constructor 3.
-    + constructor 2 with (φ x −ᵣ φ y).
-      * simpl; split; ring.
-      * now constructor 4.
-    + constructor 2 with (φ a *ᵣ φ x).
-      * simpl; split; ring.
-      * now constructor 5.
-  Qed.
-  
-  Local Fact Idl_ψ l y : Idl ⌞map snd l⌟ y → Idl ⌞l⌟ (ψ y).
-  Proof.
-    induction 1 as [ ? ((x,y) & <- & Hz)%in_map_iff | x y | | x y | a x ].
-    + constructor 2 with (((0ᵣ,1ᵣ) : 𝓟) *ᵣ (x,y)).
-      * simpl; split; ring.
-      * constructor 5; now constructor 1.
-    + constructor 2 with (ψ x); auto.
-      simpl; split; auto.
-    + constructor 3.
-    + constructor 2 with (ψ x −ᵣ ψ y).
-      * simpl; split; ring.
-      * now constructor 4.
-    + constructor 2 with (ψ a *ᵣ ψ x).
-      * simpl; split; ring.
-      * now constructor 5.
-  Qed.
-
-  Local Fact Idl_fst_snd l x y : Idl ⌞map fst l⌟ x → Idl ⌞map snd l⌟ y → Idl ⌞l⌟ (x,y).
+  (* May be the least trivial observation, by induction on l *)
+  Local Lemma Idl_π₁_π₂ l x y : Idl ⌞map π₁ l⌟ x → Idl ⌞map π₂ l⌟ y → Idl ⌞l⌟ (x,y).
   Proof.
     rewrite !Idl_iff_lc__list.
     induction l as [ | (u,v) l IHl ] in x, y |- *; simpl.
@@ -88,156 +67,243 @@ Section product_noetherian.
       constructor 2 with (a,b) (u',v'); auto.
       simpl; split; auto.
   Qed.
-  
+
   Hint Resolve in_map : core.
 
-  Local Fact Idl_φ_ψ l z : Idl ⌞l⌟ (φ (fst z)) → Idl ⌞l⌟ (ψ (snd z)) → Idl ⌞l⌟ z.
+  (* φ (π₁ z) = (1ᵣ,0ᵣ) *ᵣ z *)
+  Local Fact Idl_φ l z : Idl ⌞l⌟ z → Idl ⌞l⌟ (φ (π₁ z)).
   Proof.
-    intros H1 H2.
-    destruct z as (x,y).
-    apply Idl_fst_snd.
-    + apply Idl_sub_homo with (1 := fst_shomo) in H1.
-      revert H1; simpl; apply Idl_mono.
-      intros ? (? & -> & ?); auto.
-    + apply Idl_sub_homo with (1 := snd_shomo) in H2.
-      revert H2; simpl; apply Idl_mono.
+    unfold π₁.
+    constructor 2 with (x := ((1ᵣ,0ᵣ) : 𝓟) *ᵣ z); auto.
+    split; simpl; ring.
+  Qed.
+
+  Hint Resolve in_or_app in_eq in_cons : core.
+
+  Local Corollary Idl_φ_π₁ l z r : Idl ⌞l++φ (π₁ z)::r⌟ ⊆₁ Idl ⌞l++z::r⌟.
+  Proof.
+    apply Idl_closed.
+    intros ? [ | [ <- | ] ]%in_app_iff.
+    2: apply Idl_φ.
+    all: constructor 1; eauto.
+  Qed.
+
+  (* ψ (π₂ z) = (0ᵣ,1ᵣ) *ᵣ z *)
+  Local Fact Idl_ψ l z : Idl ⌞l⌟ z → Idl ⌞l⌟ (ψ (π₂ z)).
+  Proof.
+    unfold π₂.
+    constructor 2 with (x := ((0ᵣ,1ᵣ) : 𝓟) *ᵣ z); auto.
+    split; simpl; ring.
+  Qed.
+
+  Local Corollary Idl_ψ_π₂ l z r : Idl ⌞l++ψ (π₂ z)::r⌟ ⊆₁ Idl ⌞l++z::r⌟.
+  Proof.
+    apply Idl_closed.
+    intros ? [ | [ <- | ] ]%in_app_iff.
+    2: apply Idl_ψ.
+    all: constructor 1; eauto.
+  Qed.
+
+  Local Fact Idl_φ_iff l x : Idl ⌞map π₁ l⌟ x ↔ Idl ⌞l⌟ (φ x).
+  Proof.
+    split.
+    + intro; apply Idl_π₁_π₂; auto.
+    + intros H.
+      apply Idl_sub_homo with (1 := π₁_sub_homo) in H.
+      revert H; simpl; apply Idl_mono.
       intros ? (? & -> & ?); auto.
   Qed.
 
+  Local Corollary Idl_ψ_iff l y : Idl ⌞map π₂ l⌟ y ↔ Idl ⌞l⌟ (ψ y).
+  Proof.
+    split.
+    + intro; apply Idl_π₁_π₂; auto.
+    + intros H.
+      apply Idl_sub_homo with (1 := π₂_sub_homo) in H.
+      revert H; simpl; apply Idl_mono.
+      intros ? (? & -> & ?); auto.
+  Qed.
+
+  Local Corollary Idl_φ_ψ l : ∀z, Idl ⌞l⌟ (φ (π₁ z)) → Idl ⌞l⌟ (ψ (π₂ z)) → Idl ⌞l⌟ z.
+  Proof. intros [] ?%Idl_φ_iff ?%Idl_ψ_iff; now apply Idl_π₁_π₂. Qed.
+
+  Hint Resolve Idl_φ Idl_ψ : core.
+
+  Local Remark Idl_φ_ψ_iff l x y : Idl ⌞l⌟ (x,y) ↔ Idl ⌞l⌟ (φ x) ∧ Idl ⌞l⌟ (ψ y).
+  Proof.
+    change y with (snd (x,y)) at 2.
+    change x with (fst (x,y)) at 2.
+    generalize (x,y).
+    split; eauto.
+    intros []; now apply Idl_φ_ψ.
+  Qed.
+
+  (** Now comes the non-trivial aspect of this proof:
+
+      we define the "critical" parameterized over-approximation of LD
+      which needed to be adapted from the proof of the constructive
+      form of Ramsey's theorem in [1] (see ramsey.v):
+
+      θ lx ly over-approximates LD, and matches LD when lx = ly = [] 
+
+      Notice that in ramsey.v (hence for relations, not ideals), 
+      θ lx ly is defined as (equivalent to)
+
+           good RS (map inXY l++map inX lx++map inY ly)
+
+      where RS an "obvious" extension to R and S on the type X*Y+X+Y.
+
+      This equivalent form "is not" made explicit in [1] but is 
+      rather obfuscated by overly complex notations and unnecessary
+      auxiliary functions and hypotheses. Getting this form, as an
+      instance of the "good" predicate, was essential be able to 
+      convert the over approximation from relations to ideals.
+
+      Indeed, as LD := Good (λ m, Idl ⌞m⌟), we get a clear similarity 
+      here but we inject 𝓡 (resp. 𝓣) into 𝓡*𝓣 using φ (resp. ψ)
+      instead of the canonical injection X → X*Y+X+Y (resp.
+      Y → X*Y.X+Y. *)
+
   Let θ lx ly l := LD (l++map φ lx++map ψ ly).
 
-  (* θ lx ly is an over-approximation of LD that matches LD with lx = ly = [] *)
-  Local Fact bar_θ_nil_nil_LD : bar (θ [] []) ⊆₁ bar LD.
+  Local Fact θ_monotone lx ly : monotone (θ lx ly).
+  Proof. intros ? ? ?; now apply LD_monotone. Qed.
+
+  Local Fact bar_θ_monotone lx ly : monotone (bar (θ lx ly)).
+  Proof. apply bar_monotone, θ_monotone. Qed.
+
+  Local Proposition bar_θ_nil_nil_LD : bar (θ [] []) ⊆₁ bar LD.
   Proof. apply bar_mono; intro; unfold θ; simpl; now rewrite app_nil_r. Qed.
-
-  Hint Resolve Good_app_middle in_or_app : core.
-
-  (* θ _ _ has insertion properties similar to LD *)
-  Local Fact θ_app_middle lx ly l m r : θ lx ly (l++r) → θ lx ly (l++m++r).
-  Proof. unfold θ; rewrite <- !app_assoc; apply LD_app_middle. Qed.
-
-  Hint Resolve θ_app_middle : core.
-
-  (** Hence we can work smoolthy with bar (θ _ _) *)
- 
-  Local Fact bar_θ_middle lx ly l m r : bar (θ lx ly) (l++r) → bar (θ lx ly) (l++m++r).
-  Proof. apply bar_app_middle; auto. Qed.
-
-  Local Fact bar_θ_app_left lx ly l r : bar (θ lx ly) r → bar (θ lx ly) (l++r).
-  Proof. apply bar_app_middle with (l := []); auto. Qed.
-
-  Local Fact bar_θ_cons_middle lx ly x m r : bar (θ lx ly) (x::r) → bar (θ lx ly) (x::m++r).
-  Proof. apply bar_app_middle with (l := [x]); auto. Qed.
-
-  Local Fact bar_θ_cons lx ly x m : bar (θ lx ly) m → bar (θ lx ly) (x::m).
-  Proof. apply bar_θ_app_left with (l := [_]); auto. Qed.
-
-  Local Fact bar_θ_nil lx ly l : bar (θ lx ly) [] → bar (θ lx ly) l.
-  Proof. rewrite <- (app_nil_r l); apply bar_app_middle with (l := []); auto. Qed.
 
   Section Ramsey_nested_induction.
 
+    (** This part, with nested induction, largely differs for 
+        the corresponding one in ramsey.v, and is in fact 
+        simpler to obtain (IMHO), once you understand that
+        you first have the consider the difficult base 
+        case in bar_bar_ramsey *)
+
     Hint Resolve in_or_app in_eq in_cons : core.
 
-    Variables (lx : _) (ly : _) (z : 𝓡*𝓣).
+    Variables (lx : list 𝓡) (ly : list 𝓣) (z : 𝓡*𝓣).
 
-    Local Lemma Ramsey_1 l :
-        Idl ⌞ly⌟ (snd z)
-      → bar (θ (fst z::lx) ly) l
-      → bar (θ lx ly) (l++[z]).
+    (** First observation: when π₂ z is in the
+        ideal generated by ly, then we can deal with 
+        the case where the linear dependency (LD) of
+
+            m++[φ (π₁ z)]++map φ lx++map ψ ly
+
+        occurs at φ (π₁ z), the other cases being
+        trivial. *)
+
+    Local Proposition Idl_LD_ramsey m :
+        Idl ⌞ly⌟ (π₂ z)
+      → LD (m++[φ (π₁ z)]++map φ lx++map ψ ly)
+      → LD (m++[z]++map φ lx++map ψ ly).
     Proof.
-      intros Hz.
-      induction 1 as [ l Hl | l _ IHl ].
-      + red in Hl; simpl in Hl.
-        apply LD_middle_inv in Hl as [ (h1 & k & h2 & -> & Hh)| [|] ].
-        * rewrite <- app_assoc; apply bar_θ_app_left.
-          constructor 1; red; simpl. constructor 1.
-          revert k Hh.
-          apply Idl_smallest.
-          1: apply Idl_ring_ideal.
-          intros k; rewrite in_app_iff; simpl.
-          intros [ H | [ <- | H ] ].
-          - constructor 1; eauto.
-          - constructor 2 with (((1ᵣ,0ᵣ) : 𝓟) *ᵣ z).
-            1: destruct z; simpl; split; ring.
-            constructor 5; constructor 1; eauto.
-          - constructor 1; eauto.
-        * apply bar_θ_app_left.
-          constructor 1; red; simpl; constructor 1.
-          apply Idl_φ_ψ; auto.
-          apply Idl_ψ.
-          revert Hz; apply Idl_mono.
-          intros y ?; rewrite map_app, !map_map, in_app_iff.
-          right; simpl; now rewrite map_id.
-        * apply bar_θ_nil; now constructor 1.
-      + now constructor 2.
+      intros Hz [ (l & u & r & -> & Hu) | [] ]%LD_middle_inv.
+      + (* The LD occurs inside m *)
+        rewrite <- app_assoc.
+        apply LD_app_left.
+        simpl; constructor 1.
+        now apply Idl_φ_π₁ in Hu.
+      + (* The LD occurs at φ (π₁ z) *)
+        apply LD_app_left.
+        simpl; constructor 1.
+        apply Idl_φ_ψ; auto.
+        apply Idl_ψ_iff.
+        rewrite map_app, !map_map; simpl; rewrite map_id.
+        revert Hz; apply Idl_mono; eauto.
+      + (* The LD occurs inside map φ lx++map ψ ly *)
+        now do 2 apply LD_app_left.
     Qed.
- 
-    Local Lemma Ramsey_2 l :
-        bar (θ lx (snd z::ly)) l
-      → bar (θ (fst z::lx) ly) l
-      → bar (θ lx ly) (l++[z]).
+
+    Local Corollary Idl_bar_ramsey m :
+        Idl ⌞ly⌟ (π₂ z)
+      → bar (θ (π₁ z::lx) ly) m
+      → bar (θ lx ly) (m++[z]).
     Proof.
-      induction 1 as [ l Hl | l _ IHl ].
-      + red in Hl; simpl in Hl.
-        apply LD_special_inv in Hl
-          as [ (l1 & v & l2 & -> & Hv) 
-           | [ (l1 & v & l2 & ? & Hv)
-           | [ Hl | Hl ] ] ].
-        * intros _; rewrite <- app_assoc.
-          apply bar_θ_app_left.
+      intros Hz Hm.
+      apply bar_app_iff.
+      revert m Hm; apply bar_mono.
+      unfold θ; intro; simpl.
+      rewrite <- app_assoc.
+      now apply Idl_LD_ramsey.
+    Qed.
+
+    (** Now we can proceed by induction on 
+          bar (θ lx (π₂ z::ly)) m 
+        and the difficulty lies only
+        in the base case when the LD
+        occurs at (π₂ z) *)
+ 
+    Local Proposition bar_bar_ramsey m :
+        bar (θ lx (π₂ z::ly)) m
+      → bar (θ (π₁ z::lx) ly) m
+      → bar (θ lx ly) (m++[z]).
+    Proof.
+      induction 1 as [ m Hm | m _ IHm ].
+      + red in Hm; simpl in Hm.
+        apply LD_special_inv in Hm
+          as [ (l & u & r & -> & Hu) 
+           | [ (l' & v & r' & ? & Hv)
+           | [ Hm | Hm ] ] ].
+        * (* the LD occurs inside m, no nested recursion needed *)
+          intros _.
           constructor 1; red; simpl.
-          constructor 1.
-          revert v Hv; apply Idl_smallest; [ apply Idl_ring_ideal | ].
-          intros k; rewrite !in_app_iff; simpl.
-          intros [ | [ | [ <- | ] ] ].
-          1,2,4: constructor 1; eauto.
-          constructor 2 with (((0ᵣ,1ᵣ) : 𝓟) *ᵣ z).
-          1: destruct z; simpl; split; ring.
-          constructor 5; constructor 1; eauto.
-        * (* v is of shape (_,0) hence snd z does not contribute *)
-          intros _; apply bar_θ_nil; constructor 1; red; simpl.
-          apply map_split_inv in H as (l' & p & r' & -> & <- & <- & <-).
+          repeat (rewrite <- !app_assoc; simpl).
+          apply LD_app_left; constructor 1.
+          rewrite app_assoc in Hu; apply Idl_ψ_π₂ in Hu.
+          revert u Hu; apply Idl_mono.
+          intro; simpl; repeat (rewrite !in_app_iff; simpl); tauto.
+        * (* the LD occurs in map φ lx, no nested recursion *)
+          intros _.
+          constructor 1; red; simpl.
+          apply LD_app_left.
+          apply map_split_inv in H as (l & u & r & -> & <- & <- & <-).
           rewrite map_app; simpl; rewrite <- app_assoc; simpl.
           apply LD_app_left; constructor 1.
-          apply Idl_φ.
-          apply Idl_sub_homo with (1 := fst_shomo) in Hv.
-          rewrite map_app, !map_map; simpl; rewrite map_id.
-          revert p Hv; simpl; apply Idl_smallest; [ apply Idl_ring_ideal | ].
-          intros ? (? & -> & [ (? & <- & ?)%in_map_iff | [ <- | (? & <- & ?)%in_map_iff ] ]%in_app_iff); simpl.
-          2,3: constructor 3.
-          constructor 1; auto.
-        * apply Ramsey_1.
-          apply Idl_sub_homo with (1 := snd_shomo) in Hl.
-          revert Hl; simpl; apply Idl_mono.
-          intros ? (? & -> & (? & <- & ?)%in_map_iff); auto.
-        * intros _; apply bar_θ_nil.
+          rewrite <- Idl_φ_iff in Hv |- *.
+          revert u Hv.
+          rewrite !map_app; simpl; rewrite !map_map; simpl; rewrite !map_id.
+          apply Idl_closed; intros ? [ | [ <- | ] ]%in_app_iff; eauto.
+        * (* the LD occurs at π₂ z, we use nested recursion *)
+          apply Idl_bar_ramsey.
+          apply Idl_ψ_iff in Hm; revert Hm.
+          rewrite map_map; simpl; now rewrite map_id.
+        * (* the LD occurs in map ψ ly, no nested recursion *)
+          intros _.
           constructor 1; red; simpl.
-          now apply LD_app_left.
-      + constructor 2; intro; apply IHl.
-        now apply bar_θ_cons.
+          now do 2 apply LD_app_left.
+      + (* directly using the induction hypothesis,
+           provided that bar (θ _ _) is monotone *)
+        constructor 2; intro; apply IHm.
+        now apply bar_θ_monotone.
     Qed.
 
-    Hypothesis (B1 : bar (θ (fst z::lx) ly) []).
-    Hypothesis (B2 : bar (θ lx (snd z::ly)) []).
+    Hypothesis (B1 : bar (θ (π₁ z::lx) ly) []).
+    Hypothesis (B2 : bar (θ lx (π₂ z::ly)) []).
 
-    Local Lemma Ramsey_3 : bar (θ lx ly) [z].
-    Proof. apply Ramsey_2 with (l := []); auto. Qed.
+    Local Proposition bar_ramsey : bar (θ lx ly) [z].
+    Proof. apply bar_bar_ramsey with (m := []); auto. Qed.
 
   End Ramsey_nested_induction.
 
   Hint Resolve φ_sub_homo ψ_sub_homo : core.
 
+  (* This proceeds by simultaneous induction on bar LD lx and bar LD ly,
+     and the proof sketch is nearly the same as in [1], see file 
+     ramsey.v herein *)
   Local Lemma bar_LD__bar_θ lx ly : bar LD lx → bar LD ly → bar (θ lx ly) [].
   Proof.
-    intros H1 H2; pattern lx, ly; revert lx ly H1 H2; apply bar_double_ind.
-    + intros lx ly H; constructor 1; red; simpl.
+    double bar induction as Hlx Hly.
+    + constructor 1; red; simpl.
       apply LD_app_right.
-      revert H; apply LD_sub_homo; auto.
-    + intros lx ly H; constructor 1; red; simpl.
+      revert Hlx; apply LD_sub_homo; auto.
+    + constructor 1; red; simpl.
       apply LD_app_left.
-      revert H; apply LD_sub_homo; auto.
-    + constructor 2; intro; apply Ramsey_3; auto.
+      revert Hly; apply LD_sub_homo; auto.
+    + constructor 2; intro; apply bar_ramsey; auto.
   Qed.
 
   Theorem product_noetherian : noetherian 𝓡 → noetherian 𝓣 → noetherian 𝓟.

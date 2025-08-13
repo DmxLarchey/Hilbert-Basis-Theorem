@@ -13,6 +13,12 @@ Require Import utils bar noetherian.
 
 Import ListNotations.
 
+(** This proof is a Rocq rework of the proof 
+   of the constructive form of Ramsey's theorem 
+
+     [1] "Higman's lemma in Type theory", D. Fridlender 
+            in TYPES 1996 *)
+
 Section bar_good_middle.
 
   Variables (X : Type) (R : X → X → Prop).
@@ -151,8 +157,8 @@ Section ramsey.
     | inX  : X → X_Y_XY
     | inY  : Y → X_Y_XY
     | inXY : X*Y → X_Y_XY.
-    
-  Let K (a b : X_Y_XY) :=
+
+  Let RS (a b : X_Y_XY) :=
     match a, b with
     | inX x, inX x' => R x x'
     | inY y, inY y' => S y y'
@@ -162,42 +168,52 @@ Section ramsey.
     | _, _ => False
     end.
 
-  Let phi lx ly l := good R lx ∨ good S ly ∨ good T l
-                   ∨ (∃z, z ∈ l ∧ lowered R lx (fst z))  (** there is a non-zero in Idl l cap Idl lx ?? *)
-                   ∨ (∃z, z ∈ l ∧ lowered S ly (snd z))  (** there is a non-zero in Idl l cap Idl ly ?? *)
+  (** This is the over approximation proposed in [1] which does not
+      have the shape good ? (combination of l, lx, ly)  *)
+
+  Let θ lx ly l := good R lx ∨ good S ly ∨ good T l
+                 ∨ (∃z, z ∈ l ∧ lowered R lx (fst z))
+                 ∨ (∃z, z ∈ l ∧ lowered S ly (snd z))
                    .
 
   Hint Resolve good_app_middle in_or_app : core.
 
-  Local Fact phi_app_middle lx ly l m r : phi lx ly (l++r) → phi lx ly (l++m++r).
+  Local Fact θ_app_middle lx ly l m r : θ lx ly (l++r) → θ lx ly (l++m++r).
   Proof.
     intros [ | [ | [ | [] ] ] ]; red; eauto.
     + destruct H as (z & []%in_app_iff & ?); do 3 right; left; exists z; split; eauto.
     + destruct H as (z & []%in_app_iff & ?); do 4 right; exists z; split; eauto.
   Qed.
-  
-  Hint Resolve phi_app_middle : core.
-  
-  Local Fact bar_phi_middle lx ly l m r : bar (phi lx ly) (l++r) → bar (phi lx ly) (l++m++r).
+
+  Hint Resolve θ_app_middle : core.
+
+  Local Fact bar_θ_middle lx ly l m r : bar (θ lx ly) (l++r) → bar (θ lx ly) (l++m++r).
   Proof. apply bar_app_middle; auto. Qed.
-  
-  Local Fact bar_phi_app_left lx ly l r : bar (phi lx ly) r → bar (phi lx ly) (l++r).
+
+  Local Fact bar_θ_app_left lx ly l r : bar (θ lx ly) r → bar (θ lx ly) (l++r).
   Proof. apply bar_app_middle with (l := []); auto. Qed.
-  
-  Local Fact bar_phi_cons_middle lx ly x m r : bar (phi lx ly) (x::r) → bar (phi lx ly) (x::m++r).
+
+  Local Fact bar_θ_cons_middle lx ly x m r : bar (θ lx ly) (x::r) → bar (θ lx ly) (x::m++r).
   Proof. apply bar_app_middle with (l := [x]); auto. Qed.
 
-  Local Fact R_K x x' : R x x' → K (inX x) (inX x').   Proof. now simpl. Qed.
-  Local Fact S_K y y' : S y y' → K (inY y) (inY y').   Proof. now simpl. Qed.
-  Local Fact T_K a b : T a b → K (inXY a) (inXY b).    Proof. now simpl. Qed.
+  (** We rework the shape of θ to give a more generic form *)
 
-  Local Fact K_R x x' : K (inX x) (inX x') → R x x'.   Proof. now simpl. Qed.
-  Local Fact K_S y y' : K (inY y) (inY y') → S y y'.   Proof. now simpl. Qed.
-  Local Fact K_T a b :  K (inXY a) (inXY b) → T a b.   Proof. now simpl. Qed.
+  Local Fact R_RS x x' : R x x' → RS (inX x) (inX x').   Proof. now simpl. Qed.
+  Local Fact S_RS y y' : S y y' → RS (inY y) (inY y').   Proof. now simpl. Qed.
+  Local Fact T_RS a b : T a b → RS (inXY a) (inXY b).    Proof. now simpl. Qed.
 
-  Hint Resolve R_K S_K T_K K_R K_S K_T good_map good_app_left good_app_right good_map_inv : core. 
+  Local Fact RS_R x x' : RS (inX x) (inX x') → R x x'.   Proof. now simpl. Qed.
+  Local Fact RS_S y y' : RS (inY y) (inY y') → S y y'.   Proof. now simpl. Qed.
+  Local Fact RS_T a b :  RS (inXY a) (inXY b) → T a b.   Proof. now simpl. Qed.
 
-  Local Remark phi_iff lx ly l : phi lx ly l ↔ good K (map inXY l++map inX lx++map inY ly).
+  Hint Resolve R_RS S_RS T_RS RS_R RS_S RS_T good_map good_app_left good_app_right good_map_inv : core.
+
+  (** This equivalence is a *critical* observation when one wants to transfer
+      the θ _ _ over-approximation of (good T) to ideals instead of relations 
+
+      But it is not necessary for the proof of Ramsey below. *)
+
+  Local Remark θ_iff_good lx ly l : θ lx ly l ↔ good RS (map inXY l++map inX lx++map inY ly).
   Proof.
     split.
     + intros [ | [ | [ | [ ((x' & y') & ? & x & []) | ((x' & y') & ? & y & []) ] ] ] ]; eauto.
@@ -221,9 +237,9 @@ Section ramsey.
     Variables (lx : list X) (ly : list Y) (z : X*Y).
 
     Local Lemma lem_ramsey_1 h l :
-        (∀u, R (fst z) (fst u) → bar (phi lx ly) (u::l++[z]))
-      → bar (phi (fst z::lx) ly) h
-      → bar (phi lx ly) (h++l++[z]).
+        (∀u, R (fst z) (fst u) → bar (θ lx ly) (u::l++[z]))
+      → bar (θ (fst z::lx) ly) h
+      → bar (θ lx ly) (h++l++[z]).
     Proof.
       intros G.
       induction 1 as [ h Hh | h _ IHh ].
@@ -235,17 +251,17 @@ Section ramsey.
       + destruct Hh as (u & Hu & []%lowered_cons_inv); eauto.
         * apply in_split in Hu as (? & ? & ->).
           rewrite <- app_assoc; simpl.
-          apply bar_phi_app_left, bar_phi_cons_middle. auto.
+          apply bar_θ_app_left, bar_θ_cons_middle; auto.
         * constructor 1; red.
           do 3 right; left; eauto.
     Qed.
 
-    Hypothesis (B1 : bar (phi (fst z::lx) ly) []).
+    Hypothesis (B1 : bar (θ (fst z::lx) ly) []).
 
     Local Lemma lemma_ramsey_2 l :
         Forall (λ u, R (fst z) (fst u)) l
-      → bar (phi lx (snd z::ly)) l
-      → bar (phi lx ly) (l++[z]).
+      → bar (θ lx (snd z::ly)) l
+      → bar (θ lx ly) (l++[z]).
     Proof.
       intros H1 H2; revert H2 H1.
       induction 1 as [ l Hl | l _ IHl ].
@@ -262,25 +278,25 @@ Section ramsey.
       + intros H1; apply lem_ramsey_1 with (h := []); eauto.
     Qed.
 
-    Hypothesis (B2 : bar (phi lx (snd z::ly)) []).
+    Hypothesis (B2 : bar (θ lx (snd z::ly)) []).
 
-    Local Lemma lemma_ramsey_3 : bar (phi lx ly) [z].
+    Local Lemma lemma_ramsey_3 : bar (θ lx ly) [z].
     Proof. apply lemma_ramsey_2 with (l := []); simpl; auto. Qed.
 
   End nested_induction.
 
-  Local Lemma bar_compose lx ly : bar (good R) lx → bar (good S) ly → bar (phi lx ly) [].
+  Local Lemma bar_compose lx ly : bar (good R) lx → bar (good S) ly → bar (θ lx ly) [].
   Proof.
-    intros H1 H2; pattern lx, ly; revert lx ly H1 H2; apply bar_double_ind.
+    double bar induction as ? ?.
     + constructor 1; red; auto.
     + constructor 1; red; auto.
     + constructor 2; intro; apply lemma_ramsey_3; auto.
   Qed.
 
-  Local Fact bar_phi_good : bar (phi [] []) [] → bar (good T) [].
+  Local Fact bar_phi_good : bar (θ [] []) [] → bar (good T) [].
   Proof.
     apply bar_mono.
-    intro; rewrite phi_iff; simpl; rewrite app_nil_r; eauto.
+    intro; rewrite θ_iff_good; simpl; rewrite app_nil_r; eauto.
   Qed.
 
   Corollary ramsey : bar (good R) [] → bar (good S) [] → bar (good T) [].

@@ -47,8 +47,8 @@ Section ring_div.
     split right.
     + intros ? ? ->; auto.
     + exists un_a; ring.
-    + intros ? ? (a & ->) (b & ->); exists (op_a a (iv_a b)); ring.
-    + intros u v (a & ->); exists (op_m a u); ring.
+    + intros ? ? (a & ->) (b & ->); exists (a +ᵣ b); ring.
+    + intros u v (a & ->); exists (a *ᵣ u); ring.
   Qed.
 
 End ring_div.
@@ -73,10 +73,10 @@ Section principal.
     + intros u v E H%Hg; apply Hg; now rewrite <- E.
     + apply Hg; exists un_a; ring.
     + intros u v (a & Ha)%Hg (b &Hb)%Hg; apply Hg.
-      exists (op_a a (iv_a b)).
+      exists (a +ᵣ b).
       rewrite Ha, Hb; ring.
     + intros u v (a & Ha)%Hg; apply Hg.
-      exists (op_m u a).
+      exists (u *ᵣ a).
       rewrite Ha; ring.
   Qed.
 

@@ -124,10 +124,8 @@ Section fingen_ideal_wdec.
       as [ (x & []) | ]; auto.
     + left; exists x; rewrite Hb; split; auto.
     + right.
-      intros x.
-      rewrite Hb.
-      apply Idl_smallest; auto.
-      apply Idl_ring_ideal.
+      intro; rewrite Hb.
+      now apply Idl_closed.
   Qed.
 
 End fingen_ideal_wdec.
@@ -145,8 +143,7 @@ Section fingen_ideal_dec.
       with (P := Idl ⌞l⌟) (Q := λ x, ¬ Idl ⌞l⌟ x) (l := b)
       as [ (x & []) | ]; eauto.
     right.
-    apply Idl_smallest; auto.
-    apply Idl_ring_ideal.
+    now apply Idl_closed.
   Qed.
 
 End fingen_ideal_dec.
@@ -254,9 +251,8 @@ Section find_basis.
         - exists x; simpl; eauto.
       * intros ? [ <- | ]; auto.
       * exists b; split; eauto.
-    + exists l; split; auto.
-      intros x; split; auto.
-      revert x; apply Idl_smallest; auto.
+    + exists l; split right; auto.
+      apply Idl_smallest; auto.
   Qed.
 
   Theorem find_basis : ∃b, 𝓘 ≡₁ Idl ⌞b⌟.
@@ -267,6 +263,42 @@ Section find_basis.
   Qed.
 
 End find_basis.
+
+Section compute_basis.
+
+  Variables (𝓡 : ring)
+            (H𝓡 : noetherian 𝓡)
+            (𝓘 : 𝓡 → Prop)
+            (𝓘_ideal : ring_ideal 𝓘)
+            (𝓘_discrete : ∀l, {x | 𝓘 x ∧ ¬ Idl ⌞l⌟ x} + (𝓘 ⊆₁ Idl ⌞l⌟)).
+
+  Hint Resolve incl_tl incl_refl incl_tran : core.
+
+  (* Any list contained in P can be expanded (as a list) into a basis of P *)
+  Lemma grow_basis l : ⌞l⌟ ⊆₁ 𝓘 → {b | ⌞l⌟ ⊆₁ ⌞b⌟ ∧ 𝓘 ≡₁ Idl ⌞b⌟}.
+  Proof.
+    induction l as [ l IH ]
+      using (well_founded_induction_type (noetherian__wf_fin_Idl_strict_incl H𝓡)).
+    intros Hl.
+    destruct (𝓘_discrete l) as [ (x & H1 & H2) | H ].
+    + destruct (IH (x::l)) as (b & []).
+      * split.
+        - apply Idl_mono; eauto.
+        - exists x; simpl; eauto.
+      * intros ? [ <- | ]; auto.
+      * exists b; split; eauto.
+    + exists l; split right; auto.
+      apply Idl_smallest; auto.
+  Qed.
+
+  Theorem compute_basis : {b | 𝓘 ≡₁ Idl ⌞b⌟}.
+  Proof.
+    destruct (grow_basis []) as (b & []).
+    + intros _ [].
+    + now exists b.
+  Qed.
+
+End compute_basis.
 
 Section compute_pause.
 
@@ -292,7 +324,7 @@ Section compute_pause.
     + exists x; split.
       * now constructor 1.
       * contradict H3.
-        revert H3; apply Idl_idem.
+        now apply Idl_idem.
   Qed.
 
   Local Lemma compute_pause_from n : { m | n ≤ m ∧ Idl ⌞pfx_rev ρ m⌟ (ρ m) }.
