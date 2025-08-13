@@ -144,6 +144,9 @@ Section linearly_dependent.
   Fact LD_split m : LD m ↔ ∃ l x r, m = l++x::r ∧ Idl ⌞r⌟ x.
   Proof. apply Good_split. Qed.
 
+  Fact LD_nil_inv : @LD 𝓡 [] → False.
+  Proof. apply Good_inv. Qed.
+
   Fact LD_cons_inv x m : LD (x::m) ↔ Idl ⌞m⌟ x ∨ LD m.
   Proof. apply Good_cons_inv. Qed.
 

@@ -18,9 +18,6 @@ Require Import utils bar ring ideal noetherian.
            in_eq in_cons
          : core.
 
-(** Unused below, weaker that strictly_incl *)
-Local Definition sincl {X} (P Q : X → Prop) := P ⊆₁ Q ∧ ~ Q ⊆₁ P.
-
 #[local] Hint Constructors extends : core.
 
 Definition strict_incl {X} (P Q : X → Prop) := P ⊆₁ Q ∧ ∃x, Q x ∧ ¬ P x.
@@ -88,7 +85,7 @@ Section noetherian_wf.
     well_founded (λ l m : list 𝓡, Idl ⌞m⌟ ⊂₁ Idl ⌞l⌟).
   Proof.
     generalize noetherian__wf_Idl_strict_incl.
-    wf rel morph (fun P l => P = ⌞l⌟).
+    wf rel morph (λ P l, P = ⌞l⌟).
     + intros l; now exists ⌞l⌟.
     + intros ? ? ? ? -> ->; auto.
   Qed.
@@ -101,6 +98,16 @@ Arguments noetherian__wf_Idl_strict_incl {_}.
 Arguments noetherian__wf_fin_Idl_strict_incl {_}.
 
 Definition fingen_ideal {𝓡 : ring} 𝓘 := ∃ l : list 𝓡, 𝓘 ≡₁ Idl ⌞l⌟.
+
+Fact fingen_ideal__ring_ideal 𝓡 : @fingen_ideal 𝓡 ⊆₁ ring_ideal.
+Proof.
+  intros P (m & Hm); split right.
+  1,3,4: intros ? ?.
+  all: rewrite !Hm; apply Idl_ring_ideal.
+Qed.
+
+Fact Idl__fingen_ideal 𝓡 l : @fingen_ideal 𝓡 (Idl ⌞l⌟).
+Proof. now exists l. Qed.
 
 Section fingen_ideal_wdec.
 
@@ -143,6 +150,85 @@ Section fingen_ideal_dec.
   Qed.
 
 End fingen_ideal_dec.
+
+Definition sincl {X} (P Q : X → Prop) := P ⊆₁ Q ∧ ~ Q ⊆₁ P.
+
+Fact strict_incl_sincl X : @strict_incl X ⊆₂ sincl.
+Proof. intros ? ? (? & ? & []); split; auto. Qed.
+
+Definition ML_noetherian 𝓡 := well_founded (λ P Q : sig (@fingen_ideal 𝓡), sincl (proj1_sig Q) (proj1_sig P)).
+
+Section strongly_discrete_ML_noetherian.
+
+  (** "strongly discrete ring" is a terminology of Schuster&Yengui 2025
+      which is called "a ring with detachable ideals" in Perdry 2004 *)
+
+  Variables (𝓡 : ring)
+            (strongly_discrete : ∀ l (x : 𝓡), Idl ⌞l⌟ x ∨ ¬ Idl ⌞l⌟ x).
+
+  (** In a strongly discrete ring, strict inclusion between finitely
+      generated ideals entails witnessed strict inclusion *)
+  Proposition strictly_discrete_sincl_fingen_ideal (P Q : 𝓡 → Prop) : 
+      fingen_ideal P
+    → fingen_ideal Q
+    → sincl P Q → P ⊂₁ Q.
+  Proof.
+    intros (l & Hl) HQ (H1 & H2); split; auto.
+    destruct fingen_ideal_wdec with (𝓘 := Q) (l := l)
+      as [ (x & H3 & H4) | ]; auto.
+    + exists x; now rewrite Hl.
+    + destruct H2; intro; rewrite Hl; auto.
+  Qed.
+
+  (** In a strongly discrete ring, Noetherian entails ML-Noetherian *)
+  Local Lemma noetherian__ML_noetherian : noetherian 𝓡 → ML_noetherian 𝓡.
+  Proof.
+    intros H%noetherian__wf_strict_incl_ideal; revert H.
+    wf rel morph (λ P Q, proj1_sig P = proj1_sig Q).
+    + intros (P & HP).
+      now exists (exist _ P (fingen_ideal__ring_ideal _ _ HP)).
+    + intros (P & HP) (Q & HQ) (P' & HP') (Q' & HQ'); simpl.
+      intros <- <-; now apply strictly_discrete_sincl_fingen_ideal.
+  Qed.
+  
+  Implicit Type (l : list 𝓡).
+  
+  Fact strongly_discrete__LD_wdec l : LD l ∨ ¬ LD l.
+  Proof.
+    induction l as [ | x l Hl ].
+    + right; red; apply LD_nil_inv.
+    + rewrite LD_cons_inv.
+      generalize (strongly_discrete l x); tauto.
+  Qed.
+
+  Hint Resolve strongly_discrete__LD_wdec : core.
+
+  Local Lemma ML_noetherian__noetherian :
+      well_founded (λ P Q : sig (@fingen_ideal 𝓡), sincl (proj1_sig Q) (proj1_sig P))
+    → noetherian 𝓡.
+  Proof.
+    intros HR.
+    apply Acc_not__bar; auto.
+    generalize (@nil 𝓡).
+    revert HR.
+    wf rel morph (λ P l, proj1_sig P = Idl ⌞l⌟).
+    + intros l; now exists (exist _ (Idl ⌞l⌟) (Idl__fingen_ideal _ _)).
+    + intros (P & HP) (Q & HQ) m l; simpl.
+      intros -> -> ([x] & ?).
+      split.
+      * apply Idl_mono; eauto.
+      * contradict H.
+        constructor 1; apply H; constructor; auto.
+  Qed.
+
+  Hint Resolve noetherian__ML_noetherian ML_noetherian__noetherian : core.
+
+  Theorem strongly_discrete__ML_noetherian_iff : noetherian 𝓡 ↔ ML_noetherian 𝓡.
+  Proof. split; auto. Qed.
+
+End strongly_discrete_ML_noetherian.
+
+Check strongly_discrete__ML_noetherian_iff.
 
 Section find_basis.
 

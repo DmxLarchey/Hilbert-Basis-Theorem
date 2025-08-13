@@ -105,6 +105,17 @@ Section bar.
     + tauto.
     + intros ? ([]&?); auto.
   Qed.
+ 
+  Variables (P : list A → Prop)
+            (P_wdec : ∀l, P l ∨ ~ P l).
+
+  Lemma Acc_not__bar l : Acc (λ l m, extends⁻¹ l m ∧ ¬ P l) l → bar P l.
+  Proof.
+    induction 1 as [ l _ IH ].
+    constructor 2; intros a.
+    destruct (P_wdec (a::l)) as [ Hal | Hal ]; auto.
+    apply IH; split; auto; constructor.
+  Qed.
 
 End bar.
 
