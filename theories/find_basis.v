@@ -11,7 +11,7 @@ From Stdlib Require Import List Arith Lia Wellfounded Relations Setoid Utf8.
 
 Import ListNotations.
 
-Require Import utils bar ring ideal noetherian.
+Require Import utils bar ring ideal poly noetherian.
 
 #[local] Hint Resolve
            incl_refl incl_nil_l incl_cons incl_tl 
@@ -153,15 +153,61 @@ Definition sincl {X} (P Q : X → Prop) := P ⊆₁ Q ∧ ~ Q ⊆₁ P.
 Fact strict_incl_sincl X : @strict_incl X ⊆₂ sincl.
 Proof. intros ? ? (? & ? & []); split; auto. Qed.
 
+(** "ML-Noetherian" and "RS-Noetherian" terminology come from Perdry 2004
+
+    "strongly discrete ring" is a terminology of Schuster&Yengui 2025
+    which is called "a ring with detachable ideals" in Perdry 2004 *)
+
 Definition ML_noetherian 𝓡 := well_founded (λ P Q : sig (@fingen_ideal 𝓡), sincl (proj1_sig Q) (proj1_sig P)).
+
+Definition RS_noetherian (𝓡 : ring) :=
+  ∀ (ρ : nat → 𝓡 → Prop),
+    (∀n, ρ n ⊆₁ ρ (S n))
+  → (∀n, fingen_ideal (ρ n))
+  → ∃n, ρ (S n) ⊆₁ ρ n.
+
+Definition strongly_discrete (𝓡 : ring) := ∀ l (x : 𝓡), Idl ⌞l⌟ x ∨ ¬ Idl ⌞l⌟ x.
+
+Section zero_test.
+
+  Variable (𝓡 : ring).
+
+  Add Ring 𝓡_is_ring : (is_ring 𝓡).
+
+  Fact zero_test__discrete : (∀ x : 𝓡, x ∼ᵣ 0ᵣ ∨ ¬ x ∼ᵣ 0ᵣ) → ∀ x y : 𝓡, x ∼ᵣ y ∨ ¬ x ∼ᵣ y.
+  Proof.
+    intros HR x y.
+    destruct (HR (x −ᵣ y)) as [ H | H ]; [ left | right ].
+    + rewrite <- (ring_op_a_un_a _ y), <- H; ring.
+    + contradict H; rewrite H; ring.
+  Qed.
+
+End zero_test.
+
+Fact strongly_discrete__discrete 𝓡 : strongly_discrete 𝓡 → ∀ x y : 𝓡, x ∼ᵣ y ∨ ¬ x ∼ᵣ y.
+Proof.
+  intros HR; apply zero_test__discrete.
+  intros x.
+  destruct (HR [] x) as [ ?%Idl_iff_lc__list%lc_inv | H ]; [ left | right ]; auto.   
+  contradict H; rewrite H; constructor 3.
+Qed.
+
+Section strongly_discrete_poly.
+
+  Variables (𝓡 : ring)
+            (H𝓡 : strongly_discrete 𝓡).
+
+  Theorem stronly_discrete_poly : strongly_discrete (poly_ring 𝓡).
+  Proof.
+    intros l.
+  Admitted.
+
+End strongly_discrete_poly.
 
 Section strongly_discrete_ML_noetherian.
 
-  (** "strongly discrete ring" is a terminology of Schuster&Yengui 2025
-      which is called "a ring with detachable ideals" in Perdry 2004 *)
-
   Variables (𝓡 : ring)
-            (strongly_discrete : ∀ l (x : 𝓡), Idl ⌞l⌟ x ∨ ¬ Idl ⌞l⌟ x).
+            (H𝓡 : strongly_discrete 𝓡).
 
   (** In a strongly discrete ring, strict inclusion between finitely
       generated ideals entails witnessed strict inclusion *)
@@ -195,7 +241,7 @@ Section strongly_discrete_ML_noetherian.
     induction l as [ | x l Hl ].
     + right; red; apply LD_nil_inv.
     + rewrite LD_cons_inv.
-      generalize (strongly_discrete l x); tauto.
+      generalize (H𝓡 l x); tauto.
   Qed.
 
   Hint Resolve strongly_discrete__LD_wdec : core.
@@ -263,6 +309,80 @@ Section find_basis.
   Qed.
 
 End find_basis.
+
+Section strongly_discrete__RS_noetherian.
+
+  Variables (𝓡 : ring)
+            (𝓡_strongly_discrete : strongly_discrete 𝓡)
+            (𝓡_noetherian : ML_noetherian 𝓡).
+ 
+  Hint Resolve incl_tl incl_refl incl_tran : core.
+
+  Variables (ρ : nat → 𝓡 → Prop)
+            (ρ_incr : forall n, ρ n ⊆₁ ρ (S n))
+            (ρ_fingen : forall n, fingen_ideal (ρ n)).
+
+  Let R n m := ρ m ⊂₁ ρ n.
+
+  Local Fact R_wf : well_founded R.
+  Proof.
+    generalize 𝓡_noetherian.
+    wf rel morph (fun P n => proj1_sig P = ρ n); eauto.
+    + intros n; now exists (exist _ _ (ρ_fingen n)).
+    + intros P Q n m -> ->; apply strict_incl_sincl.
+  Qed.
+
+  Local Lemma find_pause_from n : ∃m, n ≤ m ∧ ρ (S m) ⊆₁ ρ m.
+  Proof.
+    induction n as [ n IHn ] using (well_founded_induction_type R_wf).
+    destruct (ρ_fingen n) as (ln & Hn).
+    destruct fingen_ideal_wdec with (l := ln) (𝓘 := ρ (S n))
+      as [ (x & H1 & H2)| H ]; auto.
+    + destruct (IHn (S n)) as (m & G1 & G2).
+      * split; auto; exists x; split; auto.
+        now rewrite Hn.
+      * exists m; split; auto; lia.
+    + exists n; split; auto.
+      now intros x ?%H%Hn.
+  Qed.
+
+End strongly_discrete__RS_noetherian.
+
+Theorem strongly_discrete__RS_noetherian (𝓡 : ring) :
+    strongly_discrete 𝓡
+  → ML_noetherian 𝓡
+  → RS_noetherian 𝓡.
+Proof.
+  intros ? ? rho ? ?.  
+  destruct (find_pause_from 𝓡) with (n := 0) (ρ := rho) as (m & []); eauto.
+Qed.
+
+Check strongly_discrete__RS_noetherian.
+
+Section find_pause.
+
+  Variables (𝓡 : ring)
+            (𝓡_strongly_discrete : strongly_discrete 𝓡)
+            (𝓡_noetherian : noetherian 𝓡).
+ 
+  Hint Resolve incl_tl incl_refl incl_tran : core.
+
+  Variable ρ : nat → 𝓡.
+  
+  Hint Resolve noetherian__ML_noetherian : core.
+
+  Theorem find_pause : ∃n, Idl ⌞pfx_rev ρ n⌟ (ρ n).
+  Proof. 
+    destruct strongly_discrete__RS_noetherian
+      with (ρ := fun n => Idl ⌞pfx_rev ρ n⌟)
+      as (n & Hn); auto.
+    + intros ? ?; apply Idl_mono; simpl; auto.
+    + intro; apply Idl__fingen_ideal.
+    + exists n; apply Hn.
+      constructor; simpl; auto.
+  Qed.
+
+End find_pause.
 
 Section compute_basis.
 
