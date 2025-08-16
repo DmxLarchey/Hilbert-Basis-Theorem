@@ -124,7 +124,7 @@ Tactic Notation "double" "length" "induction" hyp(l) hyp(m)
 
 Section list_choice.
 
-  (** Finite weakly decidable choice over a list
+  (** Finite logical decidable choice over a list
       code duplicated from Kruskal-Finite
         in https://dmxlarchey.github.io/Coq-Kruskal/ *)
 
@@ -141,7 +141,7 @@ Section list_choice.
       right; intros ? [ <- | ]; eauto.
   Qed.
 
-  Fact list_choice_strong l :
+  Fact list_choice_comp l :
       (∀x, x ∈ l → {P x} + {Q x})
     → { x | x ∈ l ∧ Q x } + { ∀x, x ∈ l → P x }.
   Proof.

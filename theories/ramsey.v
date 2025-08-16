@@ -9,7 +9,7 @@
 
 From Stdlib Require Import List Utf8.
 
-Require Import utils bar noetherian.
+Require Import utils bar good.
 
 Import ListNotations.
 

@@ -15,7 +15,7 @@ Import ListNotations.
 
 Require Import utils bar ring ideal poly category noetherian.
 
-(** Ref:  https://link.springer.com/chapter/10.1007/3-540-48167-2_3 by Coquand & Perrson *)
+(** Ref:  https://link.springer.com/chapter/10.1007/3-540-48167-2_3 by Coquand & Persson *)
 
 Section lex.
 
@@ -106,7 +106,7 @@ Section HTB.
 
   Hint Constructors lex bar : core.
 
-  (** A well-founded order on representation of polynomials, being of smaller length *)
+  (** A well-founded order on representations of polynomials, being of smaller length *)
   Let T p q := ⌊p⌋ < ⌊q⌋.
 
   Local Fact T_wf : well_founded T.
@@ -123,14 +123,20 @@ Section HTB.
 
   Hint Resolve T_le T_lt lex_app : core.
   Hint Constructors is_last update : core.
-  
-    Local Lemma HBT_main h : bar LD h → ∀k, Forall2 is_last h k → (∀m, lex T m k → bar LD m) → bar LD k.
+
+  (* Remark: we use the term degree abusively in the comments below 
+     because this notion applies to polynomials and they may not have
+     one (when the ring is not discrete). We use "degree" for the length 
+     of a representation of a polynomial, which exists, but is dependent
+     on the represention, hence is not a notion attached to a polynomial. *)
+
+  Local Lemma HBT_main h : bar LD h → ∀k, Forall2 is_last h k → (∀m, lex T m k → bar LD m) → bar LD k.
   Proof.
     (* induction on bar LD h *)
     induction 1 as [ h Hh | h _ IHh ].
-    + (* The list of head coefficients is linearly dependent in R 
+    + (* The list of head coefficients is linearly dependent in 𝓡
          hence h = u++[x]++v where x is a linear combination of v. *)
-      apply LD_split in Hh as (u & x & v & -> & Hx%Idl_iff_lc__list).
+      apply LD_split in Hh as (u & x & v & -> & Hx%idl_iff_lc__list).
       (* From Forall2 is_last (u++[x]++v) k, we split k accordingly into 
          k = l++[p]++m where is_last p x and Forall2 is_last v m *)
       intros ? (l & p & m & _ & Hp & Hm & ->)%Forall2_middle_inv_l IH.
@@ -144,21 +150,23 @@ Section HTB.
              (l := m)
         as [ (q & H3 & H4) | Hm' ].
       * intros; lia.
-      * (* Some polynomial in m, say q has a degree strictly greater than 
+      * (* Some polynomial in m, say q has a "degree" strictly greater than 
            that of p. Then m = m'++[q]++r with ⌊p⌋ < ⌊q⌋.
-            By IH we get bar LD ([p]++r) and conclude *)
+           By IH we get bar LD ([p]++r) and conclude *)
         apply in_split in H3 as (m' & r & ->).
+        (* it is enough to show bar LD ([p]++r) *)
         apply (bar_LD_app_middle (poly_ring _)) with (l := [_]).
         apply (bar_LD_cons_middle (poly_ring _)) with (l := [_]).
+        (* bar LD ([p]++r) holds by IH *)
         apply IH, lex_app; simpl; eauto.
-      * (* All polynomial in m have a degree lesser than that of p.
-           We build a new polynomial q of degree strictly less than p
+      * (* All polynomial in m have a "degree" lesser than that of p.
+           We build a new polynomial q of "degree" strictly less than p
            such that p-q is a linear combination of m *)
         rewrite <- Forall_forall in Hm'.
         destruct update_lead_coef
           with (𝓡 := 𝓡) (1 := Hx) (2 := Hp) (3 := Hm) (4 := Hm')
           as (q & H3 & H4).
-        (* We update p by q *)
+        (* We update p by q, and conclude using IH *)
         apply bar_LD_update_closed with (q::m); auto.
     + (* h are the heads of k *)
       intros k Hhk IH.
@@ -186,6 +194,7 @@ End HTB.
 
 Check is_poly_ring.
 Check poly_ring_correct.
+Print is_poly_ring.
 Check HBT.
 
 Section Hilbert_Basis_Theorem.
@@ -264,7 +273,7 @@ Section Hilbert_Basis_Theorem.
 
 End Hilbert_Basis_Theorem.
 
-Print is_multi_ring.
 Check multi_ring.
 Check multi_ring_correct.
+Print is_multi_ring.
 Check Hilbert_Basis_Theorem.

@@ -1,0 +1,21 @@
+
+(*
+    Btw, we can derive Dickson's lemma from the HBT:
+    
+    to the n-uplet (p₁,...,pₙ) of N^n we associate
+    the monomial X^p₁...X^pₙ in Z[X₁,...,Xₙ]. Hence
+    a sequence of n-uplet gives rise to a sequence
+    of monomials that cannot be forever free of linear
+    combinations, according to the HBT. In turn, such
+    a linear combination gives a good pair ?
+
+    Mₚ₊₁ = A₁.M₁ + ... + Aₚ.Mₚ
+    
+    implies one of the M₁,..,Mₚ is lesser than Mₚ₊₁
+    on all components
+    
+    
+    
+*)
+
+

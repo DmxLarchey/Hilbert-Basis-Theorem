@@ -11,115 +11,32 @@ From Stdlib Require Import List Ring ZArith Lia Setoid Utf8.
 
 Import ListNotations.
 
-Require Import utils bar ring ideal principal php.
+Require Import utils bar good ring ideal bezout php.
 
 #[local] Hint Resolve
            incl_refl incl_nil_l incl_cons incl_tl 
            in_eq in_cons
          : core.
 
-Section Good_and_bar.
-
-  (** The generalization of good : rel₂ X → rel₁ (list A) 
-                         as Good : rel (list A) A → rel₁ (list A)
-      subsumes both the notion of good (finite) sequence for binary relation
-                and the notion of Good increasing sequence of finitely generated ideals of a ring *)  
-
-  Variables (A : Type).
-
-  Implicit Types (P Q : list A → A → Prop).
-
-  Inductive Good P : list A → Prop :=
-    | Good_stop a l : P l a    → Good P (a::l)
-    | Good_skip a l : Good P l → Good P (a::l).
-
-  Hint Constructors Good : core.
-
-  Fact Good_inv P l :
-      Good P l
-    → match l with
-      | []   => False
-      | a::l => P l a ∨ Good P l
-      end.
-  Proof. destruct 1; eauto. Qed.
-
-  Fact Good_cons_inv P x l : Good P (x::l) ↔ P l x ∨ Good P l.
-  Proof.
-    split.
-    + apply Good_inv.
-    + intros []; eauto.
-  Qed.
-
-  Fact Good_mono P Q : P ⊆₂ Q → Good P ⊆₁ Good Q.
-  Proof. induction 2; eauto. Qed.
-
-  Fact Good_app_left P l r : Good P r → Good P (l++r).
-  Proof. intro; induction l; simpl; eauto. Qed.
-
-  Fact Good_app_right P r : 
-      (∀ l x, P l x → P (l++r) x)
-    → (∀l, Good P l → Good P (l++r)).
-  Proof. induction 2; simpl; eauto. Qed.
-
-  Hint Resolve Good_app_left : core.
-
-  (* Another characterization (in FOL) *)
-  Lemma Good_split P m : Good P m ↔ ∃ l a r, m = l++a::r ∧ P r a.
-  Proof.
-    split.
-    + induction 1 as [ a m H | a m _ (l & b & r & -> & H) ].
-      * now exists [], a, m.
-      * now exists (a::l), b, r.
-    + intros (? & ? & ? & -> & ?); auto.
-  Qed.
-  
-  Lemma Good_app_inv P l r : Good P (l++r) ↔ (∃ l' a m, l = l'++a::m ∧ P (m++r) a) ∨ Good P r.
-  Proof.
-    induction l as [ | x l IHl ]; simpl.
-    + split; auto; now intros [ ([] & ? & ? & ? & _) | ].
-    + rewrite Good_cons_inv, IHl; split.
-      * intros [ H1 | [ (l' & y & m & -> & ?) | H1 ] ]; eauto.
-        - left; now exists [], x, l.
-        - left; now exists (x::l'), y, m.
-      * intros [ ([ | z l'] & y & m & [=] & ?) | ]; subst; auto.
-        right; left; now exists l', y, m.
-  Qed.
-
-  Hint Resolve bar_monotone : core.
-
-  Fact bar_Good_app_left P l m : bar (Good P) m → bar (Good P) (l++m).
-  Proof. apply bar_app_left; eauto. Qed.
-  
-  Section Good_app_middle.
-
-    Variables (P : list A → A → Prop) (m : list A)
-              (P_app_middle : ∀ l r a, P (l++r) a → P (l++m++r) a).
-
-    Fact Good_app_middle l r : Good P (l++r) → Good P (l++m++r).
-    Proof. induction l; simpl; eauto; intros []%Good_inv; auto. Qed.
-
-    Hint Resolve Good_app_middle bar_app_middle : core.
-
-    Fact bar_Good_app_middle l r : bar (Good P) (l++r) → bar (Good P) (l++m++r).
-    Proof. eauto. Qed.
-
-  End Good_app_middle.
-
-End Good_and_bar.
-
 #[local] Hint Constructors Good : core.
 
-Arguments Good {_}.
-
-(** This gives a definition of L(inear) D(ependence) of m
+(** This gives a definition of L(inear) D(ependence) of m:
     at some point x in the sequence m = l++[x]++r, 
-    Idl ⌞r⌟ does not increase, ie Idl ⌞x::r⌟ ⊆ Idl ⌞r⌟
+    idl ⌞r⌟ does not increase, ie idl ⌞x::r⌟ ⊆ idl ⌞r⌟
+    or equivalently idl ⌞r⌟ x (see LD_split below)
 
-    see LD_split below
+    Notice that (λ m, idl ⌞m⌟) ignores the order of the list m 
+    because ⌞m⌟ is the "set" of members of the list m 
 
-    Notice that (λ m, Idl ⌞m⌟) ignores the order of the list m *)
+    This definition is equivalent to the usual definition
+    of linear dependence for fields: 
+      [x₁,...,xₙ] is linearly dependent 
+      if there are a₁,...,aₙ with a₁x₁+...+aₙxₙ = 0 
+         and aᵢ ≠ 0 for some i in {1,..,n}
 
-Definition linearly_dependent {𝓡 : ring} := Good (λ m : list 𝓡, Idl ⌞m⌟).
+    But it may not be so for non-integral rings *)
+
+Definition linearly_dependent {𝓡 : ring} := Good (λ m : list 𝓡, idl ⌞m⌟).
 
 #[local] Notation LD := linearly_dependent.
 
@@ -131,61 +48,78 @@ Section linearly_dependent.
 
   Implicit Type (l m : list 𝓡).
 
-  (** Since we know that Idl _ is invariant under update
-      We derive, in sequence, that:
-        a) LD _ is invariant under update
-        b) bar LD _ is invariant under update *)
-
-  Hint Resolve Idl_update_closed
-               Idl_substract: core.
-  Hint Constructors Good : core.
+  Fact LD_monotone : monotone (@LD 𝓡).
+  Proof. now constructor 2. Qed.
 
   (** FOL characterization of LD *)
-  Fact LD_split m : LD m ↔ ∃ l x r, m = l++x::r ∧ Idl ⌞r⌟ x.
+  Fact LD_split m : LD m ↔ ∃ l x r, m = l++x::r ∧ idl ⌞r⌟ x.
   Proof. apply Good_split. Qed.
 
   Fact LD_nil_inv : @LD 𝓡 [] → False.
   Proof. apply Good_inv. Qed.
 
-  Fact LD_cons_inv x m : LD (x::m) ↔ Idl ⌞m⌟ x ∨ LD m.
+  Fact LD_cons_inv x m : LD (x::m) ↔ idl ⌞m⌟ x ∨ LD m.
   Proof. apply Good_cons_inv. Qed.
 
-  Fact LD_monotone : monotone (@LD 𝓡).
-  Proof. now constructor 2. Qed.
+  (** Tools for analyzing the LD of lists which already
+      have a (partially) specified structure *)
 
-  Fact LD_app_inv l r : LD (l++r) ↔ (∃ l' x m, l = l'++x::m ∧ Idl ⌞m++r⌟ x) ∨ LD r.
+  (* If l++r is LD then the linear dependency occurs either in l or in r *)
+  Fact LD_app_inv l r : LD (l++r) ↔ (∃ l' x m, l = l'++x::m ∧ idl ⌞m++r⌟ x) ∨ LD r.
   Proof. apply Good_app_inv. Qed.
 
-  Fact LD_middle_inv l x r : LD (l++x::r) ↔ (∃ l' y m, l = l'++y::m ∧ Idl ⌞m++x::r⌟ y) ∨ Idl ⌞r⌟ x ∨ LD r.
+  (* If l++[x]++r is LD then the linear dependency occurs either in l, or at x or in r *)
+  Fact LD_middle_inv l x r : 
+       LD (l++x::r)
+    ↔ (∃ l' y m, l = l'++y::m ∧ idl ⌞m++x::r⌟ y) (* in l *)
+    ∨ idl ⌞r⌟ x                                  (* at x *)
+    ∨ LD r                                       (* in r *)
+    .
   Proof. rewrite LD_app_inv, LD_cons_inv; tauto. Qed.
 
-  Fact LD_special_inv l m x r : LD (l++m++x::r) ↔ (∃ l₁ y l₂, l = l₁++y::l₂ ∧ Idl ⌞l₂++m++x::r⌟ y)
-                                                ∨ (∃ m₁ y m₂, m = m₁++y::m₂ ∧ Idl ⌞m₂++x::r⌟ y)
-                                                ∨ Idl ⌞r⌟ x
-                                                ∨ LD r.
+  (* If l++m++[x]++r is LD then the linear dependency occurs either in l, or in m or at x or in r *) 
+  Fact LD_special_inv l m x r :
+       LD (l++m++x::r)
+    ↔ (∃ l₁ y l₂, l = l₁++y::l₂ ∧ idl ⌞l₂++m++x::r⌟ y) (* in l *)
+    ∨ (∃ m₁ y m₂, m = m₁++y::m₂ ∧ idl ⌞m₂++x::r⌟ y)    (* in m *)
+    ∨ idl ⌞r⌟ x                                        (* at x *)
+    ∨ LD r                                             (* in r*)
+    .
   Proof. rewrite !LD_app_inv, LD_cons_inv; tauto. Qed.
+
+  (** Since we know that idl _ is invariant under update
+      We derive, in sequence, that:
+        a) LD _ is invariant under update
+        b) bar LD _ is invariant under update *)
+
+  Hint Resolve idl_update_closed
+               idl_substract : core.
+
+  Hint Constructors bar update : core.
 
   (* linear dependency is invariant under update *)
   Lemma LD_update_closed l m : update l m → LD l → LD m.
-  Proof. unfold LD; induction 1 as [ ? ? ? ?%Idl_iff_lc__list |]; intros []%Good_inv; eauto. Qed.
+  Proof. unfold LD; induction 1 as [ ? ? ? ?%idl_iff_lc__list |]; intros []%Good_inv; eauto. Qed.
 
-  Hint Constructors bar update : core.
   Hint Resolve LD_update_closed : core.
 
   (* bar LD is invariant under update *)
   Theorem bar_LD_update_closed l m : update l m → bar LD l → bar LD m.
   Proof. apply bar_rel_closed; eauto. Qed.
 
+  (** Since LD _ is invariant under insertion anywhere in the list,
+      then so is bar LD _. *)
+
   Fact LD_app_middle m : ∀ l r, LD (l++r) → LD (l++m++r).
   Proof.
     apply Good_app_middle.
-    intros ? ? ?; apply Idl_mono.
+    intros ? ? ?; apply idl_mono.
     intros ?; rewrite !in_app_iff; tauto.
   Qed.
-  
+
   Fact LD_app_left l r : LD r → LD (l++r).
   Proof. apply Good_app_left. Qed.
-  
+
   Fact LD_app_right l r : LD l → LD (l++r).
   Proof.
     intros H.
@@ -194,7 +128,7 @@ Section linearly_dependent.
     now rewrite app_nil_r.
   Qed.
 
-   (** Three specializations of bar_Good_app_middle *)
+  (** Three specializations of bar_app_middle *)
 
   (* bar LD is invariant under adding elements anywhere *)
   Fact bar_LD_app_middle m : ∀ l r, bar LD (l++r) → bar LD (l++m++r).
@@ -210,6 +144,7 @@ End linearly_dependent.
 
 #[local] Hint Resolve in_map : core.
 
+(** LD is invariant under sub-homomorphisms *)
 Fact LD_sub_homo (𝓡 𝓣 : ring) (f : 𝓡 → 𝓣) :
     ring_sub_homo f
   → ∀ l : list 𝓡, LD l → LD (map f l).
@@ -217,16 +152,16 @@ Proof.
   unfold LD.
   induction 2 as [ x l Hl | ]; simpl; auto.
   constructor 1.
-  apply Idl_sub_homo with (f := f) in Hl; auto.
-  revert Hl; apply Idl_mono.
+  apply idl_sub_homo with (f := f) in Hl; auto.
+  revert Hl; apply idl_mono.
   intros ? (? & -> & ?); eauto.
 Qed. 
 
-(** bar LD l can be read as l is bound to become linearly dependent 
-    after finitely many steps, however it is extended by adding 
-    elements (on the lhs) 
+(** bar LD l can be read as l is bound to become linearly dependent
+    after finitely many steps, however it is extended by appending
+    elements (at its head).
 
-    Hence bar LD [] means that whichever way you build a list,
+    Hence bar LD [] means that whichever way you grow a list,
     it is bound to become LD after finitely many steps. *) 
 
 Definition noetherian (𝓡 : ring) := bar (@LD 𝓡) [].
@@ -255,6 +190,7 @@ Proof.
     constructor 2; now apply IH.
 Qed.
 
+(** Hence also invariant under isomorphisms *)
 Corollary noetherian_isomorphism (𝓡 𝓣 : ring) :
     (∃ (f : 𝓡 → 𝓣) (g : 𝓣 → 𝓡), ring_isomorphism f g)
   → noetherian 𝓡 → noetherian 𝓣.
@@ -268,7 +204,7 @@ Section noetherian_finite.
   (** Rings that have finitely many members (up-to equivalence)
       are Noetherian. *)
 
-  (* This is enough to show that Z/kZ is Noetherian, for k ≠ 0 *)
+  (* This is enough to show that Z/kZ is Noetherian (for k ≠ 0) *)
 
   Variables (𝓡 : ring)
             (H𝓡 : ∃l, ∀x : 𝓡, ∃y, y ∈ l ∧ x ∼ᵣ y).
@@ -292,11 +228,60 @@ End noetherian_finite.
 
 Check finite_noetherian.
 
-Section wf_strict_divisibility_principal_noetherian.
+Section quotient_noetherian.
+
+  Variable (𝓡 : ring)
+           (rel : 𝓡 → 𝓡 → Prop)
+           (rel_ovr : req ⊆₂ rel) 
+           (rel_eqv : Equivalence rel)
+           (rel_ext : ring_eq_ext op_a op_m iv_a rel).
+
+  Notation 𝓚 := (@quotient_ring _ rel rel_ovr rel_eqv rel_ext).
+
+  Add Ring 𝓡_is_ring : (is_ring 𝓡).
+  Add Ring 𝓚_is_ring : (is_ring 𝓚).
+
+  Hint Constructors idl : core.
+
+  Fact quotient_idl : @idl 𝓡 ⊆₂ @idl 𝓚.
+  Proof.
+    intros I.
+    induction 1 as [ | x y H _ IH | | | ]; eauto.
+    + revert IH; now apply idl_req, rel_ovr.
+    + change (@un_a 𝓡) with (@un_a 𝓚); auto.
+    + change (@op_a 𝓡 x y) with (@op_a 𝓚 x y); auto.
+    + change (@op_m 𝓡 a x) with (@op_m 𝓚 a x); auto.
+  Qed.
+
+  Hint Resolve quotient_idl : core.
+  Hint Constructors Good : core.
+
+  Fact quotient_linearly_dependent l : @LD 𝓡 l → @LD 𝓚 l.
+  Proof. unfold linearly_dependent; induction 1; eauto. Qed.
+
+  Hint Resolve quotient_linearly_dependent : core.
+  Hint Constructors bar : core.
+
+  Theorem quotient_noetherian : noetherian 𝓡 → noetherian 𝓚.
+  Proof.
+    unfold noetherian, quotient_ring; simpl.
+    generalize ([] : list 𝓡).
+    induction 1; eauto.
+  Qed.
+
+End quotient_noetherian.
+
+Check quotient_noetherian.
+
+(** We prove a theorem about Bezout rings
+    and Noetherianess to establish that
+    the ring of integers Z is Noetherian. *)
+
+Section wf_strict_divisibility_bezout_noetherian.
 
   (* If 𝓡 is:
-       a) a principal ring, ie every finitely generated ideal in mono-generated 
-       b) divisibility is weakly decidable,
+       a) a Bezout ring, ie every finitely generated ideal is singleton-generated 
+       b) divisibility is (logically) decidable,
        c) strict divisibility is well-founded
      then 𝓡 is (constructivelly) Noetherian
 
@@ -306,8 +291,8 @@ Section wf_strict_divisibility_principal_noetherian.
   Notation ring_sdiv := (λ x y, x |ᵣ y ∧ ¬ y |ᵣ x).
 
   Variables (𝓡 : ring)
-            (princ : principal 𝓡)
-            (div_wdec : ∀ x y : 𝓡, x |ᵣ y ∨ ¬ x |ᵣ y).
+            (bezout : bezout_ring 𝓡)
+            (div_dec : ∀ x y : 𝓡, x |ᵣ y ∨ ¬ x |ᵣ y).
 
   Add Ring 𝓡_is_ring : (is_ring 𝓡).
 
@@ -316,18 +301,18 @@ Section wf_strict_divisibility_principal_noetherian.
      is eventually extended in to a linearly dependent list *)  
   Local Lemma Acc_sdiv__bar_Good (g : 𝓡) :
       Acc ring_sdiv g
-    → ∀l, Idl ⌞l⌟ ≡₁ ring_div g 
+    → ∀l, idl ⌞l⌟ ≡₁ ring_div g 
     → bar LD l.
   Proof.
     induction 1 as [ g _ IHg ]; intros l Hl.
     constructor 2; intros x.
-    destruct (princ (x::l)) as (e & He).
-    destruct (div_wdec g e) as [ Hge | Hge ].
+    destruct (bezout (x::l)) as (e & He).
+    destruct (div_dec g e) as [ Hge | Hge ].
     + constructor; constructor.
       apply Hl, ring_div_trans with (1 := Hge), He.
       constructor 1; eauto.
     + apply (IHg e); auto; split; auto.
-      apply He, Idl_mono with ⌞l⌟; auto.
+      apply He, idl_mono with ⌞l⌟; auto.
       apply Hl, ring_div_refl.
   Qed.
 
@@ -337,17 +322,17 @@ Section wf_strict_divisibility_principal_noetherian.
      list [] generating the ideal {0ᵣ} 
      is eventually becoming LD *)
 
-  Theorem wf_principal_noetherian : noetherian 𝓡.
+  Theorem wf_sdiv_bezout_noetherian : noetherian 𝓡.
   Proof.
     apply Acc_sdiv__bar_Good with 0ᵣ; auto.
-    intro; rewrite Idl_iff_lc__list; split.
+    intro; rewrite idl_iff_lc__list; split.
     + intros <-%lc_inv; apply ring_div_refl.
     + intros (? & ->); constructor; ring.
   Qed.
 
-End wf_strict_divisibility_principal_noetherian.
+End wf_strict_divisibility_bezout_noetherian.
 
-Check wf_principal_noetherian.
+Check wf_sdiv_bezout_noetherian.
 
 #[local] Open Scope Z_scope.
 
@@ -387,57 +372,16 @@ Proof.
   + apply Zsdiv_Acc_not_zero with (1 := eq_refl); auto.
 Qed.
 
-#[local] Hint Resolve Z_principal : core.
+(** Using wf_sdiv_bezout_noetherian, we can show that
+    the ring of integers Z is a Noetherian ring, on 
+    top of being a Bezout ring *)
 
 Theorem Z_noetherian : noetherian Z_ring.
 Proof.
-  apply wf_principal_noetherian; auto; simpl.
+  apply wf_sdiv_bezout_noetherian; auto; simpl.
+  + exact Z_bezout_ring.
   + intros x y; destruct (Znumtheory.Zdivide_dec x y); auto.
-  + apply Zsdiv_wf.
+  + exact Zsdiv_wf.
 Qed.
 
-Section quotient_noetherian.
-
-  Variable (𝓡 : ring)
-           (rel : 𝓡 → 𝓡 → Prop)
-           (rel_ovr : req ⊆₂ rel) 
-           (rel_eqv : Equivalence rel)
-           (rel_ext : ring_eq_ext op_a op_m iv_a rel).
-
-  Notation 𝓚 := (@quotient_ring _ rel rel_ovr rel_eqv rel_ext).
-
-  Add Ring 𝓡_is_ring : (is_ring 𝓡).
-  Add Ring 𝓚_is_ring : (is_ring 𝓚).
-
-  Hint Constructors Idl : core.
-
-  Fact quotient_Idl : @Idl 𝓡 ⊆₂ @Idl 𝓚.
-  Proof.
-    intros I.
-    induction 1 as [ | x y H _ IH | | | ]; eauto.
-    + revert IH; now apply Idl_req, rel_ovr.
-    + change (@un_a 𝓡) with (@un_a 𝓚); auto.
-    + change (@op_a 𝓡 x y) with (@op_a 𝓚 x y); auto.
-    + change (@op_m 𝓡 a x) with (@op_m 𝓚 a x); auto.
-  Qed.
-
-  Hint Resolve quotient_Idl : core.
-  Hint Constructors Good : core.
-
-  Fact quotient_linearly_dependent l : @LD 𝓡 l → @LD 𝓚 l.
-  Proof. unfold linearly_dependent; induction 1; eauto. Qed.
-
-  Hint Resolve quotient_linearly_dependent : core.
-  Hint Constructors bar : core.
-
-  Theorem quotient_noetherian : noetherian 𝓡 → noetherian 𝓚.
-  Proof.
-    unfold noetherian, quotient_ring; simpl.
-    generalize ([] : list 𝓡).
-    induction 1; eauto.
-  Qed.
-
-End quotient_noetherian.
-
-Check quotient_noetherian.
 

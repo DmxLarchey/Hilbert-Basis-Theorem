@@ -9,7 +9,7 @@
 
 From Stdlib Require Import List Ring Setoid Utf8.
 
-Require Import utils bar ring product category ideal principal noetherian.
+Require Import utils bar ring product category ideal noetherian.
 
 Import ListNotations.
 
@@ -57,9 +57,9 @@ Section product_noetherian.
   Proof. split right; simpl; ring || auto || tauto. Qed.
 
   (* May be the least trivial observation, by induction on l *)
-  Local Lemma Idl_π₁_π₂ l x y : Idl ⌞map π₁ l⌟ x → Idl ⌞map π₂ l⌟ y → Idl ⌞l⌟ (x,y).
+  Local Lemma idl_π₁_π₂ l x y : idl ⌞map π₁ l⌟ x → idl ⌞map π₂ l⌟ y → idl ⌞l⌟ (x,y).
   Proof.
-    rewrite !Idl_iff_lc__list.
+    rewrite !idl_iff_lc__list.
     induction l as [ | (u,v) l IHl ] in x, y |- *; simpl.
     + intros ?%lc_inv ?%lc_inv; constructor; split; auto.
     + intros (a & u' & H1 & H2)%lc_inv (b & v' & H3 & H4)%lc_inv.
@@ -71,7 +71,7 @@ Section product_noetherian.
   Hint Resolve in_map : core.
 
   (* φ (π₁ z) = (1ᵣ,0ᵣ) *ᵣ z *)
-  Local Fact Idl_φ l z : Idl ⌞l⌟ z → Idl ⌞l⌟ (φ (π₁ z)).
+  Local Fact idl_φ l z : idl ⌞l⌟ z → idl ⌞l⌟ (φ (π₁ z)).
   Proof.
     unfold π₁.
     constructor 2 with (x := ((1ᵣ,0ᵣ) : 𝓟) *ᵣ z); auto.
@@ -80,62 +80,62 @@ Section product_noetherian.
 
   Hint Resolve in_or_app in_eq in_cons : core.
 
-  Local Corollary Idl_φ_π₁ l z r : Idl ⌞l++φ (π₁ z)::r⌟ ⊆₁ Idl ⌞l++z::r⌟.
+  Local Corollary idl_φ_π₁ l z r : idl ⌞l++φ (π₁ z)::r⌟ ⊆₁ idl ⌞l++z::r⌟.
   Proof.
-    apply Idl_closed.
+    apply idl_closed.
     intros ? [ | [ <- | ] ]%in_app_iff.
-    2: apply Idl_φ.
+    2: apply idl_φ.
     all: constructor 1; eauto.
   Qed.
 
   (* ψ (π₂ z) = (0ᵣ,1ᵣ) *ᵣ z *)
-  Local Fact Idl_ψ l z : Idl ⌞l⌟ z → Idl ⌞l⌟ (ψ (π₂ z)).
+  Local Fact idl_ψ l z : idl ⌞l⌟ z → idl ⌞l⌟ (ψ (π₂ z)).
   Proof.
     unfold π₂.
     constructor 2 with (x := ((0ᵣ,1ᵣ) : 𝓟) *ᵣ z); auto.
     split; simpl; ring.
   Qed.
 
-  Local Corollary Idl_ψ_π₂ l z r : Idl ⌞l++ψ (π₂ z)::r⌟ ⊆₁ Idl ⌞l++z::r⌟.
+  Local Corollary idl_ψ_π₂ l z r : idl ⌞l++ψ (π₂ z)::r⌟ ⊆₁ idl ⌞l++z::r⌟.
   Proof.
-    apply Idl_closed.
+    apply idl_closed.
     intros ? [ | [ <- | ] ]%in_app_iff.
-    2: apply Idl_ψ.
+    2: apply idl_ψ.
     all: constructor 1; eauto.
   Qed.
 
-  Local Fact Idl_φ_iff l x : Idl ⌞map π₁ l⌟ x ↔ Idl ⌞l⌟ (φ x).
+  Local Fact idl_φ_iff l x : idl ⌞map π₁ l⌟ x ↔ idl ⌞l⌟ (φ x).
   Proof.
     split.
-    + intro; apply Idl_π₁_π₂; auto.
+    + intro; apply idl_π₁_π₂; auto.
     + intros H.
-      apply Idl_sub_homo with (1 := π₁_sub_homo) in H.
-      revert H; simpl; apply Idl_mono.
+      apply idl_sub_homo with (1 := π₁_sub_homo) in H.
+      revert H; simpl; apply idl_mono.
       intros ? (? & -> & ?); auto.
   Qed.
 
-  Local Corollary Idl_ψ_iff l y : Idl ⌞map π₂ l⌟ y ↔ Idl ⌞l⌟ (ψ y).
+  Local Corollary idl_ψ_iff l y : idl ⌞map π₂ l⌟ y ↔ idl ⌞l⌟ (ψ y).
   Proof.
     split.
-    + intro; apply Idl_π₁_π₂; auto.
+    + intro; apply idl_π₁_π₂; auto.
     + intros H.
-      apply Idl_sub_homo with (1 := π₂_sub_homo) in H.
-      revert H; simpl; apply Idl_mono.
+      apply idl_sub_homo with (1 := π₂_sub_homo) in H.
+      revert H; simpl; apply idl_mono.
       intros ? (? & -> & ?); auto.
   Qed.
 
-  Local Corollary Idl_φ_ψ l : ∀z, Idl ⌞l⌟ (φ (π₁ z)) → Idl ⌞l⌟ (ψ (π₂ z)) → Idl ⌞l⌟ z.
-  Proof. intros [] ?%Idl_φ_iff ?%Idl_ψ_iff; now apply Idl_π₁_π₂. Qed.
+  Local Corollary idl_φ_ψ l : ∀z, idl ⌞l⌟ (φ (π₁ z)) → idl ⌞l⌟ (ψ (π₂ z)) → idl ⌞l⌟ z.
+  Proof. intros [] ?%idl_φ_iff ?%idl_ψ_iff; now apply idl_π₁_π₂. Qed.
 
-  Hint Resolve Idl_φ Idl_ψ : core.
+  Hint Resolve idl_φ idl_ψ : core.
 
-  Local Remark Idl_φ_ψ_iff l x y : Idl ⌞l⌟ (x,y) ↔ Idl ⌞l⌟ (φ x) ∧ Idl ⌞l⌟ (ψ y).
+  Local Remark idl_φ_ψ_iff l x y : idl ⌞l⌟ (x,y) ↔ idl ⌞l⌟ (φ x) ∧ idl ⌞l⌟ (ψ y).
   Proof.
     change y with (snd (x,y)) at 2.
     change x with (fst (x,y)) at 2.
     generalize (x,y).
     split; eauto.
-    intros []; now apply Idl_φ_ψ.
+    intros []; now apply idl_φ_ψ.
   Qed.
 
   (** Now comes the non-trivial aspect of this proof:
@@ -151,7 +151,7 @@ Section product_noetherian.
 
            good RS (map inXY l++map inX lx++map inY ly)
 
-      where RS an "obvious" extension to R and S on the type X*Y+X+Y.
+      where RS an "obvious" extension of R and S on the type X*Y+X+Y.
 
       This equivalent form "is not" made explicit in [1] but is 
       rather obfuscated by overly complex notations and unnecessary
@@ -159,10 +159,9 @@ Section product_noetherian.
       instance of the "good" predicate, was essential be able to 
       convert the over approximation from relations to ideals.
 
-      Indeed, as LD := Good (λ m, Idl ⌞m⌟), we get a clear similarity 
+      Indeed, as LD := Good (λ m, idl ⌞m⌟), we get a clear similarity 
       here but we inject 𝓡 (resp. 𝓣) into 𝓡*𝓣 using φ (resp. ψ)
-      instead of the canonical injection X → X*Y+X+Y (resp.
-      Y → X*Y.X+Y. *)
+      instead of the canonical injections X → X*Y+X+Y and Y → X*Y.X+Y. *)
 
   Let θ lx ly l := LD (l++map φ lx++map ψ ly).
 
@@ -196,39 +195,38 @@ Section product_noetherian.
         occurs at φ (π₁ z), the other cases being
         trivial. *)
 
-    Local Proposition Idl_LD_ramsey m :
-        Idl ⌞ly⌟ (π₂ z)
-      → LD (m++[φ (π₁ z)]++map φ lx++map ψ ly)
-      → LD (m++[z]++map φ lx++map ψ ly).
+    Local Proposition idl_θ_ramsey m :
+        idl ⌞ly⌟ (π₂ z)
+      → θ (π₁ z::lx) ly m
+      → θ lx ly (m++[z]).
     Proof.
+      unfold θ; simpl; rewrite <- !app_assoc.
       intros Hz [ (l & u & r & -> & Hu) | [] ]%LD_middle_inv.
       + (* The LD occurs inside m *)
         rewrite <- app_assoc.
         apply LD_app_left.
         simpl; constructor 1.
-        now apply Idl_φ_π₁ in Hu.
+        now apply idl_φ_π₁ in Hu.
       + (* The LD occurs at φ (π₁ z) *)
         apply LD_app_left.
         simpl; constructor 1.
-        apply Idl_φ_ψ; auto.
-        apply Idl_ψ_iff.
+        apply idl_φ_ψ; auto.
+        apply idl_ψ_iff.
         rewrite map_app, !map_map; simpl; rewrite map_id.
-        revert Hz; apply Idl_mono; eauto.
+        revert Hz; apply idl_mono; eauto.
       + (* The LD occurs inside map φ lx++map ψ ly *)
         now do 2 apply LD_app_left.
     Qed.
 
-    Local Corollary Idl_bar_ramsey m :
-        Idl ⌞ly⌟ (π₂ z)
+    Local Corollary idl_bar_ramsey m :
+        idl ⌞ly⌟ (π₂ z)
       → bar (θ (π₁ z::lx) ly) m
       → bar (θ lx ly) (m++[z]).
     Proof.
       intros Hz Hm.
       apply bar_app_iff.
       revert m Hm; apply bar_mono.
-      unfold θ; intro; simpl.
-      rewrite <- app_assoc.
-      now apply Idl_LD_ramsey.
+      intro; now apply idl_θ_ramsey.
     Qed.
 
     (** Now we can proceed by induction on 
@@ -253,8 +251,8 @@ Section product_noetherian.
           constructor 1; red; simpl.
           repeat (rewrite <- !app_assoc; simpl).
           apply LD_app_left; constructor 1.
-          rewrite app_assoc in Hu; apply Idl_ψ_π₂ in Hu.
-          revert u Hu; apply Idl_mono.
+          rewrite app_assoc in Hu; apply idl_ψ_π₂ in Hu.
+          revert u Hu; apply idl_mono.
           intro; simpl; repeat (rewrite !in_app_iff; simpl); tauto.
         * (* the LD occurs in map φ lx, no nested recursion *)
           intros _.
@@ -263,13 +261,13 @@ Section product_noetherian.
           apply map_split_inv in H as (l & u & r & -> & <- & <- & <-).
           rewrite map_app; simpl; rewrite <- app_assoc; simpl.
           apply LD_app_left; constructor 1.
-          rewrite <- Idl_φ_iff in Hv |- *.
+          rewrite <- idl_φ_iff in Hv |- *.
           revert u Hv.
           rewrite !map_app; simpl; rewrite !map_map; simpl; rewrite !map_id.
-          apply Idl_closed; intros ? [ | [ <- | ] ]%in_app_iff; eauto.
+          apply idl_closed; intros ? [ | [ <- | ] ]%in_app_iff; eauto.
         * (* the LD occurs at π₂ z, we use nested recursion *)
-          apply Idl_bar_ramsey.
-          apply Idl_ψ_iff in Hm; revert Hm.
+          apply idl_bar_ramsey.
+          apply idl_ψ_iff in Hm; revert Hm.
           rewrite map_map; simpl; now rewrite map_id.
         * (* the LD occurs in map ψ ly, no nested recursion *)
           intros _.
@@ -313,6 +311,7 @@ End product_noetherian.
 
 Check product_ring.
 Check product_ring_correct.
+Print is_product_ring.
 Check product_noetherian.
 
 

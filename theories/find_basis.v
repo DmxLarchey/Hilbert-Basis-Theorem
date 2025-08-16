@@ -41,9 +41,9 @@ Section noetherian_wf.
     intros Q ((HPQ & x & Qx & Px) & HP).
     apply IHl with (x::l); eauto.
     + contradict Gl.
-      apply Good_inv in Gl as [ H | H ]; auto.
+      apply LD_cons_inv in Gl as [ H | H ]; auto.
       destruct Px.
-      revert H; now apply Idl_smallest.
+      revert H; now apply idl_smallest.
     + intros ? [ <- | ]; eauto.
   Qed.
   
@@ -59,7 +59,7 @@ Section noetherian_wf.
     intros P.
     apply Acc_strict_incl_rev_upclosed_right with (k := []).
     + now apply bar__Acc_not.
-    + now intros ?%Good_inv.
+    + now intros ?%LD_nil_inv.
     + simpl; tauto.
   Qed.
 
@@ -67,24 +67,24 @@ Section noetherian_wf.
     well_founded (λ P Q : sig (@ring_ideal 𝓡), proj1_sig Q ⊂₁ proj1_sig P).
   Proof.
     generalize noetherian__wf_strict_incl_rev.
-    wf rel morph (fun x y => x = proj1_sig y).
+    wf rel morph (λ x y, x = proj1_sig y).
     + intros []; simpl; eauto.
     + intros ? ? [] []; simpl; intros; subst; auto.
   Qed.
 
-  Corollary noetherian__wf_Idl_strict_incl :
-    well_founded (λ P Q : 𝓡 → Prop, Idl Q ⊂₁ Idl P).
+  Corollary noetherian__wf_idl_strict_incl :
+    well_founded (λ P Q : 𝓡 → Prop, idl Q ⊂₁ idl P).
   Proof.
     generalize noetherian__wf_strict_incl_ideal.
-    wf rel morph (fun P Q => proj1_sig P = Idl Q).
-    + intros P; now exists (exist _ _ (Idl_ring_ideal _ P)).
+    wf rel morph (λ P Q, proj1_sig P = idl Q).
+    + intros P; now exists (exist _ _ (idl_ring_ideal _ P)).
     + intros ? ? ? ? -> ->; auto.
   Qed.
 
-  Corollary noetherian__wf_fin_Idl_strict_incl :
-    well_founded (λ l m : list 𝓡, Idl ⌞m⌟ ⊂₁ Idl ⌞l⌟).
+  Corollary noetherian__wf_fin_idl_strict_incl :
+    well_founded (λ l m : list 𝓡, idl ⌞m⌟ ⊂₁ idl ⌞l⌟).
   Proof.
-    generalize noetherian__wf_Idl_strict_incl.
+    generalize noetherian__wf_idl_strict_incl.
     wf rel morph (λ P l, P = ⌞l⌟).
     + intros l; now exists ⌞l⌟.
     + intros ? ? ? ? -> ->; auto.
@@ -94,59 +94,59 @@ End noetherian_wf.
 
 Arguments noetherian__wf_strict_incl_rev {_}.
 Arguments noetherian__wf_strict_incl_ideal {_}.
-Arguments noetherian__wf_Idl_strict_incl {_}.
-Arguments noetherian__wf_fin_Idl_strict_incl {_}.
+Arguments noetherian__wf_idl_strict_incl {_}.
+Arguments noetherian__wf_fin_idl_strict_incl {_}.
 
-Definition fingen_ideal {𝓡 : ring} 𝓘 := ∃ l : list 𝓡, 𝓘 ≡₁ Idl ⌞l⌟.
+Definition fingen_ideal {𝓡 : ring} 𝓘 := ∃ l : list 𝓡, 𝓘 ≡₁ idl ⌞l⌟.
 
 Fact fingen_ideal__ring_ideal 𝓡 : @fingen_ideal 𝓡 ⊆₁ ring_ideal.
 Proof.
   intros P (m & Hm); split right.
   1,3,4: intros ? ?.
-  all: rewrite !Hm; apply Idl_ring_ideal.
+  all: rewrite !Hm; apply idl_ring_ideal.
 Qed.
 
-Fact Idl__fingen_ideal 𝓡 l : @fingen_ideal 𝓡 (Idl ⌞l⌟).
+Fact idl__fingen_ideal 𝓡 l : @fingen_ideal 𝓡 (idl ⌞l⌟).
 Proof. now exists l. Qed.
 
-Section fingen_ideal_wdec.
+Section fingen_ideal_dec.
 
   Variables (𝓡 : ring) (𝓘 : 𝓡 → Prop) (H𝓘 : fingen_ideal 𝓘).
 
-  Lemma fingen_ideal_wdec (l : list 𝓡) :
-      (∀x, Idl ⌞l⌟ x ∨ ¬ Idl ⌞l⌟ x)
-    → (∃x, 𝓘 x ∧ ¬ Idl ⌞l⌟ x) ∨ 𝓘 ⊆₁ Idl ⌞l⌟.
+  Lemma fingen_ideal_dec (l : list 𝓡) :
+      (∀x, idl ⌞l⌟ x ∨ ¬ idl ⌞l⌟ x)
+    → (∃x, 𝓘 x ∧ ¬ idl ⌞l⌟ x) ∨ 𝓘 ⊆₁ idl ⌞l⌟.
   Proof.
     intros Hl.
     destruct H𝓘 as (b & Hb).
     destruct list_choice
-      with (P := Idl ⌞l⌟) (Q := λ x, ¬ Idl ⌞l⌟ x) (l := b)
+      with (P := idl ⌞l⌟) (Q := λ x, ¬ idl ⌞l⌟ x) (l := b)
       as [ (x & []) | ]; auto.
     + left; exists x; rewrite Hb; split; auto.
     + right.
       intro; rewrite Hb.
-      now apply Idl_closed.
-  Qed.
-
-End fingen_ideal_wdec.
-
-Section fingen_ideal_dec.
-
-  Variables (𝓡 : ring) (b : list 𝓡).
-
-  Lemma fingen_ideal_dec (l : list 𝓡) :
-      (∀x, { Idl ⌞l⌟ x } + { ¬ Idl ⌞l⌟ x })
-    → { x | Idl ⌞b⌟ x ∧ ¬ Idl ⌞l⌟ x } + { Idl ⌞b⌟ ⊆₁ Idl ⌞l⌟ }.
-  Proof.
-    intros Hl.
-    destruct list_choice_strong
-      with (P := Idl ⌞l⌟) (Q := λ x, ¬ Idl ⌞l⌟ x) (l := b)
-      as [ (x & []) | ]; eauto.
-    right.
-    now apply Idl_closed.
+      now apply idl_closed.
   Qed.
 
 End fingen_ideal_dec.
+
+Section fingen_ideal_dec_comp.
+
+  Variables (𝓡 : ring) (b : list 𝓡).
+
+  Lemma fingen_ideal_dec_comp (l : list 𝓡) :
+      (∀x, { idl ⌞l⌟ x } + { ¬ idl ⌞l⌟ x })
+    → { x | idl ⌞b⌟ x ∧ ¬ idl ⌞l⌟ x } + { idl ⌞b⌟ ⊆₁ idl ⌞l⌟ }.
+  Proof.
+    intros Hl.
+    destruct list_choice_comp
+      with (P := idl ⌞l⌟) (Q := λ x, ¬ idl ⌞l⌟ x) (l := b)
+      as [ (x & []) | ]; eauto.
+    right.
+    now apply idl_closed.
+  Qed.
+
+End fingen_ideal_dec_comp.
 
 Definition sincl {X} (P Q : X → Prop) := P ⊆₁ Q ∧ ~ Q ⊆₁ P.
 
@@ -166,7 +166,7 @@ Definition RS_noetherian (𝓡 : ring) :=
   → (∀n, fingen_ideal (ρ n))
   → ∃n, ρ (S n) ⊆₁ ρ n.
 
-Definition strongly_discrete (𝓡 : ring) := ∀ l (x : 𝓡), Idl ⌞l⌟ x ∨ ¬ Idl ⌞l⌟ x.
+Definition strongly_discrete (𝓡 : ring) := ∀ l (x : 𝓡), idl ⌞l⌟ x ∨ ¬ idl ⌞l⌟ x.
 
 Section zero_test.
 
@@ -188,7 +188,7 @@ Fact strongly_discrete__discrete 𝓡 : strongly_discrete 𝓡 → ∀ x y : �
 Proof.
   intros HR; apply zero_test__discrete.
   intros x.
-  destruct (HR [] x) as [ ?%Idl_iff_lc__list%lc_inv | H ]; [ left | right ]; auto.   
+  destruct (HR [] x) as [ ?%idl_iff_lc__list%lc_inv | H ]; [ left | right ]; auto.   
   contradict H; rewrite H; constructor 3.
 Qed.
 
@@ -217,7 +217,7 @@ Section strongly_discrete_ML_noetherian.
     → sincl P Q → P ⊂₁ Q.
   Proof.
     intros (l & Hl) HQ (H1 & H2); split; auto.
-    destruct fingen_ideal_wdec with (𝓘 := Q) (l := l)
+    destruct fingen_ideal_dec with (𝓘 := Q) (l := l)
       as [ (x & H3 & H4) | ]; auto.
     + exists x; now rewrite Hl.
     + destruct H2; intro; rewrite Hl; auto.
@@ -236,7 +236,7 @@ Section strongly_discrete_ML_noetherian.
   
   Implicit Type (l : list 𝓡).
   
-  Fact strongly_discrete__LD_wdec l : LD l ∨ ¬ LD l.
+  Fact strongly_discrete__LD_dec l : LD l ∨ ¬ LD l.
   Proof.
     induction l as [ | x l Hl ].
     + right; red; apply LD_nil_inv.
@@ -244,7 +244,7 @@ Section strongly_discrete_ML_noetherian.
       generalize (H𝓡 l x); tauto.
   Qed.
 
-  Hint Resolve strongly_discrete__LD_wdec : core.
+  Hint Resolve strongly_discrete__LD_dec : core.
 
   Local Lemma ML_noetherian__noetherian :
       well_founded (λ P Q : sig (@fingen_ideal 𝓡), sincl (proj1_sig Q) (proj1_sig P))
@@ -254,12 +254,12 @@ Section strongly_discrete_ML_noetherian.
     apply Acc_not__bar; auto.
     generalize (@nil 𝓡).
     revert HR.
-    wf rel morph (λ P l, proj1_sig P = Idl ⌞l⌟).
-    + intros l; now exists (exist _ (Idl ⌞l⌟) (Idl__fingen_ideal _ _)).
+    wf rel morph (λ P l, proj1_sig P = idl ⌞l⌟).
+    + intros l; now exists (exist _ (idl ⌞l⌟) (idl__fingen_ideal _ _)).
     + intros (P & HP) (Q & HQ) m l; simpl.
       intros -> -> ([x] & ?).
       split.
-      * apply Idl_mono; eauto.
+      * apply idl_mono; eauto.
       * contradict H.
         constructor 1; apply H; constructor; auto.
   Qed.
@@ -279,29 +279,29 @@ Section find_basis.
             (H𝓡 : noetherian 𝓡)
             (𝓘 : 𝓡 → Prop)
             (H𝓘1 : ring_ideal 𝓘)
-            (H𝓘2 : ∀l, (∃x, 𝓘 x ∧ ¬ Idl ⌞l⌟ x) ∨ 𝓘 ⊆₁ Idl ⌞l⌟).
+            (H𝓘2 : ∀l, (∃x, 𝓘 x ∧ ¬ idl ⌞l⌟ x) ∨ 𝓘 ⊆₁ idl ⌞l⌟).
 
   Hint Resolve incl_tl incl_refl incl_tran : core.
 
   (* Any list contained in P can be expanded (as a list) into a basis of P *)
 
-  Lemma complete_basis l : ⌞l⌟ ⊆₁ 𝓘 → ∃b, ⌞l⌟ ⊆₁ ⌞b⌟ ∧ 𝓘 ≡₁ Idl ⌞b⌟.
+  Lemma complete_basis l : ⌞l⌟ ⊆₁ 𝓘 → ∃b, ⌞l⌟ ⊆₁ ⌞b⌟ ∧ 𝓘 ≡₁ idl ⌞b⌟.
   Proof.
     induction l as [ l IH ]
-      using (well_founded_induction_type (noetherian__wf_fin_Idl_strict_incl H𝓡)).
+      using (well_founded_induction_type (noetherian__wf_fin_idl_strict_incl H𝓡)).
     intros Hl.
     destruct (H𝓘2 l) as [ (x & H1 & H2) | H ].
     + destruct (IH (x::l)) as (b & []).
       * split.
-        - apply Idl_mono; eauto.
+        - apply idl_mono; eauto.
         - exists x; simpl; eauto.
       * intros ? [ <- | ]; auto.
       * exists b; split; eauto.
     + exists l; split right; auto.
-      apply Idl_smallest; auto.
+      apply idl_smallest; auto.
   Qed.
 
-  Theorem find_basis : ∃b, 𝓘 ≡₁ Idl ⌞b⌟.
+  Theorem find_basis : ∃b, 𝓘 ≡₁ idl ⌞b⌟.
   Proof.
     destruct (complete_basis []) as (b & []).
     + intros _ [].
@@ -336,7 +336,7 @@ Section strongly_discrete__RS_noetherian.
   Proof.
     induction n as [ n IHn ] using (well_founded_induction_type R_wf).
     destruct (ρ_fingen n) as (ln & Hn).
-    destruct fingen_ideal_wdec with (l := ln) (𝓘 := ρ (S n))
+    destruct fingen_ideal_dec with (l := ln) (𝓘 := ρ (S n))
       as [ (x & H1 & H2)| H ]; auto.
     + destruct (IHn (S n)) as (m & G1 & G2).
       * split; auto; exists x; split; auto.
@@ -371,13 +371,13 @@ Section find_pause.
   
   Hint Resolve noetherian__ML_noetherian : core.
 
-  Theorem find_pause : ∃n, Idl ⌞pfx_rev ρ n⌟ (ρ n).
+  Theorem find_pause : ∃n, idl ⌞pfx_rev ρ n⌟ (ρ n).
   Proof. 
     destruct strongly_discrete__RS_noetherian
-      with (ρ := fun n => Idl ⌞pfx_rev ρ n⌟)
+      with (ρ := fun n => idl ⌞pfx_rev ρ n⌟)
       as (n & Hn); auto.
-    + intros ? ?; apply Idl_mono; simpl; auto.
-    + intro; apply Idl__fingen_ideal.
+    + intros ? ?; apply idl_mono; simpl; auto.
+    + intro; apply idl__fingen_ideal.
     + exists n; apply Hn.
       constructor; simpl; auto.
   Qed.
@@ -390,28 +390,28 @@ Section compute_basis.
             (H𝓡 : noetherian 𝓡)
             (𝓘 : 𝓡 → Prop)
             (𝓘_ideal : ring_ideal 𝓘)
-            (𝓘_discrete : ∀l, {x | 𝓘 x ∧ ¬ Idl ⌞l⌟ x} + (𝓘 ⊆₁ Idl ⌞l⌟)).
+            (𝓘_discrete : ∀l, {x | 𝓘 x ∧ ¬ idl ⌞l⌟ x} + (𝓘 ⊆₁ idl ⌞l⌟)).
 
   Hint Resolve incl_tl incl_refl incl_tran : core.
 
   (* Any list contained in P can be expanded (as a list) into a basis of P *)
-  Lemma grow_basis l : ⌞l⌟ ⊆₁ 𝓘 → {b | ⌞l⌟ ⊆₁ ⌞b⌟ ∧ 𝓘 ≡₁ Idl ⌞b⌟}.
+  Lemma grow_basis l : ⌞l⌟ ⊆₁ 𝓘 → {b | ⌞l⌟ ⊆₁ ⌞b⌟ ∧ 𝓘 ≡₁ idl ⌞b⌟}.
   Proof.
     induction l as [ l IH ]
-      using (well_founded_induction_type (noetherian__wf_fin_Idl_strict_incl H𝓡)).
+      using (well_founded_induction_type (noetherian__wf_fin_idl_strict_incl H𝓡)).
     intros Hl.
     destruct (𝓘_discrete l) as [ (x & H1 & H2) | H ].
     + destruct (IH (x::l)) as (b & []).
       * split.
-        - apply Idl_mono; eauto.
+        - apply idl_mono; eauto.
         - exists x; simpl; eauto.
       * intros ? [ <- | ]; auto.
       * exists b; split; eauto.
     + exists l; split right; auto.
-      apply Idl_smallest; auto.
+      apply idl_smallest; auto.
   Qed.
 
-  Theorem compute_basis : {b | 𝓘 ≡₁ Idl ⌞b⌟}.
+  Theorem compute_basis : {b | 𝓘 ≡₁ idl ⌞b⌟}.
   Proof.
     destruct (grow_basis []) as (b & []).
     + intros _ [].
@@ -424,41 +424,41 @@ Section compute_pause.
 
   Variables (𝓡 : ring)
             (𝓡_noetherian : noetherian 𝓡)
-            (𝓡_discrete_strong : ∀ l (x : 𝓡), { Idl ⌞l⌟ x } + { ¬ Idl ⌞l⌟ x }).
+            (𝓡_discrete_strong : ∀ l (x : 𝓡), { idl ⌞l⌟ x } + { ¬ idl ⌞l⌟ x }).
  
   Hint Resolve incl_tl incl_refl incl_tran : core.
 
   Variable ρ : nat → 𝓡.
 
-  Let R n m := Idl ⌞pfx_rev ρ m⌟ ⊂₁ Idl ⌞pfx_rev ρ n⌟.
+  Let R n m := idl ⌞pfx_rev ρ m⌟ ⊂₁ idl ⌞pfx_rev ρ n⌟.
 
-  Local Fact R_wf : well_founded R.
+  Local Fact R_wf' : well_founded R.
   Proof.
-    generalize (noetherian__wf_Idl_strict_incl 𝓡_noetherian).
-    wf rel morph (fun P n => P = Idl ⌞pfx_rev ρ n⌟); eauto.
+    generalize (noetherian__wf_idl_strict_incl 𝓡_noetherian).
+    wf rel morph (fun P n => P = idl ⌞pfx_rev ρ n⌟); eauto.
     intros P Q n m -> ->.
     unfold R.
     intros (H1 & x & H2 & H3).
     split.
-    + now apply Idl_mono.
+    + now apply idl_mono.
     + exists x; split.
       * now constructor 1.
       * contradict H3.
-        now apply Idl_idem.
+        now apply idl_idem.
   Qed.
 
-  Local Lemma compute_pause_from n : { m | n ≤ m ∧ Idl ⌞pfx_rev ρ m⌟ (ρ m) }.
+  Local Lemma compute_pause_from n : { m | n ≤ m ∧ idl ⌞pfx_rev ρ m⌟ (ρ m) }.
   Proof.
-    induction n as [ n IHn ] using (well_founded_induction_type R_wf).
+    induction n as [ n IHn ] using (well_founded_induction_type R_wf').
     destruct (𝓡_discrete_strong (pfx_rev ρ n) (ρ n)) as [ H | H ]; eauto.
     destruct (IHn (S n)) as (m & H1 & H2).
     + split.
-      * apply Idl_mono; simpl; eauto.
+      * apply idl_mono; simpl; eauto.
       * exists (ρ n); split; simpl; auto.
     + exists m; split; auto; lia.
   Qed.
 
-  Theorem compute_pause : { n | Idl ⌞pfx_rev ρ n⌟ (ρ n) }.
+  Theorem compute_pause : { n | idl ⌞pfx_rev ρ n⌟ (ρ n) }.
   Proof. destruct (compute_pause_from 0) as (m & []); eauto. Qed.
 
 End compute_pause.

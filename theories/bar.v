@@ -29,6 +29,11 @@ Section bar.
 
   Hint Constructors bar : core.
 
+  Fact bar_monotone P : monotone P → monotone (bar P).
+  Proof. induction 2; eauto. Qed.
+
+  Hint Resolve bar_monotone : core.
+
   Fact bar_mono P Q : P ⊆₁ Q → bar P ⊆₁ bar Q.
   Proof. induction 2; eauto. Qed.
 
@@ -67,7 +72,14 @@ Section bar.
 
   Hint Constructors list_insert : core.
 
-  (** This result is not part of Kruskal-AlmostFull and could be added there !! *)
+  (** This observation is very useful and the reference for this is
+        https://doi.org/10.1007/3-540-48167-2_3 (Coquand&Persson 98)
+      It avoids us to introduce the notion of sublist or the even
+      more complicated "intercalate" function that is used in
+        https://doi.org/10.1007/BFb0097789 (Fridlender 96) 
+
+      It is not part of Kruskal-AlmostFull and could be added there
+      as a usefull tool too. *)
   Lemma bar_app_middle P m :
    (∀ l r, P (l++r) → P (l++m++r))
   → ∀ l r, bar P (l++r) → bar P (l++m++r).
@@ -82,11 +94,6 @@ Section bar.
     → (∀ l m, l ≈ₚ m → bar P l → bar P m).
   Proof. apply bar_rel_closed; now constructor. Qed.
 
-  Fact bar_monotone P : monotone P → monotone (bar P).
-  Proof. induction 2; eauto. Qed.
-
-  Hint Resolve bar_monotone : core.
-
   Fact bar_app_left P : monotone P → ∀ l r, bar P r → bar P (l++r).
   Proof. intros ? l ? ?; induction l; simpl; eauto. Qed.
 
@@ -99,21 +106,25 @@ Section bar.
       exists (S n); now rewrite pfx_rev_S, <- app_assoc.
   Qed.
 
-  Lemma bar__Acc_not P l : bar P l → Acc (λ l m, extends⁻¹ l m ∧ ¬ P m) l.
+  Lemma bar__Acc_not P : bar P ⊆₁ Acc (λ l m, extends⁻¹ l m ∧ ¬ P m).
   Proof.
     induction 1; constructor.
     + tauto.
     + intros ? ([]&?); auto.
   Qed.
- 
-  Variables (P : list A → Prop)
-            (P_wdec : ∀l, P l ∨ ~ P l).
 
-  Lemma Acc_not__bar l : Acc (λ l m, extends⁻¹ l m ∧ ¬ P l) l → bar P l.
+  (** When P is logically decidable, the bar P is inbetween
+          Acc (λ l m, extends⁻¹ l m ∧ ¬ P l)
+      and Acc (λ l m, extends⁻¹ l m ∧ ¬ P m). *)
+
+  Variables (P : list A → Prop)
+            (P_dec : ∀l, P l ∨ ¬ P l).
+
+  Lemma Acc_not__bar : Acc (λ l m, extends⁻¹ l m ∧ ¬ P l) ⊆₁ bar P.
   Proof.
     induction 1 as [ l _ IH ].
     constructor 2; intros a.
-    destruct (P_wdec (a::l)) as [ Hal | Hal ]; auto.
+    destruct (P_dec (a::l)); auto.
     apply IH; split; auto; constructor.
   Qed.
 
@@ -168,7 +179,9 @@ Tactic Notation "double" "bar" "induction" "as" simple_intropattern(Hl) simple_i
 
 Section bar_nc.
 
-  (** This section is about bar in "non-constructive" settings *)
+  (** This section is about bar in "non-constructive" settings, following
+      the developments in "Constructive Substitutes for König's lemma"
+        https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.TYPES.2024.2 *)
 
   Variables (A : Type) (Q : list A → Prop).
 
@@ -227,8 +240,7 @@ Section bar_nc.
         apply (H2 n); rewrite Hg; auto.
   Qed.
 
-  (** Reminder of the bar theorem (under XM + DC of course), see also
-           https://github.com/DmxLarchey/Constructive-Konig *)
+  (** Reminder of the bar theorem (under XM + DC of course) *)
   Theorem bar_theorem__XM_DC : bar Q [] ↔ ∀ρ, ∃n, Q (pfx_rev ρ n).
   Proof.
     split.
@@ -237,9 +249,9 @@ Section bar_nc.
       destruct H as (n & Hn).
       exists n; now rewrite app_nil_r in Hn.
     + intros H.
-      destruct (xm (bar Q [])) as [ | C ]; auto.
+      destruct (xm (bar Q [])) as [ | C ]; auto || exfalso.
       apply not_bar_nil__XM_DC in C as (rho & Hrho).
-      now destruct (H rho) as (n & Hn%Hrho).
+      now destruct (H rho) as (? & ?%Hrho).
   Qed.
 
 End bar_nc.

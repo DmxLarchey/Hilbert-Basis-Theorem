@@ -11,12 +11,12 @@ From Stdlib Require Import List Ring Setoid Utf8.
 
 Import ListNotations.
 
-Require Import utils bar ring ideal principal noetherian.
+Require Import utils bar ring ideal bezout noetherian.
 
 #[local] Hint Resolve in_eq in_cons : core.
 
 (** How can we show that Q (the field of rationals) is Noetherian.
-    Trivial because Idl ⌞l⌟ is either {0} or the whole Q *)
+    Trivial because idl ⌞l⌟ is either {0} or the whole Q *)
 
 Section fields.
 
@@ -34,7 +34,7 @@ Section fields.
       as [ (? & ? & []) | ]; eauto.
   Qed.
 
-  Theorem field_principal : principal 𝓕.
+  Theorem field_bezout_ring : bezout_ring 𝓕.
   Proof.
     intros l.
     destruct (req_list_choose l)
@@ -47,7 +47,7 @@ Section fields.
         constructor 5. 
         now constructor 1.
     + exists un_a; intros z; split.
-      * apply Idl_smallest.
+      * apply idl_smallest.
         - apply ring_div_ideal.
         - intros ? ->%H; apply ring_div_refl.
       * intros (k & ->).
