@@ -20,6 +20,10 @@ Require Import utils bar ring ideal poly noetherian.
 
 #[local] Hint Constructors extends : core.
 
+(* This is witnessed strict inclusion and it is 
+   stronger than P ⊆₁ Q ∧ ¬ Q ⊆₁ P (unless one can
+   actually find a witness when ¬ Q ⊆₁ P holds) *)
+
 Definition strict_incl {X} (P Q : X → Prop) := P ⊆₁ Q ∧ ∃x, Q x ∧ ¬ P x.
 
 #[local] Notation "P ⊂₁ Q" := (strict_incl P Q) (at level 70, format "P  ⊂₁  Q").
@@ -49,9 +53,9 @@ Section noetherian_wf.
   
   Hypothesis 𝓡_noeth : noetherian 𝓡.
 
-  (** If 𝓡 is (constructivelly) Noetherian then strict reverse inclusion
-      is (constructivelly) well-founded on ideals of R, 
-      Hence any strictly increasing sequence of ideals of R is terminating. *)
+  (** If 𝓡 is (constructivelly) Noetherian then witnessed strict 
+      reverse inclusion is (constructivelly) well-founded on ideals of 𝓡, 
+      Hence any strictly increasing sequence of ideals of 𝓡 is terminating. *)
 
   Theorem noetherian__wf_strict_incl_rev :
     well_founded (λ P Q : 𝓡 → Prop, Q ⊂₁ P ∧ ring_ideal Q).
