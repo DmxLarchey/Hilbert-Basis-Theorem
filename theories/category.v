@@ -39,18 +39,37 @@ Section characteristic_property_of_the_product_ring.
     .
 
   (** Product diagrams of 𝓡 and 𝓣 form a category *)
-  Fact pd_homo_id (𝓟 : ring_product_diag) : pd_homo (λ p : 𝓟, p).
+
+  Definition pd_id {𝓟 : ring_product_diag} := (λ p : 𝓟, p).
+  Definition pd_comp {𝓟 𝓠 𝓞 : ring_product_diag} (g : 𝓠 → 𝓞) (f : 𝓟 → 𝓠) := λ p, g (f p).
+
+  Fact pd_id_homo 𝓟 : pd_homo (@pd_id 𝓟).
   Proof. split right; auto. Qed. 
 
-  Fact pd_homo_comp (𝓟 𝓠 𝓞 : ring_product_diag) (f : 𝓟 → 𝓠) (g : 𝓠 → 𝓞) :
-    pd_homo f → pd_homo g → pd_homo (λ p, g (f p)).
+  Fact pd_comp_homo {𝓟 𝓠 𝓞 : ring_product_diag} (g : 𝓠 → 𝓞) (f : 𝓟 → 𝓠)  :
+    pd_homo f → pd_homo g → pd_homo (pd_comp g f).
   Proof.
+    unfold pd_comp.
     intros (H1 & H2 & H3) (G1 & G2 & G3); split right; auto.
     + intro; now rewrite G2.
     + intro; now rewrite G3.
   Qed.
 
-  Hint Resolve pd_homo_id pd_homo_comp : core.
+  Hint Resolve pd_id_homo pd_comp_homo : core.
+
+  (* Associativity and identity laws are trivial for this category *)
+
+  Fact pd_id_left (𝓟 𝓠 : ring_product_diag) (f : 𝓟 → 𝓠) :
+    ∀p, pd_id (f p) = f p.
+  Proof. reflexivity. Qed.
+
+  Fact pd_id_right (𝓟 𝓠 : ring_product_diag) (f : 𝓟 → 𝓠) :
+    ∀p, f (pd_id p) = f p.
+  Proof. reflexivity. Qed.
+
+  Fact pd_comp_assoc {𝓟 𝓠 𝓞 𝓚 : ring_product_diag} (f : 𝓞 → 𝓚) (g : 𝓠 → 𝓞) (h : 𝓟 → 𝓠) :
+    ∀p, pd_comp f (pd_comp g h) p = pd_comp (pd_comp f g) h p.
+  Proof. reflexivity. Qed. 
 
   (** And "the" product ring for 𝓡 and 𝓣 is the terminal
       object in the category of product diagrams  *)
@@ -81,8 +100,8 @@ Section characteristic_property_of_the_product_ring.
       split right.
       + apply Hg.
       + apply Hf.
-      + intro; apply (proj2 (H2 _) (λ p, g (f p)) (λ p, p)); auto.
-      + intro; apply (proj2 (H1 _) (λ p, f (g p)) (λ p, p)); auto.
+      + intro; apply (proj2 (H2 _) (pd_comp g f) pd_id); auto.
+      + intro; apply (proj2 (H1 _) (pd_comp f g) pd_id); auto.
     Qed.
 
   End unicity.
@@ -127,10 +146,10 @@ Section characteristic_property_of_the_polynomial_ring.
 
   (** Pointed extensions of 𝓡 form a category *)
   
-  Fact pe_homo_id (𝓡x : ring_pointed_ext) : pe_homo (λ p : 𝓡x, p).
+  Fact pe_id_homo (𝓡x : ring_pointed_ext) : pe_homo (λ p : 𝓡x, p).
   Proof. split right; auto. Qed. 
 
-  Fact pe_homo_comp (𝓡x 𝓣x 𝓚x : ring_pointed_ext) (f : 𝓡x → 𝓣x) (g : 𝓣x → 𝓚x) :
+  Fact pe_comp_homo (𝓡x 𝓣x 𝓚x : ring_pointed_ext) (f : 𝓡x → 𝓣x) (g : 𝓣x → 𝓚x) :
     pe_homo f → pe_homo g → pe_homo (λ p, g (f p)).
   Proof.
     intros (H1 & H2 & H3) (G1 & G2 & G3); split right; auto.
@@ -138,7 +157,12 @@ Section characteristic_property_of_the_polynomial_ring.
     + intro; rewrite <- G3; now apply G1.
   Qed.
 
-  Hint Resolve pe_homo_id pe_homo_comp : core.
+  Hint Resolve pe_id_homo pe_comp_homo : core.
+
+  (* We ommit identity and associativity laws for the
+     category of pointed extensions here because they are trivial
+     and work exactly the same as for the category of product
+     diagrams above. These laws are of no use below. *)
 
   (** And "the" poly(nomial) ring over 𝓡 is the initial
       object in the category of pointed extensions of 𝓡  *)
@@ -232,11 +256,6 @@ Section characteristic_property_of_multivariate_rings.
   (** This is the initiality property for the polynomial ring:
       it is initial in the category of pointed rings which extend R *)
 
-  Definition is_multi_ring (𝓡A : ring_multi_ext) :=
-    ∀ 𝓣A : ring_multi_ext, 
-        (∃α : 𝓡A → 𝓣A, me_homo α)
-      ∧ (∀ α β : 𝓡A → 𝓣A, me_homo α → me_homo β → ∀p, α p ∼ᵣ β p).
-
   Fact me_homo_id (𝓡A : ring_multi_ext) : me_homo (λ p : 𝓡A, p).
   Proof. split right; auto. Qed.
 
@@ -249,6 +268,17 @@ Section characteristic_property_of_multivariate_rings.
   Qed.
 
   Hint Resolve me_homo_id me_homo_comp : core.
+
+  (* Again we ommit indentity and associativity laws
+     which are trivial and of no use below. *)
+
+  (** And "the" multi(nomial) ring over 𝓡 is the initial
+      object in the category of multi extensions of 𝓡 over
+      the type A of unknowns. *)
+  Definition is_multi_ring (𝓡A : ring_multi_ext) :=
+    ∀ 𝓣A : ring_multi_ext, 
+        (∃α : 𝓡A → 𝓣A, me_homo α)
+      ∧ (∀ α β : 𝓡A → 𝓣A, me_homo α → me_homo β → ∀p, α p ∼ᵣ β p).
 
   Section unicity.
 
