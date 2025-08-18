@@ -11,14 +11,14 @@ From Stdlib Require Import List Ring ZArith Lia Setoid Utf8.
 
 Import ListNotations.
 
-Require Import utils bar good ring ideal bezout php.
+Require Import utils bar monotone_closure ring ideal bezout php.
 
 #[local] Hint Resolve
            incl_refl incl_nil_l incl_cons incl_tl 
            in_eq in_cons
          : core.
 
-#[local] Hint Constructors Good : core.
+#[local] Hint Constructors MC : core.
 
 (** This gives a definition of L(inear) D(ependence) of m:
     at some point x in the sequence m = l++[x]++r, 
@@ -36,7 +36,7 @@ Require Import utils bar good ring ideal bezout php.
 
     But it may not be so for non-integral rings *)
 
-Definition linearly_dependent {𝓡 : ring} := Good (λ m : list 𝓡, idl ⌞m⌟).
+Definition linearly_dependent {𝓡 : ring} := MC (λ m : list 𝓡, idl ⌞m⌟).
 
 #[local] Notation LD := linearly_dependent.
 
@@ -53,20 +53,20 @@ Section linearly_dependent.
 
   (** FOL characterization of LD *)
   Fact LD_split m : LD m ↔ ∃ l x r, m = l++x::r ∧ idl ⌞r⌟ x.
-  Proof. apply Good_split. Qed.
+  Proof. apply MC_split. Qed.
 
   Fact LD_nil_inv : @LD 𝓡 [] → False.
-  Proof. apply Good_inv. Qed.
+  Proof. apply MC_inv. Qed.
 
   Fact LD_cons_inv x m : LD (x::m) ↔ idl ⌞m⌟ x ∨ LD m.
-  Proof. apply Good_cons_inv. Qed.
+  Proof. apply MC_cons_inv. Qed.
 
   (** Tools for analyzing the LD of lists which already
       have a (partially) specified structure *)
 
   (* If l++r is LD then the linear dependency occurs either in l or in r *)
   Fact LD_app_inv l r : LD (l++r) ↔ (∃ l' x m, l = l'++x::m ∧ idl ⌞m++r⌟ x) ∨ LD r.
-  Proof. apply Good_app_inv. Qed.
+  Proof. apply MC_app_inv. Qed.
 
   (* If l++[x]++r is LD then the linear dependency occurs either in l, or at x or in r *)
   Fact LD_middle_inv l x r : 
@@ -99,7 +99,7 @@ Section linearly_dependent.
 
   (* linear dependency is invariant under update *)
   Lemma LD_update_closed l m : update l m → LD l → LD m.
-  Proof. unfold LD; induction 1 as [ ? ? ? ?%idl_iff_lc__list |]; intros []%Good_inv; eauto. Qed.
+  Proof. unfold LD; induction 1 as [ ? ? ? ?%idl_iff_lc__list |]; intros []%MC_inv; eauto. Qed.
 
   Hint Resolve LD_update_closed : core.
 
@@ -112,13 +112,13 @@ Section linearly_dependent.
 
   Fact LD_app_middle m : ∀ l r, LD (l++r) → LD (l++m++r).
   Proof.
-    apply Good_app_middle.
+    apply MC_app_middle.
     intros ? ? ?; apply idl_mono.
     intros ?; rewrite !in_app_iff; tauto.
   Qed.
 
   Fact LD_app_left l r : LD r → LD (l++r).
-  Proof. apply Good_app_left. Qed.
+  Proof. apply MC_app_left. Qed.
 
   Fact LD_app_right l r : LD l → LD (l++r).
   Proof.
@@ -212,13 +212,13 @@ Section noetherian_finite.
   Theorem finite_noetherian : noetherian 𝓡.
   Proof.
     destruct H𝓡 as (lR & HlR).
-    apply bar_mono with (P := Good (λ l x, ∃y, y ∈ l ∧ x ∼ᵣ y)).
-    + apply Good_mono.
+    apply bar_mono with (P := MC (λ l x, ∃y, y ∈ l ∧ x ∼ᵣ y)).
+    + apply MC_mono.
       intros l x (y & ? & ->).
       now constructor 1.
     + apply bar_above_length with (S ⌊lR⌋).
       intros l (a & x & b & y & c & -> & ?)%(@php_upto _ (@req 𝓡)); auto.
-      * apply Good_app_left; constructor 1; exists y; split; auto.
+      * apply MC_app_left; constructor 1; exists y; split; auto.
         rewrite in_app_iff; simpl; auto.
       * intros ? ? ->; trivial.
       * intros ? ? ? ->; trivial.
@@ -254,7 +254,6 @@ Section quotient_noetherian.
   Qed.
 
   Hint Resolve quotient_idl : core.
-  Hint Constructors Good : core.
 
   Fact quotient_linearly_dependent l : @LD 𝓡 l → @LD 𝓚 l.
   Proof. unfold linearly_dependent; induction 1; eauto. Qed.

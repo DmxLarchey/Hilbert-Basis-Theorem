@@ -13,54 +13,58 @@ Import ListNotations.
 
 Require Import utils bar.
 
-Section Good_and_bar.
+Section MC_and_bar.
 
-  (** The generalization of good : rel₂ X → rel₁ (list A) 
-                         as Good : rel (list A) A → rel₁ (list A)
-      subsumes both the notion of good (finite) sequence for binary relation
-                and the notion of Good increasing sequence of finitely 
-                    generated ideals of a ring *)  
+  (** monotone_closure (P : rel (list A) A) : rel₁ (list A) (denoted MC)
+      subsumes good (R : rel₂ A) : rel₁ (list A), the notion of good (finite) sequence for a binary relation R
+      and LD (𝓡 : ring) : rel₁ (list 𝓡), the notion of linearly dependent sequence in a ring 𝓡 *)  
 
   Variables (A : Type).
 
   Implicit Types (P Q : list A → A → Prop).
 
-  Inductive Good P : list A → Prop :=
-    | Good_stop a l : P l a    → Good P (a::l)
-    | Good_skip a l : Good P l → Good P (a::l).
+  Inductive monotone_closure P : list A → Prop :=
+    | monotone_closure_stop a l : P l a                → monotone_closure P (a::l)
+    | monotone_closure_skip a l : monotone_closure P l → monotone_closure P (a::l)
+    .
 
-  Hint Constructors Good : core.
+  Notation MC := monotone_closure.
 
-  Fact Good_inv P l :
-      Good P l
+  Hint Constructors MC : core.
+
+  Fact MC_inv P l :
+      MC P l
     → match l with
       | []   => False
-      | a::l => P l a ∨ Good P l
+      | a::l => P l a ∨ MC P l
       end.
   Proof. destruct 1; eauto. Qed.
 
-  Fact Good_cons_inv P x l : Good P (x::l) ↔ P l x ∨ Good P l.
+  Fact MC_cons_inv P x l : MC P (x::l) ↔ P l x ∨ MC P l.
   Proof.
     split.
-    + apply Good_inv.
+    + apply MC_inv.
     + intros []; eauto.
   Qed.
 
-  Fact Good_mono P Q : P ⊆₂ Q → Good P ⊆₁ Good Q.
+  Fact MC_monotone P : monotone (MC P).
+  Proof. now constructor 2. Qed.
+
+  Fact MC_mono P Q : P ⊆₂ Q → MC P ⊆₁ MC Q.
   Proof. induction 2; eauto. Qed.
 
-  Fact Good_app_left P l r : Good P r → Good P (l++r).
+  Fact MC_app_left P l r : MC P r → MC P (l++r).
   Proof. intro; induction l; simpl; eauto. Qed.
 
-  Fact Good_app_right P r : 
+  Fact MC_app_right P r : 
       (∀ l x, P l x → P (l++r) x)
-    → (∀l, Good P l → Good P (l++r)).
+    → (∀l, MC P l → MC P (l++r)).
   Proof. induction 2; simpl; eauto. Qed.
 
-  Hint Resolve Good_app_left : core.
+  Hint Resolve MC_app_left : core.
 
   (* Another characterization (in FOL) *)
-  Lemma Good_split P m : Good P m ↔ ∃ l a r, m = l++a::r ∧ P r a.
+  Lemma MC_split P m : MC P m ↔ ∃ l a r, m = l++a::r ∧ P r a.
   Proof.
     split.
     + induction 1 as [ a m H | a m _ (l & b & r & -> & H) ].
@@ -68,12 +72,12 @@ Section Good_and_bar.
       * now exists (a::l), b, r.
     + intros (? & ? & ? & -> & ?); auto.
   Qed.
-  
-  Lemma Good_app_inv P l r : Good P (l++r) ↔ (∃ l' a m, l = l'++a::m ∧ P (m++r) a) ∨ Good P r.
+
+  Lemma MC_app_inv P l r : MC P (l++r) ↔ (∃ l' a m, l = l'++a::m ∧ P (m++r) a) ∨ MC P r.
   Proof.
     induction l as [ | x l IHl ]; simpl.
     + split; auto; now intros [ ([] & ? & ? & ? & _) | ].
-    + rewrite Good_cons_inv, IHl; split.
+    + rewrite MC_cons_inv, IHl; split.
       * intros [ H1 | [ (l' & y & m & -> & ?) | H1 ] ]; eauto.
         - left; now exists [], x, l.
         - left; now exists (x::l'), y, m.
@@ -83,24 +87,27 @@ Section Good_and_bar.
 
   Hint Resolve bar_monotone : core.
 
-  Fact bar_Good_app_left P l m : bar (Good P) m → bar (Good P) (l++m).
+  Fact bar_MC_app_left P l m : bar (MC P) m → bar (MC P) (l++m).
   Proof. apply bar_app_left; eauto. Qed.
-  
-  Section Good_app_middle.
+
+  Section MC_app_middle.
 
     Variables (P : list A → A → Prop) (m : list A)
               (P_app_middle : ∀ l r a, P (l++r) a → P (l++m++r) a).
 
-    Fact Good_app_middle l r : Good P (l++r) → Good P (l++m++r).
-    Proof. induction l; simpl; eauto; intros []%Good_inv; auto. Qed.
+    Fact MC_app_middle l r : MC P (l++r) → MC P (l++m++r).
+    Proof. induction l; simpl; eauto; intros []%MC_inv; auto. Qed.
 
-    Hint Resolve Good_app_middle bar_app_middle : core.
+    Hint Resolve MC_app_middle bar_app_middle : core.
 
-    Fact bar_Good_app_middle l r : bar (Good P) (l++r) → bar (Good P) (l++m++r).
+    Fact bar_MC_app_middle l r : bar (MC P) (l++r) → bar (MC P) (l++m++r).
     Proof. eauto. Qed.
 
-  End Good_app_middle.
+  End MC_app_middle.
 
-End Good_and_bar.
+End MC_and_bar.
 
-Arguments Good {_}.
+Arguments monotone_closure {_}.
+
+#[global] Notation MC := monotone_closure.
+

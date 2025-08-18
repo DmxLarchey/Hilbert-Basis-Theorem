@@ -9,7 +9,7 @@
 
 From Stdlib Require Import List Utf8.
 
-Require Import utils bar good.
+Require Import utils bar monotone_closure.
 
 Import ListNotations.
 
@@ -39,9 +39,9 @@ Section bar_good_middle.
   Fact lowered_cons_inv y l x : lowered (y::l) x → R y x ∨ lowered l x.
   Proof. intros (? & [ <- | ] & ?); auto; right; red; eauto. Qed.  
 
-  Definition good := Good lowered.
+  Definition good := MC lowered.
 
-  Hint Constructors Good : core.
+  Hint Constructors MC : core.
 
   Hint Resolve in_or_app in_eq : core.
 
@@ -49,12 +49,12 @@ Section bar_good_middle.
   Proof. now constructor 2. Qed.
 
   Fact good_nil_inv : good [] → False.
-  Proof. now intros ?%Good_inv. Qed.
+  Proof. now intros ?%MC_inv. Qed.
 
   Fact good_cons_inv x l : good (x::l) ↔ good l ∨ lowered l x.
   Proof.
     split.
-    + intros []%Good_inv; eauto.
+    + intros []%MC_inv; eauto.
     + intros [ | ]; [ now constructor 2 | now constructor 1 ].
   Qed.
 
@@ -62,16 +62,16 @@ Section bar_good_middle.
   Proof. intros [ []%good_nil_inv | (? & [] & _) ]%good_cons_inv. Qed.
 
   Fact good_app_left l r : good r → good (l++r).
-  Proof. apply Good_app_left. Qed.
+  Proof. apply MC_app_left. Qed.
 
   Fact good_app_right l r : good l → good (l++r).
-  Proof. revert l; apply Good_app_right; intros ? ? (? & []); red; eauto. Qed.
+  Proof. revert l; apply MC_app_right; intros ? ? (? & []); red; eauto. Qed.
 
   Hint Resolve good_app_left good_app_right : core.
 
   Fact good_iff_split p : good p ↔ ∃ l x m y r, p = l++x::m++y::r ∧ R y x.
   Proof.
-    unfold good; rewrite Good_split; split.
+    unfold good; rewrite MC_split; split.
     + intros (l & x & ? & -> & y & (m & r & ->)%in_split & ?); simpl.
       now exists l, x, m, y, r.
     + intros (l & x & m & y & r & -> & ?); exists l, x, (m++y::r); split; auto.
@@ -84,14 +84,14 @@ Section bar_good_middle.
   Proof.
     split.
     + induction l as [ | x l IHl ]; simpl; eauto.
-      intros [ (y & [ H1 | H1 ]%in_app_iff & H2) | [ | [ | (u & v & ? & []) ] ]%IHl ]%Good_inv; eauto.
+      intros [ (y & [ H1 | H1 ]%in_app_iff & H2) | [ | [ | (u & v & ? & []) ] ]%IHl ]%MC_inv; eauto.
       * left; constructor 1; red; eauto.
       * do 2 right; exists x; split; auto; red; eauto.
       * left; now constructor 2.
       * do 2 right; exists u; split; auto; red; eauto.
     + intros [ | [ | (x & (l' & m & ->)%in_split & ?) ] ]; eauto.
       rewrite <- app_assoc; simpl.
-      apply Good_app_left; constructor 1; eauto.
+      apply MC_app_left; constructor 1; eauto.
   Qed.
 
   Fact good_snoc_inv l x : good (l++[x]) ↔ good l ∨ ∃y, y ∈ l ∧ R x y.
