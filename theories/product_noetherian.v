@@ -13,8 +13,8 @@ Require Import utils bar ring product category ideal noetherian.
 
 Import ListNotations.
 
-(** This proof was inspired by a Rocq rework of the proof 
-   of the constructive form of Ramsey's theorem 
+(** This proof was inspired by a Rocq rework of the proof
+    of the constructive form of Ramsey's theorem 
 
      [1] "Higman's lemma in Type theory", D. Fridlender 
             in TYPES 1996
@@ -151,17 +151,20 @@ Section product_noetherian.
 
            good RS (map inXY l++map inX lx++map inY ly)
 
-      where RS an "obvious" extension of R and S on the type X*Y+X+Y.
+      where RS an "obvious" extension of R and S on the type X*Y+X+Y
+      (see θ_iff_good in ramsey.v).
 
-      This equivalent form "is not" made explicit in [1] but is 
+      This equivalent form "is not" made explicit in [1] and is 
       rather obfuscated by overly complex notations and unnecessary
       auxiliary functions and hypotheses. Getting this form, as an
       instance of the "good" predicate, was essential be able to 
       convert the over approximation from relations to ideals.
 
-      Indeed, as LD := Good (λ m, idl ⌞m⌟), we get a clear similarity 
-      here but we inject 𝓡 (resp. 𝓣) into 𝓡*𝓣 using φ (resp. ψ)
-      instead of the canonical injections X → X*Y+X+Y and Y → X*Y.X+Y. *)
+      Indeed, as good := MC (λ l x, ∃y, y ∈ l ∧ R y x)
+              and  LD := MC (λ l x, idl ⌞l⌟ x), 
+      we get a clear similarity here but we inject 𝓡 (resp. 𝓣) 
+      into 𝓡*𝓣 using φ (resp. ψ) instead of the canonical injections 
+      X → X*Y+X+Y and Y → X*Y.X+Y. *)
 
   Let θ lx ly l := LD (l++map φ lx++map ψ ly).
 
@@ -176,11 +179,11 @@ Section product_noetherian.
 
   Section Ramsey_nested_induction.
 
-    (** This part, with nested induction, largely differs for 
-        the corresponding one in ramsey.v, and is in fact 
+    (** This part, with nested induction, largely differs for
+        the corresponding one in ramsey.v, and is in fact
         simpler to obtain (IMHO), once you understand that
-        you first have the consider the difficult base 
-        case in bar_bar_ramsey *)
+        you first have the consider the difficult base case 
+        in bar_bar_ramsey *)
 
     Hint Resolve in_or_app in_eq in_cons : core.
 
@@ -233,7 +236,8 @@ Section product_noetherian.
           bar (θ lx (π₂ z::ly)) m 
         and the difficulty lies only
         in the base case when the LD
-        occurs at (π₂ z) *)
+        occurs at (π₂ z), and we use
+        idl_bar_ramsey *)
  
     Local Proposition bar_bar_ramsey m :
         bar (θ lx (π₂ z::ly)) m

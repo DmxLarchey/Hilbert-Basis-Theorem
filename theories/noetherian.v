@@ -307,9 +307,9 @@ Section wf_strict_divisibility_bezout_noetherian.
   (* If g is Acc(essible) for strict divisibility
      then any list l generating the same ideal as g
      is eventually extended in to a linearly dependent list *)  
-  Local Lemma Acc_sdiv__bar_Good (g : 𝓡) :
+  Local Lemma Acc_sdiv__bar_LD (g : 𝓡) :
       Acc ring_sdiv g
-    → ∀l, idl ⌞l⌟ ≡₁ ring_div g 
+    → ∀l, idl ⌞l⌟ ≡₁ ring_div g
     → bar LD l.
   Proof.
     induction 1 as [ g _ IHg ]; intros l Hl.
@@ -332,7 +332,7 @@ Section wf_strict_divisibility_bezout_noetherian.
 
   Theorem wf_sdiv_bezout_noetherian : noetherian 𝓡.
   Proof.
-    apply Acc_sdiv__bar_Good with 0ᵣ; auto.
+    apply Acc_sdiv__bar_LD with 0ᵣ; auto.
     intro; rewrite idl_iff_lc__list; split.
     + intros <-%lc_inv; apply ring_div_refl.
     + intros (? & ->); constructor; ring.
@@ -368,7 +368,7 @@ Proof.
     rewrite Z.mul_assoc, <- Z.abs_square, !C; ring.
 Qed.
 
-Local Proposition Zsdiv_wf : well_founded Zsdiv.
+Proposition Zsdiv_wf : well_founded Zsdiv.
 Proof.
   intros z.
   destruct (Z.eq_dec z 0) as [ -> | H ].
