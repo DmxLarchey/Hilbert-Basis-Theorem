@@ -20,13 +20,20 @@ Require Import utils bar monotone_closure ring ideal bezout php.
 
 #[local] Hint Constructors MC : core.
 
-(** This gives a definition of L(inear) D(ependence) of m:
+(** This gives a definition of L(inear) D(ependence) of (m : list 𝓡)
+
+      LD (m : list 𝓡) := MC (λ l, idl ⌞l⌟) m
+
+    We give it as an instance of the monotone_closure MC
+    an inductive predicate, but the FOL characterization
+    given by LD_split (see below) would have worked as well: 
+    
     at some point x in the sequence m = l++[x]++r, 
     idl ⌞r⌟ does not increase, ie idl ⌞x::r⌟ ⊆ idl ⌞r⌟
     or equivalently idl ⌞r⌟ x (see LD_split below)
 
-    Notice that (λ m, idl ⌞m⌟) ignores the order of the list m 
-    because ⌞m⌟ is the "set" of members of the list m 
+    Notice that (λ l, idl ⌞l⌟) ignores the order of the list l 
+    because ⌞l⌟ is the "set" of members of the list l. 
 
     This definition is equivalent to the usual definition
     of linear dependence for fields: 
@@ -36,7 +43,7 @@ Require Import utils bar monotone_closure ring ideal bezout php.
 
     But it may not be so for non-integral rings *)
 
-Definition linearly_dependent {𝓡 : ring} := MC (λ m : list 𝓡, idl ⌞m⌟).
+Definition linearly_dependent {𝓡 : ring} := MC (λ l : list 𝓡, idl ⌞l⌟).
 
 #[local] Notation LD := linearly_dependent.
 
@@ -55,14 +62,14 @@ Section linearly_dependent.
   Fact LD_split m : LD m ↔ ∃ l x r, m = l++x::r ∧ idl ⌞r⌟ x.
   Proof. apply MC_split. Qed.
 
+  (** Some tools for analyzing the LD of lists which already
+      have a (partially) specified structure *)
+
   Fact LD_nil_inv : @LD 𝓡 [] → False.
   Proof. apply MC_inv. Qed.
 
   Fact LD_cons_inv x m : LD (x::m) ↔ idl ⌞m⌟ x ∨ LD m.
   Proof. apply MC_cons_inv. Qed.
-
-  (** Tools for analyzing the LD of lists which already
-      have a (partially) specified structure *)
 
   (* If l++r is LD then the linear dependency occurs either in l or in r *)
   Fact LD_app_inv l r : LD (l++r) ↔ (∃ l' x m, l = l'++x::m ∧ idl ⌞m++r⌟ x) ∨ LD r.
@@ -159,10 +166,11 @@ Qed.
 
 (** bar LD l can be read as l is bound to become linearly dependent
     after finitely many steps, however it is extended by appending
-    elements (at its head).
+    elements at its head.
 
-    Hence bar LD [] means that whichever way you grow a list,
-    it is bound to become LD after finitely many steps. *) 
+    Hence bar LD [] means that whichever way you grow a list
+    starting from the empty list, it is bound to become LD after 
+    finitely many steps. *) 
 
 Definition noetherian (𝓡 : ring) := bar (@LD 𝓡) [].
 
@@ -201,10 +209,11 @@ Qed.
 
 Section noetherian_finite.
 
-  (** Rings that have finitely many members (up-to equivalence)
-      are Noetherian. *)
+  (** Rings that have finitely many members (up to equivalence)
+      are Noetherian.
 
-  (* This is enough to show that Z/kZ is Noetherian (for k ≠ 0) *)
+      This is enough to show that Z/kZ is Noetherian (for k ≠ 0)
+   *)
 
   Variables (𝓡 : ring)
             (H𝓡 : ∃l, ∀x : 𝓡, ∃y, y ∈ l ∧ x ∼ᵣ y).
