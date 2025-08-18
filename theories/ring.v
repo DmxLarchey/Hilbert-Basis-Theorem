@@ -23,9 +23,9 @@ Record ring := {
   un_m : carrier;
   op_m : carrier → carrier → carrier;
   req  : carrier → carrier → Prop;
-  eq_equiv : Equivalence req;
+  req_equiv : Equivalence req;
   is_ring : @ring_theory carrier un_a un_m op_a op_m (λ x y, op_a x (iv_a y)) iv_a req;
-  eq_ext : @ring_eq_ext carrier op_a op_m iv_a req
+  req_ext : @ring_eq_ext carrier op_a op_m iv_a req
 }.
 
 Arguments un_a {_}.
@@ -49,13 +49,13 @@ Notation "x *ᵣ y" := (op_m x y) (at level 29, left associativity, format "x  *
 (** req/∼ᵣ is a equivalence relation, defining a setoid *)
 
 Fact ring_eq_refl (𝓡 : ring) (x : 𝓡) : x ∼ᵣ x.
-Proof. apply eq_equiv. Qed.
+Proof. apply req_equiv. Qed.
 
 Fact ring_eq_sym (𝓡 : ring) (x y : 𝓡) : x ∼ᵣ y → y ∼ᵣ x.
-Proof. apply eq_equiv. Qed.
+Proof. apply req_equiv. Qed.
 
 Fact ring_eq_trans (𝓡 : ring) (x y z : 𝓡) : x ∼ᵣ y → y ∼ᵣ z → x ∼ᵣ z.
-Proof. apply eq_equiv. Qed.
+Proof. apply req_equiv. Qed.
 
 Hint Resolve ring_eq_refl ring_eq_sym ring_eq_trans : core.
 
@@ -68,13 +68,13 @@ Add Parametric Relation (𝓡 : ring) : 𝓡 req
 (** ring operations are morphisms wrt. req/∼ᵣ *)
 
 Add Parametric Morphism (𝓡 : ring) : (@op_a 𝓡) with signature (req) ==> (req) ==> (req) as ring_op_a_morph.
-Proof. apply eq_ext. Qed.
+Proof. apply req_ext. Qed.
 
 Add Parametric Morphism (𝓡 : ring) : (@op_m 𝓡) with signature (req) ==> (req) ==> (req) as ring_op_m_morph.
-Proof. apply eq_ext. Qed.
+Proof. apply req_ext. Qed.
 
 Add Parametric Morphism (𝓡 : ring) : (@iv_a 𝓡) with signature (req) ==> (req) as ring_iv_a_morph.
-Proof. apply eq_ext. Qed.
+Proof. apply req_ext. Qed.
 
 (** Some obvious derived equations for rings *)
 

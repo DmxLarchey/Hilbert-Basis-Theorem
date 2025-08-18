@@ -138,20 +138,22 @@ Section ring_ideal.
 
   Fact idl_closed P Q : P ⊆₁ idl Q → idl P ⊆₁ idl Q.
   Proof. apply idl_smallest, idl_ring_ideal. Qed.
+  
+  #[local] Hint Resolve in_eq in_cons : core.
 
-  Fact idl_stable x l : idl ⌞l⌟ x → idl ⌞x::l⌟ ⊆₁ idl ⌞l⌟.
+  Fact idl_stable x l : idl ⌞l⌟ x ↔ idl ⌞x::l⌟ ⊆₁ idl ⌞l⌟.
   Proof.
-    intros H; apply idl_closed; auto.
-    intros ? [ <- | ]; eauto.
+    split.
+    + intros ?; apply idl_closed; auto.
+      intros ? [ <- | ]; eauto.
+    + intros H; apply H; eauto.
   Qed.
 
   (** Another characterization of idl ⌞l⌟ *)
 
-  #[local] Hint Resolve in_eq in_cons : core.
-
   Fact lc__idl l x : lc l x → idl ⌞l⌟ x.
   Proof.
-    induction 1 as [ x E | a x l r y E _ IH ]; eauto.
+    induction 1 as [ | a x l r y E _ IH ]; eauto.
     constructor 2 with (1 := E).
     apply idl_op_a; eauto.
     revert IH; apply idl_mono; eauto.
@@ -297,7 +299,7 @@ Section ring_ideal.
   Qed.
 
   Inductive update : list 𝓡 → list 𝓡 → Prop :=
-    | update_stop l x y : lc l (y −ᵣ x) → update (x::l) (y::l)
+    | update_chng l x y : lc l (y −ᵣ x) → update (x::l) (y::l)
     | update_skip x l m : update l m → update (x::l) (x::m).
 
   Hint Constructors update : core.
