@@ -61,6 +61,30 @@ Section characteristic_property_of_the_product_ring.
 
   Section unicity.
 
+     Variables (𝓟₁ 𝓟₂ : ring_product_diag).
+
+      Add Ring 𝓟1_ring : (is_ring 𝓟₁).
+      Add Ring 𝓟2_ring : (is_ring 𝓟₂).
+
+    Theorem product_ring_unique :
+         is_product_ring 𝓟₁
+       → is_product_ring 𝓟₂
+       → ∃ (f : 𝓟₁ → 𝓟₂) (g : 𝓟₂ → 𝓟₁),
+             ring_isomorphism f g
+           ∧ pd_homo f
+           ∧ pd_homo g.
+    Proof.
+      intros H1 H2.
+      destruct (H1 𝓟₂) as ((f & Hf) & H3).
+      destruct (H2 𝓟₁) as ((g & Hg) & H4).
+      exists g, f; split; [ | split ]; auto.
+      split right.
+      + apply Hg.
+      + apply Hf.
+      + intro; apply (proj2 (H2 _) (λ p, g (f p)) (λ p, p)); auto.
+      + intro; apply (proj2 (H1 _) (λ p, f (g p)) (λ p, p)); auto.
+    Qed.
+
   End unicity.
 
 End characteristic_property_of_the_product_ring.
@@ -156,20 +180,18 @@ Section characteristic_property_of_the_polynomial_ring.
        → is_poly_ring 𝓡x₂
        → ∃ (f : 𝓡x₁ → 𝓡x₂) (g : 𝓡x₂ → 𝓡x₁),
              ring_isomorphism f g
-           ∧ f (pe_point 𝓡x₁) ∼ᵣ pe_point 𝓡x₂
-           ∧ g (pe_point 𝓡x₂) ∼ᵣ pe_point 𝓡x₁.
+           ∧ pe_homo f
+           ∧ pe_homo g.
     Proof.
       intros H1 H2.
       destruct (H1 𝓡x₂) as ((f & Hf) & H3).
       destruct (H2 𝓡x₁) as ((g & Hg) & H4).
-      exists f, g; split right.
-      + split right.
-        * apply Hf.
-        * apply Hg.
-        * intro; apply (proj2 (H2 _) (λ p, f (g p)) (λ p, p)); auto.
-        * intro; apply (proj2 (H1 _) (λ p, g (f p)) (λ p, p)); auto.
+      exists f, g; split; [ | split ]; auto.
+      split right.
       + apply Hf.
       + apply Hg.
+      + intro; apply (proj2 (H2 _) (λ p, f (g p)) (λ p, p)); auto.
+      + intro; apply (proj2 (H1 _) (λ p, g (f p)) (λ p, p)); auto.
     Qed.
 
   End unicity.
@@ -240,20 +262,18 @@ Section characteristic_property_of_multivariate_rings.
        → is_multi_ring 𝓡A₂
        → ∃ (f : 𝓡A₁ → 𝓡A₂) (g : 𝓡A₂ → 𝓡A₁),
              ring_isomorphism f g
-           ∧ (∀x, f (me_points 𝓡A₁ x) ∼ᵣ me_points 𝓡A₂ x)
-           ∧ (∀x, g (me_points 𝓡A₂ x) ∼ᵣ me_points 𝓡A₁ x).
+           ∧ me_homo f
+           ∧ me_homo g.
     Proof.
       intros H1 H2.
       destruct (H1 𝓡A₂) as ((f & Hf) & H3).
       destruct (H2 𝓡A₁) as ((g & Hg) & H4).
-      exists f, g; split right.
-      + split right.
-        * apply Hf.
-        * apply Hg.
-        * intro; apply (proj2 (H2 _) (λ p, f (g p)) (λ p, p)); auto.
-        * intro; apply (proj2 (H1 _) (λ p, g (f p)) (λ p, p)); auto.
+      exists f, g; split; [ | split ]; auto.
+      split right.
       + apply Hf.
       + apply Hg.
+      + intro; apply (proj2 (H2 _) (λ p, f (g p)) (λ p, p)); auto.
+      + intro; apply (proj2 (H1 _) (λ p, g (f p)) (λ p, p)); auto.
     Qed.
 
   End unicity.
