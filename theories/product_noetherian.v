@@ -16,10 +16,14 @@ Import ListNotations.
 (** This proof was inspired by a Rocq rework of the proof
     of the constructive form of Ramsey's theorem 
 
-     [1] "Higman's lemma in Type theory", D. Fridlender 
+     [1] "Higman's lemma in Type theory", D. Fridlender
             in TYPES 1996
 
-   see file ramsey.v herein *)
+   which is expressed there as "the direct product of two
+   almost full binary relations is almost full"
+
+   See file ramsey.v herein for the Rocq rework of that
+   proof in [1]. *)
 
 #[local] Notation LD := linearly_dependent.
 

@@ -14,28 +14,47 @@ Require Import utils bar monotone_closure.
 Import ListNotations.
 
 (** This proof is a Rocq rework of the proof 
-   of the constructive form of Ramsey's theorem 
+    of the constructive form of Ramsey's theorem that
+    can be found in
 
      [1] "Higman's lemma in Type theory", D. Fridlender 
-            in TYPES 1996 *)
+            in TYPES 1996 
+
+    Notice that D. Fridlender proves that the direct
+    product of two almost full binary relations
+    ("AF R" is expressed as "bar (good R) []") is
+    also almost full.
+
+    The proof derived from Coquand's abstract outline 
+    (unpublished) in
+
+     [2] "Stop we you are almost full" (ITP 2012)
+
+    works differently, by induction on the arity of
+    the relations and show that the intersection of
+    two AF relations is AF. That approach was not
+    suitable to work out an adaptation to the context
+    of Noetherian relations (see product_noetherian.v)
+ *)
 
 Section bar_good_middle.
 
   Variables (X : Type) (R : X → X → Prop).
-  
+
+  (* x is above some member of l *)
   Definition lowered l x := ∃y, y ∈ l ∧ R y x.
-  
+
   Fact lowered_incl l m x : incl l m → lowered l x → lowered m x.
   Proof. intros H (? & ?%H & ?); red; eauto. Qed.
-  
+
   Hint Resolve in_or_app : core.
-  
+
   Fact lowered_app_left l r x : lowered r x → lowered (l++r) x.
   Proof. apply lowered_incl; red; eauto. Qed.
-  
+
   Fact lowered_app_right l r x : lowered l x → lowered (l++r) x.
   Proof. apply lowered_incl; red; eauto. Qed.
-  
+
   Fact lowered_cons_inv y l x : lowered (y::l) x → R y x ∨ lowered l x.
   Proof. intros (? & [ <- | ] & ?); auto; right; red; eauto. Qed.  
 
