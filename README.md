@@ -96,13 +96,13 @@ Additionally, we remarked classical proofs of the Noetherianess of the direct pr
 Hence, we wondered whether a constructive form of Ramsey's theorem, based on `bar` inductive predicates, could be adapted to 
 derive the closure of Noetherianess under direct products, w/o assuming further properties on rings (such as e.g. strong discreteness).
 
-And indeed, it turnzs out that D. Fridlender's proof of Ramsey's theorem~[5], simplified and reworked Rocq, 
-what a good starting point, to derive the Noetherianess of the direct products:
+And indeed, it turns out that D. Fridlender's proof of Ramsey's theorem [5], simplified and reworked in Rocq, 
+was a good starting point to derive the Noetherianess of the direct products:
 ```coq
 Theorem product_noetherian 𝓡 𝓣 : noetherian 𝓡 → noetherian 𝓣 → noetherian (product_ring 𝓡 𝓣).
 ```
 
-Further comments on that **new proof** will come later on.  
+Further comments on that **new proof** will come later on.
 
 ## Induction principles derived from Noetherianess
 
