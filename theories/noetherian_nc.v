@@ -156,7 +156,7 @@ Section noetherian__noetherian_nc__XM.
   Theorem noetherian_nc__noetherian__XM_DC : noetherian_nc ⊆₁ noetherian.
   Proof.
     intros R HR; red.
-    destruct (xm (@bar R linearly_dependent [])) as [ | C ]; auto; exfalso.
+    destruct (xm (bar (@pauses R) [])) as [ | C ]; auto; exfalso.
     apply not_bar_nil__XM_DC in C as (rho & Hrho); auto.
     set (img x := ∃n, rho n = x).
     destruct (HR (idl img)) as (l & Hl).

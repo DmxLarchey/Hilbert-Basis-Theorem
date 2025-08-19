@@ -27,7 +27,7 @@ Require Import utils bar ring ideal poly noetherian.
 Definition strict_incl {X} (P Q : X → Prop) := P ⊆₁ Q ∧ ∃x, Q x ∧ ¬ P x.
 
 #[local] Notation "P ⊂₁ Q" := (strict_incl P Q) (at level 70, format "P  ⊂₁  Q").
-#[local] Notation LD := linearly_dependent.
+#[local] Notation PA := pauses.
 
 Section noetherian_wf.
 
@@ -35,9 +35,9 @@ Section noetherian_wf.
 
   Implicit Type (l m k : list 𝓡).
 
-  Local Lemma Acc_strict_incl_rev_upclosed_right k :
-      Acc (λ l m, extends⁻¹ l m ∧ ¬ LD m) k
-    → ¬ LD k
+  Local Lemma Acc_extends__strict_incl_rev k :
+      Acc (λ l m, extends⁻¹ l m ∧ ¬ PA m) k
+    → ¬ PA k
     → ∀P, ⌞k⌟ ⊆₁ P → Acc (λ P Q, Q ⊂₁ P ∧ ring_ideal Q) P.
   Proof.
     induction 1 as [ l _ IHl ].
@@ -45,7 +45,7 @@ Section noetherian_wf.
     intros Q ((HPQ & x & Qx & Px) & HP).
     apply IHl with (x::l); eauto.
     + contradict Gl.
-      apply LD_cons_inv in Gl as [ H | H ]; auto.
+      apply PA_cons_inv in Gl as [ H | H ]; auto.
       destruct Px.
       revert H; now apply idl_smallest.
     + intros ? [ <- | ]; eauto.
@@ -53,17 +53,22 @@ Section noetherian_wf.
   
   Hypothesis 𝓡_noeth : noetherian 𝓡.
 
+  Local Fact Acc_extends_nil : Acc (λ l m, extends⁻¹ l m ∧ ¬ PA m) [].
+  Proof. apply bar__Acc_not; auto. Qed.
+
+  Hint Resolve Acc_extends_nil : core.
+
   (** If 𝓡 is (constructivelly) Noetherian then witnessed strict 
-      reverse inclusion is (constructivelly) well-founded on ideals of 𝓡, 
-      Hence any strictly increasing sequence of ideals of 𝓡 is terminating. *)
+      reverse inclusion is (constructivelly) well-founded on the 
+      ideals of 𝓡. Hence any strictly increasing sequence of 
+      ideals of 𝓡 is terminating. *)
 
   Theorem noetherian__wf_strict_incl_rev :
     well_founded (λ P Q : 𝓡 → Prop, Q ⊂₁ P ∧ ring_ideal Q).
   Proof.
-    intros P.
-    apply Acc_strict_incl_rev_upclosed_right with (k := []).
-    + now apply bar__Acc_not.
-    + now intros ?%LD_nil_inv.
+    intro.
+    apply Acc_extends__strict_incl_rev with (k := []); auto.
+    + now intros ?%PA_nil_inv.
     + simpl; tauto.
   Qed.
 
@@ -240,15 +245,15 @@ Section strongly_discrete_ML_noetherian.
   
   Implicit Type (l : list 𝓡).
   
-  Fact strongly_discrete__LD_dec l : LD l ∨ ¬ LD l.
+  Fact strongly_discrete__PA_dec l : PA l ∨ ¬ PA l.
   Proof.
     induction l as [ | x l Hl ].
-    + right; red; apply LD_nil_inv.
-    + rewrite LD_cons_inv.
+    + right; red; apply PA_nil_inv.
+    + rewrite PA_cons_inv.
       generalize (H𝓡 l x); tauto.
   Qed.
 
-  Hint Resolve strongly_discrete__LD_dec : core.
+  Hint Resolve strongly_discrete__PA_dec : core.
 
   Local Lemma ML_noetherian__noetherian :
       well_founded (λ P Q : sig (@fingen_ideal 𝓡), sincl (proj1_sig Q) (proj1_sig P))

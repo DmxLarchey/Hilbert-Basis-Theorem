@@ -34,10 +34,15 @@ Import ListNotations.
     the relations and show that the intersection of
     two AF relations is AF. That approach was not
     suitable to work out an adaptation to the context
-    of Noetherian relations (see product_noetherian.v)
- *)
+    of Noetherian relations.
+
+    See product_noetherian.v to review the conversion
+    of the below proof to the context of Bar Noetherian
+    rings. *)
 
 Section bar_good_middle.
+
+  Notation MC := monotone_closure.
 
   Variables (X : Type) (R : X → X → Prop).
 

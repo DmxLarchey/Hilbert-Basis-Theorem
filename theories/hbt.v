@@ -92,11 +92,11 @@ End lex.
 
 Arguments lex {_}.
 
-#[local] Notation LD := linearly_dependent.
+#[local] Notation PA := pauses.
 
 Section HTB.
 
-  (** Beware that LD is used for two rings below, both 𝓡 and 𝓡[X] !! *)
+  (** Beware that PA is used for two rings below, both 𝓡 and 𝓡[X] !! *)
 
   Variable (𝓡 : ring).
 
@@ -130,18 +130,18 @@ Section HTB.
      of a representation of a polynomial, which exists, but is dependent
      on the represention, hence is not a notion attached to a polynomial. *)
 
-  Local Lemma HBT_main h : bar LD h → ∀k, Forall2 is_last h k → (∀m, lex T m k → bar LD m) → bar LD k.
+  Local Lemma HBT_main h : bar PA h → ∀k, Forall2 is_last h k → (∀m, lex T m k → bar PA m) → bar PA k.
   Proof.
-    (* induction on bar LD h *)
+    (* induction on bar PA h *)
     induction 1 as [ h Hh | h _ IHh ].
-    + (* The list of head coefficients is linearly dependent in 𝓡
+    + (* The list of head coefficients pauses in 𝓡
          hence h = u++[x]++v where x is a linear combination of v. *)
-      apply LD_split in Hh as (u & x & v & -> & Hx%idl_iff_lc__list).
+      apply PA_split in Hh as (u & x & v & -> & Hx%idl_iff_lc__list).
       (* From Forall2 is_last (u++[x]++v) k, we split k accordingly into 
          k = l++[p]++m where is_last p x and Forall2 is_last v m *)
       intros ? (l & p & m & _ & Hp & Hm & ->)%Forall2_middle_inv_l IH.
-      (* because LD is monotone, it is enough to show bar LD (p::m) *)
-      apply bar_LD_app_left.
+      (* because PA is monotone, it is enough to show bar PA (p::m) *)
+      apply bar_PA_app_left.
       (* either all polynomials in m have degree less than ⌊p⌋
          or one of them, say q, has degree strictly greater than ⌊p⌋ *)
       destruct list_choice 
@@ -152,12 +152,13 @@ Section HTB.
       * intros; lia.
       * (* Some polynomial in m, say q has a "degree" strictly greater than 
            that of p. Then m = m'++[q]++r with ⌊p⌋ < ⌊q⌋.
-           By IH we get bar LD ([p]++r) and conclude *)
+           By IH we get bar PA ([p]++r) and conclude *)
         apply in_split in H3 as (m' & r & ->).
-        (* it is enough to show bar LD ([p]++r) *)
-        apply (bar_LD_app_middle (poly_ring _)) with (l := [_]).
-        apply (bar_LD_cons_middle (poly_ring _)) with (l := [_]).
-        (* bar LD ([p]++r) holds by IH *)
+        (* it is enough to show bar PA ([p]++r), 
+           ie we can discard m++[q] in the middle *)
+        replace (p::m'++q::r) with ([p]++(m'++[q])++r) by now rewrite <- app_assoc.
+        apply (bar_PA_app_middle (poly_ring _)).
+        (* bar PA ([p]++r) holds by IH *)
         apply IH, lex_app; simpl; eauto.
       * (* All polynomial in m have a "degree" lesser than that of p.
            We build a new polynomial q of "degree" strictly less than p
@@ -167,20 +168,20 @@ Section HTB.
           with (𝓡 := 𝓡) (1 := Hx) (2 := Hp) (3 := Hm) (4 := Hm')
           as (q & H3 & H4).
         (* We update p by q, and conclude using IH *)
-        apply bar_LD_update_closed with (q::m); auto.
+        apply bar_PA_update_closed with (q::m); auto.
     + (* h are the heads of k *)
       intros k Hhk IH.
-      (* it is sufficient to show ∀p, bar LD (p::k) *)
+      (* it is sufficient to show ∀p, bar PA (p::k) *)
       constructor 2.
       (* we use the special lexicographic induction on lex (p::k) 
-         and can thus further assume bar LD l for any l <lex p::k *)
+         and can thus further assume bar PA l for any l <lex p::k *)
       apply lex_special_wf with (1 := T_wf); trivial.
       (* either p is [] or of shape q++[x] *)
       intros p; destruct p as [ | x q _ ] using rev_ind.
-      * (* p is [] (the zero polynomial) and thus []::_ is LD *)
+      * (* p is [] (the zero polynomial) and thus []::_ is PA *)
         constructor 1; constructor; constructor 3.
       * (* x::h are the heads of (q++[x])::k 
-           hence we get bar LD ((q++[x])::k) using IHh *)
+           hence we get bar PA ((q++[x])::k) using IHh *)
         apply (IHh x); auto.
   Qed.
 

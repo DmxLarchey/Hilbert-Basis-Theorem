@@ -16,8 +16,18 @@ Require Import utils bar.
 Section MC_and_bar.
 
   (** monotone_closure (P : rel (list A) A) : rel₁ (list A) (denoted MC)
-      subsumes good (R : rel₂ A) : rel₁ (list A), the notion of good (finite) sequence for a binary relation R
-      and LD (𝓡 : ring) : rel₁ (list 𝓡), the notion of linearly dependent sequence in a ring 𝓡 *)  
+      subsumes 
+
+      - good (R : rel₂ A) ([xₙ;...;x₁] : list A),
+        the notion of good (finite) sequence for a binary relation R,
+        ie R xᵢ xⱼ holds for some 1 ≤ i < j ≤ n (see file ramsey.v)
+
+      - pauses ([xₙ;...;x₁] : list 𝓡),
+        the notion of that the finite increasing sequence 
+        idl [] ⊆ idl [x₁] ⊆ idl [x₂;x₁] ⊆ ... ⊆ idl [xₙ;...;x₁] 
+        of finitely generated ideals (of 𝓡 : ring) "pauses",
+        ie idl [xᵢ₋₁,...,x₁] xᵢ holds for some i in 1..n
+        (see file noetherian.v) *)
 
   Variables (A : Type).
 
@@ -108,6 +118,4 @@ Section MC_and_bar.
 End MC_and_bar.
 
 Arguments monotone_closure {_}.
-
-#[global] Notation MC := monotone_closure.
 

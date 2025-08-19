@@ -18,36 +18,32 @@ Require Import utils bar monotone_closure ring ideal bezout php.
            in_eq in_cons
          : core.
 
+#[local] Notation MC := monotone_closure.
 #[local] Hint Constructors MC : core.
 
-(** This gives a definition of L(inear) D(ependence) of (m : list 𝓡)
+(** This gives a definition of "pauses"/PA ) 
+    for the finite sequence (m : list 𝓡)
 
-      LD (m : list 𝓡) := MC (λ l, idl ⌞l⌟) m
+      PA (m : list 𝓡) := MC (λ l, idl ⌞l⌟) m
 
     We give it as an instance of the monotone_closure MC
     an inductive predicate, but the FOL characterization
-    given by LD_split (see below) would have worked as well: 
-    
-    at some point x in the sequence m = l++[x]++r, 
-    idl ⌞r⌟ does not increase, ie idl ⌞x::r⌟ ⊆ idl ⌞r⌟
-    or equivalently idl ⌞r⌟ x (see LD_split below)
+    given by PA_split (see below) would have worked as well:
+
+    at some point x in the sequence m = l++[x]++r,
+    idl ⌞r⌟ pauses, i.e. idl ⌞x::r⌟ ⊆ idl ⌞r⌟
+    or equivalently idl ⌞r⌟ x (see PA_split below)
+    or equivalently lc r x. 
 
     Notice that (λ l, idl ⌞l⌟) ignores the order of the list l 
-    because ⌞l⌟ is the "set" of members of the list l. 
+    because ⌞l⌟ is the "set" of members of the list l.
+ *)
 
-    This definition is equivalent to the usual definition
-    of linear dependence for fields: 
-      [x₁,...,xₙ] is linearly dependent 
-      if there are a₁,...,aₙ with a₁x₁+...+aₙxₙ = 0 
-         and aᵢ ≠ 0 for some i in {1,..,n}
+Definition pauses {𝓡 : ring} := MC (λ l : list 𝓡, idl ⌞l⌟).
 
-    But it may not be so for non-integral rings *)
+#[local] Notation PA := pauses.
 
-Definition linearly_dependent {𝓡 : ring} := MC (λ l : list 𝓡, idl ⌞l⌟).
-
-#[local] Notation LD := linearly_dependent.
-
-Section linearly_dependent.
+Section pauses.
 
   Variables (𝓡 : ring).
 
@@ -55,108 +51,109 @@ Section linearly_dependent.
 
   Implicit Type (l m : list 𝓡).
 
-  Fact LD_monotone : monotone (@LD 𝓡).
+  Fact PA_monotone : monotone (@PA 𝓡).
   Proof. now constructor 2. Qed.
 
-  (** FOL characterization of LD *)
-  Fact LD_split m : LD m ↔ ∃ l x r, m = l++x::r ∧ idl ⌞r⌟ x.
+  (** FOL characterization of PA *)
+  Fact PA_split m : PA m ↔ ∃ l x r, m = l++x::r ∧ idl ⌞r⌟ x.
   Proof. apply MC_split. Qed.
 
-  (** Some tools for analyzing the LD of lists which already
+  (** Some tools for analyzing the PA of lists which already
       have a (partially) specified structure *)
 
-  Fact LD_nil_inv : @LD 𝓡 [] → False.
+  Fact PA_nil_inv : @PA 𝓡 [] → False.
   Proof. apply MC_inv. Qed.
 
-  Fact LD_cons_inv x m : LD (x::m) ↔ idl ⌞m⌟ x ∨ LD m.
+  Fact PA_cons_inv x m : PA (x::m) ↔ idl ⌞m⌟ x ∨ PA m.
   Proof. apply MC_cons_inv. Qed.
 
-  (* If l++r is LD then the linear dependency occurs either in l or in r *)
-  Fact LD_app_inv l r : LD (l++r) ↔ (∃ l' x m, l = l'++x::m ∧ idl ⌞m++r⌟ x) ∨ LD r.
+  (* If l++r is PA then the pause occurs either in l or in r *)
+  Fact PA_app_inv l r : PA (l++r) ↔ (∃ l' x m, l = l'++x::m ∧ idl ⌞m++r⌟ x) ∨ PA r.
   Proof. apply MC_app_inv. Qed.
 
-  (* If l++[x]++r is LD then the linear dependency occurs either in l, or at x or in r *)
-  Fact LD_middle_inv l x r : 
-       LD (l++x::r)
+  (* If l++[x]++r is PA then the pause occurs either in l, or at x or in r *)
+  Fact PA_middle_inv l x r : 
+       PA (l++x::r)
     ↔ (∃ l' y m, l = l'++y::m ∧ idl ⌞m++x::r⌟ y) (* in l *)
     ∨ idl ⌞r⌟ x                                  (* at x *)
-    ∨ LD r                                       (* in r *)
+    ∨ PA r                                       (* in r *)
     .
-  Proof. rewrite LD_app_inv, LD_cons_inv; tauto. Qed.
+  Proof. rewrite PA_app_inv, PA_cons_inv; tauto. Qed.
 
-  (* If l++m++[x]++r is LD then the linear dependency occurs either in l, or in m or at x or in r *) 
-  Fact LD_special_inv l m x r :
-       LD (l++m++x::r)
+  (* If l++m++[x]++r is PA then the pause occurs either in l, or in m or at x or in r *) 
+  Fact PA_special_inv l m x r :
+       PA (l++m++x::r)
     ↔ (∃ l₁ y l₂, l = l₁++y::l₂ ∧ idl ⌞l₂++m++x::r⌟ y) (* in l *)
     ∨ (∃ m₁ y m₂, m = m₁++y::m₂ ∧ idl ⌞m₂++x::r⌟ y)    (* in m *)
     ∨ idl ⌞r⌟ x                                        (* at x *)
-    ∨ LD r                                             (* in r*)
+    ∨ PA r                                             (* in r*)
     .
-  Proof. rewrite !LD_app_inv, LD_cons_inv; tauto. Qed.
+  Proof. rewrite !PA_app_inv, PA_cons_inv; tauto. Qed.
 
   (** Since we know that idl _ is invariant under update
       We derive, in sequence, that:
-        a) LD _ is invariant under update
-        b) bar LD _ is invariant under update *)
+        a) PA _ is invariant under update
+        b) bar PA _ is invariant under update *)
 
   Hint Resolve idl_update_closed
                idl_substract : core.
 
   Hint Constructors bar update : core.
 
-  (* linear dependency is invariant under update *)
-  Lemma LD_update_closed l m : update l m → LD l → LD m.
-  Proof. unfold LD; induction 1 as [ ? ? ? ?%idl_iff_lc__list |]; intros []%MC_inv; eauto. Qed.
+  (* pause is invariant under update *)
+  Lemma PA_update_closed l m : update l m → PA l → PA m.
+  Proof. unfold PA; induction 1 as [ ? ? ? ?%idl_iff_lc__list |]; intros []%MC_inv; eauto. Qed.
 
-  Hint Resolve LD_update_closed : core.
+  Hint Resolve PA_update_closed : core.
 
-  (* bar LD is invariant under update *)
-  Theorem bar_LD_update_closed l m : update l m → bar LD l → bar LD m.
+  (* bar PA is invariant under update *)
+  Theorem bar_PA_update_closed l m : update l m → bar PA l → bar PA m.
   Proof. apply bar_rel_closed; eauto. Qed.
 
-  (** Since LD _ is invariant under insertion anywhere in the list,
-      then so is bar LD _. *)
+  Fact PA_app_left l r : PA r → PA (l++r).
+  Proof. apply MC_app_left. Qed.
 
-  Fact LD_app_middle m : ∀ l r, LD (l++r) → LD (l++m++r).
+  (** Since PA, the existence of a pause, is invariant 
+      under insertion anywhere in the list, then so is 
+      bar PA. *)
+
+  Fact PA_app_middle m : ∀ l r, PA (l++r) → PA (l++m++r).
   Proof.
     apply MC_app_middle.
     intros ? ? ?; apply idl_mono.
     intros ?; rewrite !in_app_iff; tauto.
   Qed.
 
-  Fact LD_app_left l r : LD r → LD (l++r).
-  Proof. apply MC_app_left. Qed.
-
-  Fact LD_app_right l r : LD l → LD (l++r).
+  Fact PA_app_right l r : PA l → PA (l++r).
   Proof.
     intros H.
     rewrite <- app_nil_r, <- app_assoc.
-    apply LD_app_middle.
+    apply PA_app_middle.
     now rewrite app_nil_r.
   Qed.
 
   (** Three specializations of bar_app_middle *)
 
-  (* bar LD is invariant under adding elements anywhere *)
-  Fact bar_LD_app_middle m : ∀ l r, bar LD (l++r) → bar LD (l++m++r).
-  Proof. apply bar_app_middle, LD_app_middle. Qed.
+  (* bar PA is invariant under adding elements anywhere *)
+  Fact bar_PA_app_middle m : ∀ l r, bar PA (l++r) → bar PA (l++m++r).
+  Proof. apply bar_app_middle, PA_app_middle. Qed.
 
-  Fact bar_LD_app_left l r : bar LD r → bar LD (l++r).
-  Proof. apply bar_LD_app_middle with (l := []). Qed.
+  Fact bar_PA_app_left l r : bar PA r → bar PA (l++r).
+  Proof. apply bar_PA_app_middle with (l := []). Qed.
 
-  Fact bar_LD_cons_middle l x r : bar LD (l++r) → bar LD (l++x::r).
-  Proof. apply bar_LD_app_middle with (m := [_]). Qed.
+  Fact bar_PA_cons_middle l x r : bar PA (l++r) → bar PA (l++x::r).
+  Proof. apply bar_PA_app_middle with (m := [_]). Qed.
 
-End linearly_dependent.
+End pauses.
 
 #[local] Hint Resolve in_map : core.
 
-(** LD is invariant under sub-homomorphisms *)
-Fact LD_sub_homo (𝓡 𝓣 : ring) (f : 𝓡 → 𝓣) :
+(** PA is invariant under sub-homomorphisms *)
+Fact PA_sub_homo (𝓡 𝓣 : ring) (f : 𝓡 → 𝓣) :
     ring_sub_homo f
-  → ∀ l : list 𝓡, LD l → LD (map f l).
+  → ∀ l : list 𝓡, PA l → PA (map f l).
 Proof.
-  unfold LD.
+  unfold PA.
   induction 2 as [ x l Hl | ]; simpl; auto.
   constructor 1.
   apply idl_sub_homo with (f := f) in Hl; auto.
@@ -164,15 +161,15 @@ Proof.
   intros ? (? & -> & ?); eauto.
 Qed. 
 
-(** bar LD l can be read as l is bound to become linearly dependent
-    after finitely many steps, however it is extended by appending
-    elements at its head.
+(** bar PA l can be read as l unavoidably pauses
+    after finitely many steps, however it is 
+    extended by appending elements at its head.
 
-    Hence bar LD [] means that whichever way you grow a list
-    starting from the empty list, it is bound to become LD after 
-    finitely many steps. *) 
+    Hence bar PA [] means that whichever way you 
+    grow a list starting from the empty list, it 
+    unavoidably pauses after finitely many steps. *) 
 
-Definition noetherian (𝓡 : ring) := bar (@LD 𝓡) [].
+Definition noetherian (𝓡 : ring) := bar (@PA 𝓡) [].
 
 (** Noetherianess is invariant under surjective homomorphisms *)
 Lemma noetherian_surj_homo (𝓡 𝓣 : ring) :
@@ -252,7 +249,7 @@ Section quotient_noetherian.
 
   Hint Constructors idl : core.
 
-  Fact quotient_idl : @idl 𝓡 ⊆₂ @idl 𝓚.
+  Local Fact quotient_idl : @idl 𝓡 ⊆₂ @idl 𝓚.
   Proof.
     intros I.
     induction 1 as [ | x y H _ IH | | | ]; eauto.
@@ -264,10 +261,10 @@ Section quotient_noetherian.
 
   Hint Resolve quotient_idl : core.
 
-  Fact quotient_linearly_dependent l : @LD 𝓡 l → @LD 𝓚 l.
-  Proof. unfold linearly_dependent; induction 1; eauto. Qed.
+  Local Fact quotient_pauses l : @PA 𝓡 l → @PA 𝓚 l.
+  Proof. unfold PA; induction 1; eauto. Qed.
 
-  Hint Resolve quotient_linearly_dependent : core.
+  Hint Resolve quotient_pauses : core.
   Hint Constructors bar : core.
 
   Theorem quotient_noetherian : noetherian 𝓡 → noetherian 𝓚.
@@ -294,7 +291,7 @@ Section wf_strict_divisibility_bezout_noetherian.
      then 𝓡 is (constructivelly) Noetherian
 
      This is enough to show that Z (the integers)
-     is constructivelly Noetherian. *)
+     is (Bar) Noetherian. *)
 
   Notation ring_sdiv := (λ x y, x |ᵣ y ∧ ¬ y |ᵣ x).
 
@@ -306,11 +303,11 @@ Section wf_strict_divisibility_bezout_noetherian.
 
   (* If g is Acc(essible) for strict divisibility
      then any list l generating the same ideal as g
-     is eventually extended in to a linearly dependent list *)  
-  Local Lemma Acc_sdiv__bar_LD (g : 𝓡) :
+     unavoidably pauses. *)  
+  Local Lemma Acc_sdiv__bar_PA (g : 𝓡) :
       Acc ring_sdiv g
     → ∀l, idl ⌞l⌟ ≡₁ ring_div g
-    → bar LD l.
+    → bar PA l.
   Proof.
     induction 1 as [ g _ IHg ]; intros l Hl.
     constructor 2; intros x.
@@ -327,12 +324,12 @@ Section wf_strict_divisibility_bezout_noetherian.
   Hypothesis (sdiv_wf : @well_founded 𝓡 ring_sdiv).
 
   (* Hence since 0ᵣ is Acc(essible), the
-     list [] generating the ideal {0ᵣ} 
-     is eventually becoming LD *)
+     growing the list [] (generating the ideal {0ᵣ})
+     unavoidably pauses. *)
 
   Theorem wf_sdiv_bezout_noetherian : noetherian 𝓡.
   Proof.
-    apply Acc_sdiv__bar_LD with 0ᵣ; auto.
+    apply Acc_sdiv__bar_PA with 0ᵣ; auto.
     intro; rewrite idl_iff_lc__list; split.
     + intros <-%lc_inv; apply ring_div_refl.
     + intros (? & ->); constructor; ring.
@@ -381,7 +378,7 @@ Proof.
 Qed.
 
 (** Using wf_sdiv_bezout_noetherian, we can show that
-    the ring of integers Z is a Noetherian ring, on 
+    the ring of integers Z is a Noetherian ring, on
     top of being a Bezout ring *)
 
 Theorem Z_noetherian : noetherian Z_ring.
