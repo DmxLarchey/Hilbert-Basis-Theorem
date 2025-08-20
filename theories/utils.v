@@ -214,6 +214,25 @@ Section pfx_rev.
     apply pfx_rev_ext; intros; f_equal; lia.
   Qed.
 
+  Fact pfx_rev_cons_inv f n x l :
+      x::l = pfx_rev f n
+    → ∃m, n = S m ∧ x = f m ∧ l = pfx_rev f m.
+  Proof.
+    destruct n; simpl; [ easy | ].
+    intros [=]; subst; eauto.
+  Qed.
+
+  Fact pfx_rev_app_inv f n l r :
+      l++r = pfx_rev f n
+    → ∃ a b, n = a+b ∧ l = pfx_rev (λ n, f (n+b)) a ∧ r = pfx_rev f b.
+  Proof.
+    induction l as [ | x l IHl ] in n |- *; simpl.
+    + intros ->; now exists 0, n.
+    + intros (m & -> & -> & ?)%pfx_rev_cons_inv.
+      destruct (IHl _ H) as (a & b & ? & ? & ?).
+      exists (S a), b; subst; auto.
+  Qed.
+
 End pfx_rev.
 
 Arguments pfx_rev {X}.

@@ -175,6 +175,21 @@ Definition RS_noetherian (𝓡 : ring) :=
   → (∀n, fingen_ideal (ρ n))
   → ∃n, ρ (S n) ⊆₁ ρ n.
 
+Theorem noetherian__RS_noetherian_alt 𝓡 : 
+    noetherian 𝓡
+  → ∀ρ : nat → 𝓡, ∃n, idl ⌞pfx_rev ρ n⌟ (ρ n).
+Proof.
+  intros H rho.
+  destruct bar_sequences
+    with (1 := H) (ρ := rho)
+    as (n & Hn).
+  apply PA_split in Hn as (l & x & r & H1 & H2).
+  symmetry in H1.
+  apply pfx_rev_app_inv in H1 as (a & b & H3 & H4 & H5).
+  apply pfx_rev_cons_inv in H5 as (i & ? & ? & ?).
+  now exists i; subst.
+Qed.
+
 Definition strongly_discrete (𝓡 : ring) := ∀ l (x : 𝓡), idl ⌞l⌟ x ∨ ¬ idl ⌞l⌟ x.
 
 Section zero_test.

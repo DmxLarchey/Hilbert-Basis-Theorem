@@ -97,21 +97,42 @@ Section bar.
   Fact bar_app_left P : monotone P → ∀ l r, bar P r → bar P (l++r).
   Proof. intros ? l ? ?; induction l; simpl; eauto. Qed.
 
-  Lemma bar_sequences P l : bar P l → ∀ρ, ∃n, P (pfx_rev ρ n ++ l).
+  Lemma bar_any_negative P l :
+      bar P l
+    → ∀Q, Q l 
+        → (∀m, Q (m++l) → ∃x, Q (x::m++l))
+        → ∃m, P (m++l) ∧ Q (m++l).
   Proof.
-    induction 1 as [ l Hl | l _ IHl ].
-    + exists 0; auto.
-    + intros f.
-      destruct (IHl (f 0) (λ n, f (1+n))) as (n & Hn).
-      exists (S n); now rewrite pfx_rev_S, <- app_assoc.
+    induction 1 as [ l Hl | l _ IHl ]; intros Q H1 H2.
+    + now exists [].
+    + destruct (H2 [] H1) as (a & Ha).
+      destruct (IHl _ _ Ha) as (m & Hm).
+      * intros m.
+        replace (m++a::l) with ((m++[a])++l) by now rewrite <- app_assoc.
+        apply H2.
+      * exists (m++[a]); now rewrite <- app_assoc.
   Qed.
 
-  Corollary bar_barred P : bar P [] → ∀ρ, ∃n, P (pfx_rev ρ n).
+  Theorem bar_negative P :
+      bar P []
+    → ∀Q, Q [] 
+        → (∀l, Q l → ∃x, Q (x::l))
+        → ∃l, P l ∧ Q l.
+  Proof.
+    intros H Q H1 H2.
+    destruct bar_any_negative with (1 := H) (Q := Q) as (l & Hl); auto.
+    rewrite app_nil_r in Hl; eauto.
+  Qed.
+
+  Theorem bar_sequences P : bar P [] → ∀ρ, ∃n, P (pfx_rev ρ n).
   Proof.
     intros H rho.
-    destruct bar_sequences with (1 := H) (ρ := rho) as (n & Hn).
-    exists n.
-    now rewrite app_nil_r in Hn.
+    destruct bar_negative
+      with (1 := H) (Q := fun x => exists n, pfx_rev rho n = x)
+      as (l & Hl & n & <-).
+    + now exists 0.
+    + intros ? (n & <-); now exists (rho n), (S n).
+    + eauto.
   Qed.
 
   Lemma bar__Acc_not P : bar P ⊆₁ Acc (λ l m, extends⁻¹ l m ∧ ¬ P m).
@@ -252,7 +273,7 @@ Section bar_nc.
   Theorem bar_theorem__XM_DC : bar Q [] ↔ ∀ρ, ∃n, Q (pfx_rev ρ n).
   Proof.
     split.
-    + apply bar_barred.
+    + apply bar_sequences.
     + intros H.
       destruct (xm (bar Q [])) as [ | C ]; auto || exfalso.
       apply not_bar_nil__XM_DC in C as (rho & Hrho).
