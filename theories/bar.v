@@ -97,13 +97,21 @@ Section bar.
   Fact bar_app_left P : monotone P → ∀ l r, bar P r → bar P (l++r).
   Proof. intros ? l ? ?; induction l; simpl; eauto. Qed.
 
-  Fact bar_sequences P l : bar P l → ∀ρ, ∃n, P (pfx_rev ρ n ++ l).
+  Lemma bar_sequences P l : bar P l → ∀ρ, ∃n, P (pfx_rev ρ n ++ l).
   Proof.
     induction 1 as [ l Hl | l _ IHl ].
     + exists 0; auto.
     + intros f.
       destruct (IHl (f 0) (λ n, f (1+n))) as (n & Hn).
       exists (S n); now rewrite pfx_rev_S, <- app_assoc.
+  Qed.
+
+  Corollary bar_barred P : bar P [] → ∀ρ, ∃n, P (pfx_rev ρ n).
+  Proof.
+    intros H rho.
+    destruct bar_sequences with (1 := H) (ρ := rho) as (n & Hn).
+    exists n.
+    now rewrite app_nil_r in Hn.
   Qed.
 
   Lemma bar__Acc_not P : bar P ⊆₁ Acc (λ l m, extends⁻¹ l m ∧ ¬ P m).
@@ -155,11 +163,11 @@ End bar_relmap.
 
 Section bar_double_ind.
 
-  Variables (X Y : Type) (P : list X → Prop) (Q : list Y → Prop) 
-            (K : list X → list Y → Prop)
+  Variables (A B : Type) (P : list A → Prop) (Q : list B → Prop) 
+            (K : list A → list B → Prop)
             (HPK : ∀ l m, P l → K l m) 
             (HQK : ∀ l m, Q m → K l m)
-            (HPQK : ∀ l m, (∀x, K (x::l) m) → (∀y, K l (y::m)) → K l m).
+            (HPQK : ∀ l m, (∀a, K (a::l) m) → (∀b, K l (b::m)) → K l m).
 
   Theorem bar_double_ind l m : bar P l → bar Q m → K l m.
   Proof.
@@ -244,10 +252,7 @@ Section bar_nc.
   Theorem bar_theorem__XM_DC : bar Q [] ↔ ∀ρ, ∃n, Q (pfx_rev ρ n).
   Proof.
     split.
-    + intros H rho.
-      apply bar_sequences with (ρ := rho) in H.
-      destruct H as (n & Hn).
-      exists n; now rewrite app_nil_r in Hn.
+    + apply bar_barred.
     + intros H.
       destruct (xm (bar Q [])) as [ | C ]; auto || exfalso.
       apply not_bar_nil__XM_DC in C as (rho & Hrho).

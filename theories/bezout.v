@@ -211,7 +211,8 @@ Qed.
     meaning 2 would divide 1 which is the contradiction we need. 
 
     Notice that Z/pqZ with p prime and q > 1 is a Bezout ring
-    ring (as a quotient ring). However (Z/pqZ)[X] is a Bezout ring.
+    ring (as a quotient ring). However (Z/pqZ)[X] is not
+    a Bezout ring.
 
     Indeed, let us assume that idl [p.X⁰;1.X¹] is a principal
     ideal. Then let G be a generator of that ideal.
