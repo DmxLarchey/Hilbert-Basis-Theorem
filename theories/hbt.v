@@ -15,35 +15,38 @@ Import ListNotations.
 
 Require Import utils bar ring ideal poly category noetherian.
 
-(** Ref:  https://link.springer.com/chapter/10.1007/3-540-48167-2_3 by Coquand & Persson *)
+(** Ref:  https://link.springer.com/chapter/10.1007/3-540-48167-2_3 by Coquand & Persson 99 *)
+
+#[local] Reserved Notation "l '<T' m" (at level 70, no associativity, format "l  <T  m").
+#[local] Notation PA := pauses.
 
 Section lex.
 
   Variables (A : Type) (T : A → A → Prop).
 
-  (** This order is stronger that shortlex, ie either shorter
+  (** This relation is stronger that shortlex, ie either shorter
       or of equal length and lexicographically smaller *)
   Inductive lex : list A → list A → Prop :=
-    | lex_stop a b m : T a b   → lex (a::m) (b::m)
-    | lex_next b l m : lex l m → lex l (b::m).
+    | lex_stop a b m : T a b  → a::m <T b::m
+    | lex_next b l m : l <T m → l <T b::m
+  where "l <T m" := (lex l m).
 
   Hint Constructors lex : core.
 
   Fact lex_inv l m :
-      lex l m
+      l <T m
     → match m with
       | []   => False
-      | b::m => (∃a, T a b ∧ l = a::m) ∨ lex l m
+      | b::m => (∃a, T a b ∧ l = a::m) ∨ l <T m
       end.
   Proof. destruct 1; eauto. Qed.
 
-  Fact lex_app l m k : lex l m → lex l (k++m).
+  Fact lex_app l m k : l <T m → l <T k++m.
   Proof. intro; induction k; simpl; auto. Qed.
 
   Hypothesis T_wf : well_founded T.
 
-  (** Wellfoundness of lexicographic orders is usually proved 
-      by nested induction *)
+  (** Wellfoundness of lexicographic orders is usually proved by nested induction *)
   Remark lex_wf : well_founded lex.
   Proof.
     intros l.
@@ -59,18 +62,18 @@ Section lex.
   Qed.
 
   (** We just need a tailored induction principle described below
-      replacing "open induction" in Coquand & Perrson *)
+      replacing "open induction" in Coquand & Persson 99 *)
 
   Section lex_special_wf.
 
-    (** Given "fixed" k and P, to show P (a::k) it is enough to show:
-        - the base case: P l holds for any l <lex k
-        - the recursive case: P (a:k) holds further assuming P l for any l <lex a::k *)
+    (** Given "fixed" k and P, to show P (a::k), it is enough to show:
+        - the base case: P l holds for any l <T k
+        - the recursive case: P (a:k) holds further assuming P l for any l <T a::k *)
 
     Variables (k : list A)
               (P : list A → Prop)
-              (HP0 : ∀l, lex l k → P l)                        (* The base case *)
-              (HP1 : ∀a, (∀l, lex l (a::k) → P l) → P (a::k))  (* The recursive case *)
+              (HP0 : ∀l, l <T k → P l)                      (* The base case *)
+              (HP1 : ∀a, (∀l, l <T a::k → P l) → P (a::k))  (* The recursive case *)
               .
 
     Theorem lex_special_wf a : P (a::k).
@@ -85,8 +88,6 @@ End lex.
 
 Arguments lex {_}.
 
-#[local] Notation PA := pauses.
-
 Section HTB.
 
   (** Beware that PA is used for two rings below, both 𝓡 and 𝓡[X] !! *)
@@ -97,44 +98,34 @@ Section HTB.
                 (p q : poly_ring 𝓡) 
                 (l k : list (poly_ring 𝓡)).
 
-  Hint Constructors lex bar : core.
-
   (** A well-founded order on representations of polynomials, being of smaller length *)
   Let T p q := ⌊p⌋ < ⌊q⌋.
+
+  Infix "<T" := (lex T).
 
   Local Fact T_wf : well_founded T.
   Proof. unfold T; apply wf_inverse_image, lt_wf. Qed.
 
-  (** Hence lex T is well-founded as well and we can use the
-      special instance of lex induction implemented above *)
-(*
-  Local Fact T_le p q x : ⌊p⌋ ≤ ⌊q⌋ → T p (q++[x]).
-  Proof. intro; red; rewrite length_app; simpl; lia. Qed.
-
-  Local Fact T_lt p q x : 1+⌊p⌋ < ⌊q⌋ → T (p++[x]) q.
-  Proof. intro; red; rewrite length_app; simpl; lia. Qed.
-*)
-
-  Hint Resolve (*T_le T_lt*) lex_app : core.
-  Hint Constructors is_last update : core.
+  Hint Constructors bar lex is_last update : core.
+  Hint Resolve lex_app : core.
 
   (* Remark: we use the term degree abusively in the comments below 
      because this notion applies to polynomials and they may not have
      one (when the ring is not discrete). We use "degree" for the length 
      of a representation of a polynomial, which exists, but is dependent
-     on the represention, hence is not a notion attached to a polynomial. *)
+     on the representation, hence is not a notion attached to a polynomial. *)
 
-  Local Lemma HBT_main h : bar PA h → ∀k, Forall2 is_last h k → (∀m, lex T m k → bar PA m) → bar PA k.
+  Local Lemma HBT_main h : bar PA h → ∀k, Forall2 is_last h k → (∀m, m <T k → bar PA m) → bar PA k.
   Proof.
     (* induction on bar PA h *)
-    induction 1 as [ h Hh | h _ IHh ].
+    induction 1 as [ h H1 | h _ IHh ].
     + (* The list of head coefficients pauses in 𝓡
          hence h = u++[x]++v where x is a linear combination of v. *)
-      apply PA_split in Hh as (u & x & v & -> & Hx%idl_iff_lc__list).
+      apply PA_split in H1 as (u & x & v & -> & Hx%idl_iff_lc__list).
       (* From Forall2 is_last (u++[x]++v) k, we split k accordingly into 
          k = l++[p]++m where is_last p x and Forall2 is_last v m *)
       intros ? (l & p & m & _ & Hp & Hm & ->)%Forall2_middle_inv_l IH.
-      (* because PA is monotone, it is enough to show bar PA (p::m) *)
+      (* because bar PA is monotone, it is enough to show bar PA (p::m) *)
       apply bar_PA_app_left.
       (* either all polynomials in m have degree less than ⌊p⌋
          or one of them, say q, has degree strictly greater than ⌊p⌋ *)
@@ -149,29 +140,28 @@ Section HTB.
            By IH we get bar PA ([p]++r) and conclude *)
         apply in_split in H3 as (m' & r & ->).
         (* it is enough to show bar PA ([p]++r), 
-           ie we can discard m++[q] in the middle *)
+           ie we can discard m'++[q] in the middle *)
         replace (p::m'++q::r) with ([p]++(m'++[q])++r) by now rewrite <- app_assoc.
         apply (bar_PA_app_middle (poly_ring _)).
         (* bar PA ([p]++r) holds by IH *)
-        apply IH, lex_app; simpl; eauto.
+        apply IH; simpl; auto.
       * (* All polynomial in m have a "degree" lesser than that of p.
            We build a new polynomial q of "degree" strictly less than p
            such that p-q is a linear combination of m *)
         rewrite <- Forall_forall in Hm'.
-        destruct update_lead_coef
-          with (𝓡 := 𝓡) (1 := Hm') (p := p) (m := m)
+        destruct update_lead_coef with (𝓡 := 𝓡) (1 := Hm')
           as (q & []); eauto.
         (* We update p by q, and conclude using IH *)
         apply bar_PA_update_closed with (q::m); auto.
     + (* h are the heads of k *)
-      intros k Hhk IH.
+      intros k H2 IH.
       (* it is sufficient to show ∀p, bar PA (p::k) *)
       constructor 2.
-      (* we use the special lexicographic induction on lex (p::k) 
-         and can thus further assume bar PA l for any l <lex p::k *)
-      apply lex_special_wf with (1 := T_wf); trivial.
+      (* we use the special lexicographic induction on (a::k) 
+         and can thus further assume bar PA l for any l <lex a::k *)
+      apply lex_special_wf with (1 := T_wf); [ assumption | intros a ].
       (* either p is [] or of shape q++[x] *)
-      intros a; destruct a as [ | x q _ ] using rev_ind.
+      destruct a as [ | x q _ ] using rev_ind.
       * (* p is [] (the zero polynomial) and thus []::_ is PA *)
         constructor 1; constructor; constructor 3.
       * (* x::h are the heads of (q++[x])::k 
