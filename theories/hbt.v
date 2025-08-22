@@ -63,17 +63,17 @@ Section lex.
 
   Section lex_special_wf.
 
-    (** Given "fixed" m and P, to show ∀a, P (a::m) it is enough to show:
-        - the base case: P l holds for any l <lex m
-        - the recursive case: P (a:m) holds further assuming P l for any l <lex a::m *)
+    (** Given "fixed" k and P, to show P (a::k) it is enough to show:
+        - the base case: P l holds for any l <lex k
+        - the recursive case: P (a:k) holds further assuming P l for any l <lex a::k *)
 
-    Variables (m : list A)
+    Variables (k : list A)
               (P : list A → Prop)
-              (HP0 : ∀l, lex l m → P l)                        (* The base case *)
-              (HP1 : ∀a, (∀l, lex l (a::m) → P l) → P (a::m))  (* The recursive case *)
+              (HP0 : ∀l, lex l k → P l)                        (* The base case *)
+              (HP1 : ∀a, (∀l, lex l (a::k) → P l) → P (a::k))  (* The recursive case *)
               .
 
-    Theorem lex_special_wf a : P (a::m).
+    Theorem lex_special_wf a : P (a::k).
     Proof.
       induction a using (well_founded_induction T_wf).
       apply HP1; intros ? [(? & ? & ->)|]%lex_inv; eauto.
@@ -107,14 +107,15 @@ Section HTB.
 
   (** Hence lex T is well-founded as well and we can use the
       special instance of lex induction implemented above *)
-
+(*
   Local Fact T_le p q x : ⌊p⌋ ≤ ⌊q⌋ → T p (q++[x]).
   Proof. intro; red; rewrite length_app; simpl; lia. Qed.
 
   Local Fact T_lt p q x : 1+⌊p⌋ < ⌊q⌋ → T (p++[x]) q.
   Proof. intro; red; rewrite length_app; simpl; lia. Qed.
+*)
 
-  Hint Resolve T_le T_lt lex_app : core.
+  Hint Resolve (*T_le T_lt*) lex_app : core.
   Hint Constructors is_last update : core.
 
   (* Remark: we use the term degree abusively in the comments below 
@@ -170,7 +171,7 @@ Section HTB.
          and can thus further assume bar PA l for any l <lex p::k *)
       apply lex_special_wf with (1 := T_wf); trivial.
       (* either p is [] or of shape q++[x] *)
-      intros p; destruct p as [ | x q _ ] using rev_ind.
+      intros a; destruct a as [ | x q _ ] using rev_ind.
       * (* p is [] (the zero polynomial) and thus []::_ is PA *)
         constructor 1; constructor; constructor 3.
       * (* x::h are the heads of (q++[x])::k 
