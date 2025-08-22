@@ -102,7 +102,7 @@ Section pauses.
 
   (* pause is invariant under update *)
   Lemma PA_update_closed l m : update l m → PA l → PA m.
-  Proof. unfold PA; induction 1 as [ ? ? ? ?%idl_iff_lc__list |]; intros []%MC_inv; eauto. Qed.
+  Proof. unfold PA; induction 1 as [ ? ? ? ?%idl_iff_lc__list | ]; intros []%MC_inv; eauto. Qed.
 
   Hint Resolve PA_update_closed : core.
 

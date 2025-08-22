@@ -455,34 +455,34 @@ Section polynomial_ring.
 
   (* Linear combination of head coefficients:
 
-       if * the length ⌊v₁⌋,...,⌊vₙ⌋ are lesser than 1+d
-          * v₁,...,vₙ have head coefficients a₁,...,aₙ  (in poly_ring)
-          * x is a linear combination of a₁,...,aₙ      (in R)
-       then there is a representation of a polynomial p with
-          * p is a linear combination of v₁,...,vₙ      (in poly_ring)
+       if * the lengths ⌊m₁⌋,...,⌊mₙ⌋ are lesser than d+1
+          * m₁,...,mₙ have head coefficients h₁,...,hₙ  (in poly_ring)
+          * x is a linear combination of h₁,...,hₙ      (in R)
+       then there is a representation of a polynomial p st
+          * p is a linear combination of m₁,...,mₙ      (in poly_ring)
           * the length ⌊p⌋ of p is d+1
           * x is the head coefficient of p
  
-     Idea: multiply with Xʰ/shift each vᵢ with i in 1,...,n
-           so that the degre matches 1+d and use the same
+     Idea: multiply with Xʰ/shift each mᵢ with i in 1,...,n
+           so that the degre matches d+1 and use the same
            coefficients as the original linear combination, ie
 
-            if x = r₁a₁ + ... + rₙaₙ then
-               p := r₁q₁.ʰ¹ + ... + rₙqₙ.Xʰⁿ 
+            if x = r₁h₁ + ... + rₙhₙ then
+               p := r₁m₁.Xʰ¹ + ... + rₙmₙ.Xʰⁿ 
 
-               where hᵢ = d+1-⌊vᵢ⌋ for i in 1,...,n *)
+               where hᵢ = d+1-⌊mᵢ⌋ for i in 1,...,n *)
 
-  Lemma lc_lead_coef d (a : list 𝓡) x (v : list poly_ring) :
-      lc a x                       (* x is a linear combination of [a₁;...;aₙ] *)
-    → Forall2 is_last a v          (* [a₁;...;aₙ] are the heads of [v₁;...;vₙ] *) 
-    → Forall (λ q, ⌊q⌋ ≤ d+1) v    (* d+1 is greater the all the length ⌊v₁⌋,...,⌊vₙ⌋ *)
+  Lemma lc_lead_coef d (h : list 𝓡) x (m : list poly_ring) :
+      lc h x                       (* x is a linear combination of [h₁;...;hₙ] *)
+    → Forall2 is_last h m          (* [h₁;...;hₙ] are the heads of [m₁;...;mₙ] *) 
+    → Forall (λ q, ⌊q⌋ ≤ d+1) m    (* d+1 is greater the all the length ⌊m₁⌋,...,⌊mₙ⌋ *)
     → ∃ p y,
          ⌊p⌋ = d+1                 (* p has length d+1 *)
        ∧ is_last y p ∧ x ∼ᵣ y      (* p has head y ~ᵣ x *)
-       ∧ lc v p                    (* p is a linear combination of [v₁;...;vₙ] *)
+       ∧ lc m p                    (* p is a linear combination of [m₁;...;mₙ] *)
     .
   Proof.
-    induction 1 as [ x H1 | a x l c r H1 H2 IH2 ] in v |- *.
+    induction 1 as [ x H1 | a x l c r H1 H2 IH2 ] in m |- *.
     + intros ->%Forall2_nil_inv_l _.
       exists (repeat un_a d++[x]), x; repeat split; auto.
       * rewrite length_app, repeat_length; simpl; lia.
@@ -508,10 +508,10 @@ Section polynomial_ring.
         rewrite poly_shift_scal; auto.
   Qed.
 
-  Theorem update_lead_coef (p : poly_ring) (v : list poly_ring) :
-      Forall (λ q, ⌊q⌋ ≤ ⌊p⌋) v
-    → (∃ x h, is_last x p ∧ Forall2 is_last h v ∧ lc h x)
-    → ∃q : poly_ring, ⌊q⌋ < ⌊p⌋ ∧ lc v (p −ᵣ q).
+  Theorem update_lead_coef (p : poly_ring) (m : list poly_ring) :
+      Forall (λ q, ⌊q⌋ ≤ ⌊p⌋) m
+    → (∃ x h, is_last x p ∧ Forall2 is_last h m ∧ lc h x)
+    → ∃q : poly_ring, ⌊q⌋ < ⌊p⌋ ∧ lc m (p −ᵣ q).
   Proof.
     intros H3 (x & h & Hp & H2 & H1).
     induction Hp as [ p ].

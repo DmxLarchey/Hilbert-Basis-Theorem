@@ -159,7 +159,7 @@ Section HTB.
            such that p-q is a linear combination of m *)
         rewrite <- Forall_forall in Hm'.
         destruct update_lead_coef
-          with (𝓡 := 𝓡) (1 := Hm') (p := p) (v := m)
+          with (𝓡 := 𝓡) (1 := Hm') (p := p) (m := m)
           as (q & []); eauto.
         (* We update p by q, and conclude using IH *)
         apply bar_PA_update_closed with (q::m); auto.
