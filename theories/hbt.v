@@ -19,13 +19,13 @@ Require Import utils bar ring ideal poly category noetherian.
 
 Section lex.
 
-  Variables (A : Type) (R : A → A → Prop).
+  Variables (A : Type) (T : A → A → Prop).
 
   (** This order is stronger that shortlex, ie either shorter
       or of equal length and lexicographically smaller *)
   Inductive lex : list A → list A → Prop :=
-    | lex_stop a b m : R a b   → lex (a::m) (b::m)
-    | lex_next a l m : lex l m → lex l (a::m).
+    | lex_stop a b m : T a b   → lex (a::m) (b::m)
+    | lex_next b l m : lex l m → lex l (b::m).
 
   Hint Constructors lex : core.
 
@@ -33,35 +33,33 @@ Section lex.
       lex l m
     → match m with
       | []   => False
-      | b::m => (∃a, R a b ∧ l = a::m) ∨ lex l m
+      | b::m => (∃a, T a b ∧ l = a::m) ∨ lex l m
       end.
   Proof. destruct 1; eauto. Qed.
 
   Fact lex_app l m k : lex l m → lex l (k++m).
   Proof. intro; induction k; simpl; auto. Qed.
 
-  Hypothesis R_wf : well_founded R.
+  Hypothesis T_wf : well_founded T.
 
   (** Wellfoundness of lexicographic orders is usually proved 
       by nested induction *)
-  Theorem lex_wf : well_founded lex.
+  Remark lex_wf : well_founded lex.
   Proof.
     intros l.
     (* first induction, structural on l *)
     induction l as [ | b l IH ].
     + (* when l = [], it has no predecessors *)
       constructor; now intros ? ?%lex_inv.
-    + (* second induction on the head of q::l, using R_wf as an induction principle *)
-      induction b using (well_founded_induction R_wf) in l, IH |- *.
+    + (* second induction on the head of q::l, using T_wf as an induction principle *)
+      induction b using (well_founded_induction T_wf) in l, IH |- *.
       constructor.
       intros ? [ (? & ? & ->) | ]%lex_inv; eauto.
       now apply Acc_inv with (1 := IH).
   Qed.
 
-  (** It gives rises to a tailored induction principle used below
-      called "open induction" in Coquand & Perrson but we view it
-      as a specialized case of a well-founded lexicographic product
-      on lists here *)
+  (** We just need a tailored induction principle described below
+      replacing "open induction" in Coquand & Perrson *)
 
   Section lex_special_wf.
 
@@ -75,14 +73,9 @@ Section lex.
               (HP1 : ∀a, (∀l, lex l (a::m) → P l) → P (a::m))  (* The recursive case *)
               .
 
-    Notation T := (λ a b, lex (a::m) (b::m)).
-
-    Local Fact lex_special_T_wf : well_founded T.
-    Proof. apply wf_inverse_image, lex_wf. Qed.
-
     Theorem lex_special_wf a : P (a::m).
     Proof.
-      induction a using (well_founded_induction lex_special_T_wf).
+      induction a using (well_founded_induction T_wf).
       apply HP1; intros ? [(? & ? & ->)|]%lex_inv; eauto.
     Qed.
 
