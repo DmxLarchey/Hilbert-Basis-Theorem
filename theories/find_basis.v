@@ -11,7 +11,7 @@ From Stdlib Require Import List Arith Lia Wellfounded Relations Setoid Utf8.
 
 Import ListNotations.
 
-Require Import utils bar ring ideal poly noetherian.
+Require Import utils bar ring ideal poly noetherian noetherian_wf.
 
 #[local] Hint Resolve
            incl_refl incl_nil_l incl_cons incl_tl 
@@ -20,91 +20,8 @@ Require Import utils bar ring ideal poly noetherian.
 
 #[local] Hint Constructors extends : core.
 
-(* This is witnessed strict inclusion and it is 
-   stronger than P ⊆₁ Q ∧ ¬ Q ⊆₁ P (unless one can
-   actually find a witness when ¬ Q ⊆₁ P holds) *)
-
-Definition strict_incl {X} (P Q : X → Prop) := P ⊆₁ Q ∧ ∃x, Q x ∧ ¬ P x.
-
-#[local] Notation "P ⊂₁ Q" := (strict_incl P Q) (at level 70, format "P  ⊂₁  Q").
+#[local] Notation "P ⊂𞁤 Q" := (witnessed_strict_incl P Q) (at level 70, format "P  ⊂𞁤  Q").
 #[local] Notation PA := pauses.
-
-Section noetherian_wf.
-
-  Variable (𝓡 : ring).
-
-  Implicit Type (l m k : list 𝓡).
-
-  Local Lemma Acc_extends__strict_incl_rev k :
-      Acc (λ l m, extends⁻¹ l m ∧ ¬ PA m) k
-    → ¬ PA k
-    → ∀P, ⌞k⌟ ⊆₁ P → Acc (λ P Q, Q ⊂₁ P ∧ ring_ideal Q) P.
-  Proof.
-    induction 1 as [ l _ IHl ].
-    intros Gl P Hl; constructor.
-    intros Q ((HPQ & x & Qx & Px) & HP).
-    apply IHl with (x::l); eauto.
-    + contradict Gl.
-      apply PA_cons_inv in Gl as [ H | H ]; auto.
-      destruct Px.
-      revert H; now apply idl_smallest.
-    + intros ? [ <- | ]; eauto.
-  Qed.
-  
-  Hypothesis 𝓡_noeth : noetherian 𝓡.
-
-  Local Fact Acc_extends_nil : Acc (λ l m, extends⁻¹ l m ∧ ¬ PA m) [].
-  Proof. apply bar__Acc_not; auto. Qed.
-
-  Hint Resolve Acc_extends_nil : core.
-
-  (** If 𝓡 is (constructivelly) Noetherian then witnessed strict 
-      reverse inclusion is (constructivelly) well-founded on the 
-      ideals of 𝓡. Hence any strictly increasing sequence of 
-      ideals of 𝓡 is terminating. *)
-
-  Theorem noetherian__wf_strict_incl_rev :
-    well_founded (λ P Q : 𝓡 → Prop, Q ⊂₁ P ∧ ring_ideal Q).
-  Proof.
-    intro.
-    apply Acc_extends__strict_incl_rev with (k := []); auto.
-    + now intros ?%PA_nil_inv.
-    + simpl; tauto.
-  Qed.
-
-  Corollary noetherian__wf_strict_incl_ideal :
-    well_founded (λ P Q : sig (@ring_ideal 𝓡), proj1_sig Q ⊂₁ proj1_sig P).
-  Proof.
-    generalize noetherian__wf_strict_incl_rev.
-    wf rel morph (λ x y, x = proj1_sig y).
-    + intros []; simpl; eauto.
-    + intros ? ? [] []; simpl; intros; subst; auto.
-  Qed.
-
-  Corollary noetherian__wf_idl_strict_incl :
-    well_founded (λ P Q : 𝓡 → Prop, idl Q ⊂₁ idl P).
-  Proof.
-    generalize noetherian__wf_strict_incl_ideal.
-    wf rel morph (λ P Q, proj1_sig P = idl Q).
-    + intros P; now exists (exist _ _ (idl_ring_ideal _ P)).
-    + intros ? ? ? ? -> ->; auto.
-  Qed.
-
-  Corollary noetherian__wf_fin_idl_strict_incl :
-    well_founded (λ l m : list 𝓡, idl ⌞m⌟ ⊂₁ idl ⌞l⌟).
-  Proof.
-    generalize noetherian__wf_idl_strict_incl.
-    wf rel morph (λ P l, P = ⌞l⌟).
-    + intros l; now exists ⌞l⌟.
-    + intros ? ? ? ? -> ->; auto.
-  Qed.
-
-End noetherian_wf.
-
-Arguments noetherian__wf_strict_incl_rev {_}.
-Arguments noetherian__wf_strict_incl_ideal {_}.
-Arguments noetherian__wf_idl_strict_incl {_}.
-Arguments noetherian__wf_fin_idl_strict_incl {_}.
 
 Definition fingen_ideal {𝓡 : ring} 𝓘 := ∃ l : list 𝓡, 𝓘 ≡₁ idl ⌞l⌟.
 
@@ -159,7 +76,7 @@ End fingen_ideal_dec_comp.
 
 Definition sincl {X} (P Q : X → Prop) := P ⊆₁ Q ∧ ~ Q ⊆₁ P.
 
-Fact strict_incl_sincl X : @strict_incl X ⊆₂ sincl.
+Fact strict_incl_sincl X : @witnessed_strict_incl X ⊆₂ sincl.
 Proof. intros ? ? (? & ? & []); split; auto. Qed.
 
 (** "ML-Noetherian" and "RS-Noetherian" terminology come from Perdry 2004
@@ -238,7 +155,7 @@ Section strongly_discrete_ML_noetherian.
   Proposition strictly_discrete_sincl_fingen_ideal (P Q : 𝓡 → Prop) : 
       fingen_ideal P
     → fingen_ideal Q
-    → sincl P Q → P ⊂₁ Q.
+    → sincl P Q → P ⊂𞁤 Q.
   Proof.
     intros (l & Hl) HQ (H1 & H2); split; auto.
     destruct fingen_ideal_dec with (𝓘 := Q) (l := l)
@@ -346,7 +263,7 @@ Section strongly_discrete__RS_noetherian.
             (ρ_incr : forall n, ρ n ⊆₁ ρ (S n))
             (ρ_fingen : forall n, fingen_ideal (ρ n)).
 
-  Let R n m := ρ m ⊂₁ ρ n.
+  Let R n m := ρ m ⊂𞁤 ρ n.
 
   Local Fact R_wf : well_founded R.
   Proof.
@@ -454,7 +371,7 @@ Section compute_pause.
 
   Variable ρ : nat → 𝓡.
 
-  Let R n m := idl ⌞pfx_rev ρ m⌟ ⊂₁ idl ⌞pfx_rev ρ n⌟.
+  Let R n m := idl ⌞pfx_rev ρ m⌟ ⊂𞁤 idl ⌞pfx_rev ρ n⌟.
 
   Local Fact R_wf' : well_founded R.
   Proof.

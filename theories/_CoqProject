@@ -15,6 +15,8 @@ product.v
 product_noetherian.v
 poly.v
 hbt.v
+noetherian_wf.v
+find_pause.v
 find_basis.v
 noetherian_nc.v
 ramsey.v
