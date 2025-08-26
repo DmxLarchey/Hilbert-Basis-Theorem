@@ -69,26 +69,26 @@ where `poly_ring 𝓡` is (isomorphic to) `𝓡[X]` and `multivariate_ring 𝓡 
 ## Examples of Noetherian rings
 
 As explained in the previous paragraph, the classical definition of _principal ring_ (as having only mono-generated/principal ideals) is not suited in anti-classical settins
-because again, the ring of integers `Z` would not be principal. Instead we define principal rings as:
+because again, the ring of integers `Z` would not be principal. Instead we define Bezout rings as:
 ```coq
-Definition principal (𝓡 : ring) := ∃g, idl 𝓡 ⌞l⌟ = { x*ᵣg | x ∈ 𝓡 }.
+Definition bezout_ring (𝓡 : ring) := ∃g, idl 𝓡 ⌞l⌟ = { x*ᵣg | x ∈ 𝓡 }.
 ```
-i.e. every finitely generated ideal is a principal ideal. Notice that this definition of principality __does not__ implies Noetherianess but however 
-the two properties are linked in some way, e.g. we show:
+i.e. every finitely generated ideal is a principal ideal. Notice that this definition of Bezout ring 
+__does not__ implies Noetherianess but however the two properties are linked in some way, e.g. we show:
 ```coq
-Theorem wf_principal_noetherian (𝓡 : ring) :
-    principal 𝓡
+Theorem wf_sdiv_bezout_noetherian (𝓡 : ring) :
+    bezout_ring 𝓡
   → (∀ x y : 𝓡, x |ᵣ y ∨ ¬ x |ᵣ y)
   → well_founded (λ x y : 𝓡, x |ᵣ y ∧ ¬ y |ᵣ x)
   → noetherian 𝓡.
 ```
-meaning that any ring which is principal, with (weakly) decidable divisibility, and well-founded strict divisibility is Noetherian.
+meaning that any Bezout ring with (logically) decidable divisibility, and well-founded strict divisibility is Noetherian.
 
 In addition to the HBT above, with these definitions, we can show that:
-- fields are principal and Noetherian rings;
-- the ring of integers `Z` is a principal ring and Noetherian ring (via `wf_principal_noetherian` above);
+- (discrete) fields are Bezout and Noetherian rings;
+- the ring of integers `Z` is a Bezout ring and Noetherian ring (via `wf_sdiv_bezout_noetherian` above);
 - finite rings are Noetherian (e.g `Z/nZ` for `n > 0`);
-- the quotient of a principal (resp. Noetherian) ring is principal (resp. Noetherian).
+- the quotient of a Bezout (resp. Noetherian) ring is Bezout (resp. Noetherian).
 
 ## The direct product is Noetherian
 
@@ -138,7 +138,7 @@ The property `∀l, (∃x, x ∈ 𝓘 ∧ ¬ idl 𝓡 ⌞l⌟ x) ∨ 𝓘 ⊆ id
 - the largest part of the proof, though not the most difficult, is the construction of the polynomial ring `𝓡[X]`, based on the `Setoid` rewriting and `Ring` frameworks of Coq which allows us to micro-manage ring computations, see [`poly.v`](theories/poly.v); Without those two frameworks, that construction could become quite tricky and unsurprisingly, this part was avoided in the implementation proposed in [1].
 - the _open induction principle_ of [1] is reinterpreted as a well-founded induction over the projection of a lexicographic product.
 - The proof of the `HBT` stated above is quite small (20-25 loc) in [`hbt.v`](theories/hbt.v) but relies on the theorem `update_lead_coef` from [`poly.v`](theories/poly.v) which states that if `x` is the head coefficent of `p` and is a linear combination of the head coefficents of `v`, a list of polynomials of length less than `p`, then `p::v` can be updated into `q::v` where `q := p+lc` is of length strictly less than `p` and `lc` is a linear combination of the values in `v`.
-- Updating preserves `LD` (linear dependence) and thus also `bar LD`.
+- Updating preserves `PA` (pauses) and thus also `bar PA`.
 
 ## References
 
