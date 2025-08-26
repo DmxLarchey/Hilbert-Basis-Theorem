@@ -69,26 +69,26 @@ where `poly_ring 𝓡` is (isomorphic to) `𝓡[X]` and `multivariate_ring 𝓡 
 ## Examples of Noetherian rings
 
 As explained in the previous paragraph, the classical definition of _principal ring_ (as having only mono-generated/principal ideals) is not suited in anti-classical settins
-because again, the ring of integers `Z` would not be principal. Instead we define principal rings as:
+because again, the ring of integers `Z` would not be principal. Instead we define Bezout rings as:
 ```coq
-Definition principal (𝓡 : ring) := ∃g, idl 𝓡 ⌞l⌟ = { x*ᵣg | x ∈ 𝓡 }.
+Definition bezout_ring (𝓡 : ring) := ∃g, idl 𝓡 ⌞l⌟ = { x*ᵣg | x ∈ 𝓡 }.
 ```
-i.e. every finitely generated ideal is a principal ideal. Notice that this definition of principality __does not__ implies Noetherianess but however 
-the two properties are linked in some way, e.g. we show:
+i.e. every finitely generated ideal is a principal ideal. Notice that this definition of Bezout ring 
+__does not__ implies Noetherianess but however the two properties are linked in some way, e.g. we show:
 ```coq
-Theorem wf_principal_noetherian (𝓡 : ring) :
-    principal 𝓡
+Theorem wf_sdiv_bezout_noetherian (𝓡 : ring) :
+    bezout_ring 𝓡
   → (∀ x y : 𝓡, x |ᵣ y ∨ ¬ x |ᵣ y)
   → well_founded (λ x y : 𝓡, x |ᵣ y ∧ ¬ y |ᵣ x)
   → noetherian 𝓡.
 ```
-meaning that any ring which is principal, with (weakly) decidable divisibility, and well-founded strict divisibility is Noetherian.
+meaning that any Bezout ring with (logically) decidable divisibility, and well-founded strict divisibility is Noetherian.
 
 In addition to the HBT above, with these definitions, we can show that:
-- fields are principal and Noetherian rings;
-- the ring of integers `Z` is a principal ring and Noetherian ring (via `wf_principal_noetherian` above);
+- (discrete) fields are Bezout and Noetherian rings;
+- the ring of integers `Z` is a Bezout ring and Noetherian ring (via `wf_sdiv_bezout_noetherian` above);
 - finite rings are Noetherian (e.g `Z/nZ` for `n > 0`);
-- the quotient of a principal (resp. Noetherian) ring is principal (resp. Noetherian).
+- the quotient of a Bezout (resp. Noetherian) ring is Bezout (resp. Noetherian).
 
 ## The direct product is Noetherian
 
