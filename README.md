@@ -138,7 +138,7 @@ The property `∀l, (∃x, x ∈ 𝓘 ∧ ¬ idl 𝓡 ⌞l⌟ x) ∨ 𝓘 ⊆ id
 - the largest part of the proof, though not the most difficult, is the construction of the polynomial ring `𝓡[X]`, based on the `Setoid` rewriting and `Ring` frameworks of Coq which allows us to micro-manage ring computations, see [`poly.v`](theories/poly.v); Without those two frameworks, that construction could become quite tricky and unsurprisingly, this part was avoided in the implementation proposed in [1].
 - the _open induction principle_ of [1] is reinterpreted as a well-founded induction over the projection of a lexicographic product.
 - The proof of the `HBT` stated above is quite small (20-25 loc) in [`hbt.v`](theories/hbt.v) but relies on the theorem `update_lead_coef` from [`poly.v`](theories/poly.v) which states that if `x` is the head coefficent of `p` and is a linear combination of the head coefficents of `v`, a list of polynomials of length less than `p`, then `p::v` can be updated into `q::v` where `q := p+lc` is of length strictly less than `p` and `lc` is a linear combination of the values in `v`.
-- Updating preserves `LD` (linear dependence) and thus also `bar LD`.
+- Updating preserves `PA` (pauses) and thus also `bar PA`.
 
 ## References
 
