@@ -301,15 +301,16 @@ Section wf_strict_divisibility_bezout_noetherian.
 
   Add Ring 𝓡_is_ring : (is_ring 𝓡).
 
-  (* If g is Acc(essible) for strict divisibility
-     then any list l generating the same ideal as g
-     unavoidably pauses. *)  
-  Local Lemma Acc_sdiv__bar_PA (g : 𝓡) :
-      Acc ring_sdiv g
-    → ∀l, idl ⌞l⌟ ≡₁ ring_div g
+  Hypothesis (sdiv_wf : @well_founded 𝓡 ring_sdiv).
+
+  (* For any g, if it generates the same ideal as l
+     then extending l unavoidably pauses. *)
+  Lemma wf_sdiv__bar_PA (g : 𝓡) :
+      ∀l, idl ⌞l⌟ ≡₁ ring_div g
     → bar PA l.
   Proof.
-    induction 1 as [ g _ IHg ]; intros l Hl.
+    induction g as [ g IHg ] using (well_founded_induction sdiv_wf);
+      intros l Hl.
     constructor 2; intros x.
     destruct (bezout (x::l)) as (e & He).
     destruct (div_dec g e) as [ Hge | Hge ].
@@ -321,15 +322,9 @@ Section wf_strict_divisibility_bezout_noetherian.
       apply Hl, ring_div_refl.
   Qed.
 
-  Hypothesis (sdiv_wf : @well_founded 𝓡 ring_sdiv).
-
-  (* Hence since 0ᵣ is Acc(essible), the
-     growing the list [] (generating the ideal {0ᵣ})
-     unavoidably pauses. *)
-
   Theorem wf_sdiv_bezout_noetherian : noetherian 𝓡.
   Proof.
-    apply Acc_sdiv__bar_PA with 0ᵣ; auto.
+    apply wf_sdiv__bar_PA with 0ᵣ; auto.
     intro; rewrite idl_iff_lc__list; split.
     + intros <-%lc_inv; apply ring_div_refl.
     + intros (? & ->); constructor; ring.
