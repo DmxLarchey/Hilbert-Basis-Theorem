@@ -42,7 +42,7 @@ Section ring_div.
   Fact ring_div_trans x y z : x |ᵣ y → y |ᵣ z → x |ᵣ z.
   Proof. intros (a & ->) (b & ->); exists (op_m a b); ring. Qed.
 
-  Fact ring_div_ideal x : ring_ideal (λ y, x |ᵣ y).
+  Fact ring_div_ideal x : ideal (λ y, x |ᵣ y).
   Proof.
     split right.
     + intros ? ? ->; auto.
@@ -67,7 +67,7 @@ Section principal.
   Definition principal_ideal (P : 𝓡 → Prop) :=
     ∃g, P ≡₁ λ y, g |ᵣ y.
 
-  Fact principal_ideal__ring_ideal P : principal_ideal P → ring_ideal P.
+  Fact principal_ideal__ideal P : principal_ideal P → ideal P.
   Proof.
     intros (g & Hg); split right.
     + intros u v E H%Hg; apply Hg; now rewrite <- E.
@@ -96,7 +96,7 @@ Section principal.
     induction l as [ | x l (g & Hg) ].
     + exists un_a; intros x; split.
       * revert x; apply idl_smallest.
-        - apply principal_ideal__ring_ideal; exists un_a; tauto.
+        - apply principal_ideal__ideal; exists un_a; tauto.
         - now simpl.
       * intros (a & ->).
         constructor 2 with un_a.

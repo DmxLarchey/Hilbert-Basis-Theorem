@@ -26,7 +26,7 @@ Require Import utils bar ring ideal noetherian.
 
 Definition witnessed_strict_incl {X} (P Q : X → Prop) := P ⊆₁ Q ∧ ∃x, Q x ∧ ¬ P x.
 
-#[local] Notation "P ⊂𞁤 Q" := (witnessed_strict_incl P Q) (at level 70, format "P  ⊂𞁤  Q").
+#[local] Notation "P '⊂w' Q" := (witnessed_strict_incl P Q) (at level 70, format "P  ⊂w  Q").
 #[local] Notation PA := pauses.
 
 Section noetherian_wf.
@@ -35,7 +35,7 @@ Section noetherian_wf.
 
   Implicit Type (l m k : list 𝓡).
 
-  Let T (P Q : 𝓡 → Prop) := Q ⊂𞁤 P ∧ ring_ideal Q.
+  Let T (P Q : 𝓡 → Prop) := Q ⊂w P ∧ ideal Q.
 
   Local Lemma bar_PA__Acc l : bar PA l → ¬ PA l → ∀P, ⌞l⌟ ⊆₁ P → Acc T P.
   Proof.
@@ -68,7 +68,7 @@ Section noetherian_wf.
   Qed.
 
   Corollary noetherian__wf_strict_incl_ideal :
-    well_founded (λ P Q : sig (@ring_ideal 𝓡), proj1_sig Q ⊂𞁤 proj1_sig P).
+    well_founded (λ P Q : sig (@ideal 𝓡), proj1_sig Q ⊂w proj1_sig P).
   Proof.
     generalize noetherian__wf_strict_incl_rev.
     unfold T.
@@ -78,16 +78,16 @@ Section noetherian_wf.
   Qed.
 
   Corollary noetherian__wf_idl_strict_incl :
-    well_founded (λ P Q : 𝓡 → Prop, idl Q ⊂𞁤 idl P).
+    well_founded (λ P Q : 𝓡 → Prop, idl Q ⊂w idl P).
   Proof.
     generalize noetherian__wf_strict_incl_ideal.
     wf rel morph (λ P Q, proj1_sig P = idl Q).
-    + intros P; now exists (exist _ _ (idl_ring_ideal _ P)).
+    + intros P; now exists (exist _ _ (idl__ideal _ P)).
     + intros ? ? ? ? -> ->; auto.
   Qed.
 
   Corollary noetherian__wf_fin_idl_strict_incl :
-    well_founded (λ l m : list 𝓡, idl ⌞m⌟ ⊂𞁤 idl ⌞l⌟).
+    well_founded (λ l m : list 𝓡, idl ⌞m⌟ ⊂w idl ⌞l⌟).
   Proof.
     generalize noetherian__wf_idl_strict_incl.
     wf rel morph (λ P l, P = ⌞l⌟).

@@ -19,15 +19,15 @@ Section principal__finitely_generated.
 
   Add Ring 𝓡_is_ring : (is_ring 𝓡).
 
-  Fact fingen__ring_ideal : fingen_ideal ⊆₁ @ring_ideal 𝓡.
+  Fact fg_ideal__ideal : fg_ideal ⊆₁ @ideal 𝓡.
   Proof.
     intros P (b & Hb).
-    generalize (idl_ring_ideal _ ⌞b⌟).
-    apply ring_ideal_equiv.
+    generalize (idl__ideal _ ⌞b⌟).
+    apply ideal_equiv.
     intro; now rewrite Hb.
   Qed.
 
-  Fact principal__fingen_ideal : principal_ideal ⊆₁ @fingen_ideal 𝓡.
+  Fact principal_ideal__fg_ideal : principal_ideal ⊆₁ @fg_ideal 𝓡.
   Proof.
     intros P (g & Hg); exists [g].
     intros x; rewrite Hg; split.
@@ -37,16 +37,13 @@ Section principal__finitely_generated.
 
   (** nc stands for for non constructive *)
 
-  Definition principal_nc := ring_ideal ⊆₁ @principal_ideal 𝓡.
-  Definition noetherian_nc := ring_ideal ⊆₁ @fingen_ideal 𝓡.
+  Definition principal_nc := ideal ⊆₁ @principal_ideal 𝓡.
+  Definition noetherian_nc := ideal ⊆₁ @fg_ideal 𝓡.
 
   Fact principal__noetherian_nc : principal_nc → noetherian_nc.
-  Proof. intros H P HP; now apply principal__fingen_ideal, H. Qed.
+  Proof. intros H P HP; now apply principal_ideal__fg_ideal, H. Qed.
 
 End principal__finitely_generated.
-
-Arguments fingen_ideal {_}.
-Arguments principal_ideal {_}.
 
 Section noetherian_nc_is_meaningless_constructivelly.
 
@@ -63,7 +60,7 @@ Section noetherian_nc_is_meaningless_constructivelly.
   (* The set { x | x ∼ᵣ 0ᵣ ∨ P } is an ideal *)
   Let 𝓙 P x := x ∼ᵣ 0ᵣ ∨ P.
 
-  Local Fact 𝓙_ideal P : ring_ideal (𝓙 P).
+  Local Fact 𝓙_ideal P : ideal (𝓙 P).
   Proof.
     split right.
     + intros ? ? E []; [ left | right ]; auto; now rewrite <- E.
@@ -78,7 +75,7 @@ Section noetherian_nc_is_meaningless_constructivelly.
   Hypothesis (eq_dec : ∀ x y, x ∼ᵣ y ∨ ¬ x ∼ᵣ y)
              (zero_not_one : ¬ 1ᵣ ∼ᵣ @un_a 𝓡).
 
-  Theorem finitely_gen__discriminate P : ∃𝓘, ring_ideal 𝓘 ∧ (fingen_ideal 𝓘 → P ∨ ¬ P).
+  Theorem finitely_gen__discriminate P : ∃𝓘, ideal 𝓘 ∧ (fg_ideal 𝓘 → P ∨ ¬ P).
   Proof.
     exists (𝓙 P); split.
     1: apply 𝓙_ideal.
@@ -160,7 +157,7 @@ Section noetherian__noetherian_nc__XM.
     apply not_bar_nil__XM_DC in C as (rho & Hrho); auto.
     set (img x := ∃n, rho n = x).
     destruct (HR (idl img)) as (l & Hl).
-    1: apply idl_ring_ideal.
+    1: apply idl__ideal.
     destruct (@idl_compact _ img l) as (m & H1 & H2).
     1: intro; rewrite Hl; eauto.
     apply reif_Forall2 in H1 as (k & Hk).
