@@ -19,14 +19,6 @@ Section principal__finitely_generated.
 
   Add Ring 𝓡_is_ring : (is_ring 𝓡).
 
-  Fact fg_ideal__ideal : fg_ideal ⊆₁ @ideal 𝓡.
-  Proof.
-    intros P (b & Hb).
-    generalize (idl__ideal _ ⌞b⌟).
-    apply ideal_equiv.
-    intro; now rewrite Hb.
-  Qed.
-
   Fact principal_ideal__fg_ideal : principal_ideal ⊆₁ @fg_ideal 𝓡.
   Proof.
     intros P (g & Hg); exists [g].

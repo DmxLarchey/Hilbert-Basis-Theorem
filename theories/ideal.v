@@ -351,3 +351,18 @@ Fact idl_sub_homo (𝓡 𝓣 : ring) (f : 𝓡 → 𝓣) :
     ring_sub_homo f
   → ∀ (P : 𝓡 → Prop) x, idl P x → idl (λ y, ∃x, y = f x ∧ P x) (f x).
 Proof. intros (? & ? & []); induction 1; eauto. Qed.
+
+(** Finitely generated ideals *)
+
+Definition fg_ideal {𝓡 : ring} 𝓘 := ∃ l : list 𝓡, 𝓘 ≡₁ idl ⌞l⌟.
+
+Fact fg_ideal__ideal 𝓡 : @fg_ideal 𝓡 ⊆₁ ideal.
+Proof.
+  intros P (m & Hm); split right.
+  1,3,4: intros ? ?.
+  all: rewrite !Hm; apply idl__ideal.
+Qed.
+
+Fact idl__fg_ideal 𝓡 l : @fg_ideal 𝓡 (idl ⌞l⌟).
+Proof. now exists l. Qed.
+

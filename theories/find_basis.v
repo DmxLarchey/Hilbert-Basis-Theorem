@@ -23,18 +23,6 @@ Require Import utils bar ring ideal poly noetherian noetherian_wf.
 #[local] Notation "P '⊂w' Q" := (witnessed_strict_incl P Q) (at level 70, format "P  ⊂w  Q").
 #[local] Notation PA := pauses.
 
-Definition fg_ideal {𝓡 : ring} 𝓘 := ∃ l : list 𝓡, 𝓘 ≡₁ idl ⌞l⌟.
-
-Fact fg_ideal__ideal 𝓡 : @fg_ideal 𝓡 ⊆₁ ideal.
-Proof.
-  intros P (m & Hm); split right.
-  1,3,4: intros ? ?.
-  all: rewrite !Hm; apply idl__ideal.
-Qed.
-
-Fact idl__fg_ideal 𝓡 l : @fg_ideal 𝓡 (idl ⌞l⌟).
-Proof. now exists l. Qed.
-
 Section fg_ideal_dec.
 
   Variables (𝓡 : ring) (𝓘 : 𝓡 → Prop) (H𝓘 : fg_ideal 𝓘).
@@ -170,7 +158,7 @@ Section strongly_discrete_ML_noetherian.
     intros H%noetherian__wf_strict_incl_ideal; revert H.
     wf rel morph (λ P Q, proj1_sig P = proj1_sig Q).
     + intros (P & HP).
-      now exists (exist _ P (fg_ideal__ideal _ _ HP)).
+      now exists (exist _ P (fg_ideal__ideal HP)).
     + intros (P & HP) (Q & HQ) (P' & HP') (Q' & HQ'); simpl.
       intros <- <-; now apply strictly_discrete_sincl_fingen_ideal.
   Qed.
@@ -229,7 +217,7 @@ Section find_basis.
   Lemma complete_basis l : ⌞l⌟ ⊆₁ 𝓘 → ∃b, ⌞l⌟ ⊆₁ ⌞b⌟ ∧ 𝓘 ≡₁ idl ⌞b⌟.
   Proof.
     induction l as [ l IH ]
-      using (well_founded_induction_type (noetherian__wf_fin_idl_strict_incl H𝓡)).
+      using (well_founded_induction_type (noetherian__wf_fg_idl_strict_incl H𝓡)).
     intros Hl.
     destruct (H𝓘2 l) as [ (x & H1 & H2) | H ].
     + destruct (IH (x::l)) as (b & []).
@@ -339,7 +327,7 @@ Section compute_basis.
   Lemma grow_basis l : ⌞l⌟ ⊆₁ 𝓘 → {b | ⌞l⌟ ⊆₁ ⌞b⌟ ∧ 𝓘 ≡₁ idl ⌞b⌟}.
   Proof.
     induction l as [ l IH ]
-      using (well_founded_induction_type (noetherian__wf_fin_idl_strict_incl H𝓡)).
+      using (well_founded_induction_type (noetherian__wf_fg_idl_strict_incl H𝓡)).
     intros Hl.
     destruct (𝓘_discrete l) as [ (x & H1 & H2) | H ].
     + destruct (IH (x::l)) as (b & []).
