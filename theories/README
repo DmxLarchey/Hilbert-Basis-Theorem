@@ -1,0 +1,84 @@
+The archive contains the Rocq artefact for the CPP 2026 submission
+
+    Bar Inductive Predicates for Constructive Algebra in Rocq
+    
+The code was written to be compiled and reviewed using Rocq-9.0.0.
+The only incompatibility with Coq (say 8.20) are in the "From StdLib"
+import directives that should be replaced by "From Coq" instead.
+
+Before reviewing the code, you should install Rocq-9.0.0 (I would
+suggest using the opam tool), unpack the archive and, in a terminal;
+from the main directory of the archive, compile the whole project with 
+
+> make all
+
+This should run and complete in less than 15 seconds. Some of
+the main results are purposedly displayed while they are
+compiled by Rocq.
+ 
+After that, you can review the individual files using your
+favorite Rocq editor, possibly rocqide.
+ 
+This is a summary of the contents of the files in the archive:
+ 
+utils.v:             utilities and basic notations
+measure.v:           tools for induction on a measure
+php.v:               tailored instance of the finite
+                     pigeon hole principle
+
+bar.v:               bar inductive predicates in general
+
+ring.v:              the definition of (non-discrete) rings
+
+ideal.v:             definition and tools for finitely generated
+                     ring ideals
+
+monotone_closure.v:  monotone closure of a relation
+
+noetherian_nc.v:     why does the classical characterization of
+                     Noetherian rings fail constructively
+
+bezout.v:            Bezout rings, among which Z, the ring of
+                     integers
+                     
+noetherian.v:        definition of (Bar) Noetherian rings and
+                     Z is a (Bar) Noetherian ring
+                     
+product.v:           construction of the direct product of two rings
+
+product_noetherian.v: the direct product preserves Noetherian rings
+                     
+poly.v:              construction of the polynomial ring R[X]
+                     for a non-discrete ring R
+                     
+category.v:          categorical characterizations of product rings,
+                     polynomial rings, and multivariate polynomial rings
+
+hbt.v:               Hilbert basis theorem
+
+noetherian_wf.v:     well-founded induction principles for Noetherian rings
+
+noetherian_alt.v:    comparison with alternate constructive characterizations
+                     of RS- and ML-Noetherian rings
+   
+ramsey.v:            reworked proof that the direct product of WQOs
+                     is a WQO (for the record)
+
+field.v
+find_basis.v
+find_pause.v
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
