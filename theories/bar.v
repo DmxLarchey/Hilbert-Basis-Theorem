@@ -17,7 +17,8 @@ Import ListNotations.
 
 Section bar.
 
-  (** Code partly imported/inspired from Kruskal-AlmostFull in https://dmxlarchey.github.io/Coq-Kruskal/ *)
+  (** Code partly imported/inspired from the Kruskal-AlmostFull 
+      project in https://dmxlarchey.github.io/Coq-Kruskal/ *)
 
   Variables (A : Type).
 

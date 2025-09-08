@@ -171,6 +171,23 @@ Qed.
 
 Definition noetherian (𝓡 : ring) := bar (@PA 𝓡) [].
 
+(** PA is barred and we find a pause in any "lawlike"
+    sequence of fg ideals n → idl ⌞[ρ (n-1);...;ρ 0⌟ *)
+Fact noetherian_idl_pauses 𝓡 : 
+    noetherian 𝓡
+  → ∀ρ : nat → 𝓡, ∃n, idl ⌞pfx_rev ρ n⌟ (ρ n).
+Proof.
+  intros H rho.
+  destruct bar_sequences
+    with (1 := H) (ρ := rho)
+    as (n & Hn).
+  apply PA_split in Hn as (l & x & r & H1 & H2).
+  symmetry in H1.
+  apply pfx_rev_app_inv in H1 as (a & b & H3 & H4 & H5).
+  apply pfx_rev_cons_inv in H5 as (i & ? & ? & ?).
+  now exists i; subst.
+Qed.
+
 (** Noetherianess is invariant under surjective homomorphisms *)
 Lemma noetherian_surj_homo (𝓡 𝓣 : ring) :
     (∃ f : 𝓡 → 𝓣, ring_homo f ∧ ∀x, ∃y, f y ∼ᵣ x)
