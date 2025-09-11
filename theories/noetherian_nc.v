@@ -11,7 +11,7 @@ From Stdlib Require Import List Arith Lia Wellfounded Relations Setoid Utf8.
 
 Import ListNotations.
 
-Require Import utils bar ring ideal bezout noetherian find_basis.
+Require Import utils bar ring ideal bezout noetherian.
 
 Section principal__finitely_generated.
 
@@ -118,54 +118,3 @@ End noetherian_nc_is_meaningless_constructivelly.
     get the equivalence *)
 
 Check noetherian_nc_implies_XM.
-
-(** Show that under XM and dependent choice, the constructive definition
-    of Noetherian and the classical one coincide: with XM, one can actually show that
-    in constructively Noetherian rings all ideals are finitely generated.
-
-    We now study under which conditions an ideal can be proved finitely generated
-    constructively. We already explained how the classically understood Noetherianess
-    (non-decidable) ideals of Z/2Z can be used to establish excluded middle. So
-    we need some assumptions on ideals to show that they are finitely generated
-    in a constructive ways. *)
-
-Section noetherian__noetherian_nc__XM.
-
-  Hypothesis xm : ∀P, P ∨ ¬ P.
-
-  Theorem noetherian__noetherian_nc__XM : noetherian ⊆₁ noetherian_nc.
-  Proof.
-    intros R HR P HP.
-    apply find_basis; auto.
-    intro; apply incl_witnessed_dec__XM, xm.
-  Qed.
-
-  Hypothesis dc : ∀ A (R : A → A → Prop), (∀a, ∃b, R a b) → ∀a, ∃ρ, ρ 0 = a ∧ ∀n, R (ρ n) (ρ (1+n)).
-
-  Theorem noetherian_nc__noetherian__XM_DC : noetherian_nc ⊆₁ noetherian.
-  Proof.
-    intros R HR; red.
-    destruct (xm (bar (@pauses R) [])) as [ | C ]; auto; exfalso.
-    apply not_bar_nil__XM_DC in C as (rho & Hrho); auto.
-    set (img x := ∃n, rho n = x).
-    destruct (HR (idl img)) as (l & Hl).
-    1: apply idl__ideal.
-    destruct (@idl_compact _ img l) as (m & H1 & H2).
-    1: intro; rewrite Hl; eauto.
-    apply reif_Forall2 in H1 as (k & Hk).
-    assert (∃b, ⌞m⌟ ⊆₁ ⌞pfx_rev rho b⌟) as (b & Hb).
-    + exists (S (lmax k)).
-      intros x Hx.
-      apply in_pfx_rev.
-      apply Forall2_in_inv_l with (1 := Hk) in Hx
-        as (n & []).
-      exists n; split; auto.
-      now apply le_n_S, lmax_in.
-    + apply (Hrho (S b)); simpl.
-      constructor 1.
-      apply idl_mono with (P := ⌞m⌟), idl_idem, idl_mono with (P := ⌞l⌟); auto.
-      apply Hl; constructor 1; now exists b.
-  Qed.
-
-End noetherian__noetherian_nc__XM.
-
