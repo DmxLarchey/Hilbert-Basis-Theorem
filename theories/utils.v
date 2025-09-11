@@ -1,8 +1,4 @@
 (**************************************************************)
-(*   Copyright Dominique Larchey-Wendling [*]                 *)
-(*                                                            *)
-(*                             [*] Affiliation LORIA -- CNRS  *)
-(**************************************************************)
 (*      This file is distributed under the terms of the       *)
 (*        Mozilla Public License Version 2.0, MPL-2.0         *)
 (**************************************************************)
@@ -125,8 +121,8 @@ Tactic Notation "double" "length" "induction" hyp(l) hyp(m)
 Section list_choice.
 
   (** Finite logical decidable choice over a list
-      code duplicated from Kruskal-Finite
-        in https://dmxlarchey.github.io/Coq-Kruskal/ *)
+      code duplicated from the coq-kruskal-finite 
+      project *)
 
   Variables (X : Type) (P Q : X → Prop).
 

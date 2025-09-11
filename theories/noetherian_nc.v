@@ -1,8 +1,4 @@
 (**************************************************************)
-(*   Copyright Dominique Larchey-Wendling [*]                 *)
-(*                                                            *)
-(*                             [*] Affiliation LORIA -- CNRS  *)
-(**************************************************************)
 (*      This file is distributed under the terms of the       *)
 (*        Mozilla Public License Version 2.0, MPL-2.0         *)
 (**************************************************************)
@@ -104,17 +100,5 @@ Section noetherian_nc_is_meaningless_constructivelly.
   Proof. intro; now apply noetherian_nc_implies_XM, principal__noetherian_nc. Qed.
 
 End noetherian_nc_is_meaningless_constructivelly.
-
-(** So constructively, the classical definition of Noetherian
-    (and also principal) is useless because unless XM holds (and 
-    then we are not constructive anymore), all usefull rings are 
-    not going be Noetherian (nor principal).
-
-    So we need another definition of Noetherian and this is the
-    definition given by Coquand & Perrson which works for
-    establishing HBT constructively. Moreover, we will show
-    that using XM, one can prove that this definition implies
-    the classical definition. Adding Dependent Choice, we
-    get the equivalence *)
 
 Check noetherian_nc_implies_XM.
