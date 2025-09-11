@@ -7,7 +7,7 @@ The only incompatibility with Coq (say 8.20) are in the "From StdLib"
 import directives that should be replaced by "From Coq" instead.
 
 Before reviewing the code, you should install Rocq-9.0.0 (I would
-suggest using the opam tool), unpack the archive and, in a terminal;
+suggest using the opam tool), unpack the archive and, in a terminal,
 from the main directory of the archive, compile the whole project with 
 
 > make all
@@ -17,7 +17,8 @@ the main results are purposedly displayed while they are
 compiled by Rocq.
  
 After that, you can review the individual files using your
-favorite Rocq editor, possibly rocqide.
+favorite Rocq editor, possibly rocqide. Some of them are
+heavily commented.
  
 This is a summary of the contents of the files in the archive:
  
@@ -63,10 +64,6 @@ noetherian_alt.v:    comparison with alternate constructive characterizations
    
 ramsey.v:            reworked proof that the direct product of WQOs
                      is a WQO (for the record)
-
-field.v
-find_basis.v
-find_pause.v
 
 
 
