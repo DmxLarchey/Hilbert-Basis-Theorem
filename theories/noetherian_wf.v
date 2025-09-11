@@ -35,9 +35,9 @@ Section noetherian_wf.
 
   Implicit Type (l m k : list 𝓡).
 
-  Let R (P Q : 𝓡 → Prop) := Q ⊂w P ∧ ideal Q.
+  Let T (P Q : 𝓡 → Prop) := Q ⊂w P ∧ ideal Q.
 
-  Local Lemma bar_PA__Acc l : bar PA l → ¬ PA l → ∀P, ⌞l⌟ ⊆₁ P → Acc R P.
+  Local Lemma bar_PA__Acc l : bar PA l → ¬ PA l → ∀P, ⌞l⌟ ⊆₁ P → Acc T P.
   Proof.
     induction 1 as [ l Hl | l _ IHl ].
     + now intros [].
@@ -59,7 +59,7 @@ Section noetherian_wf.
       sequence of ideals of 𝓡 is terminating. *)
 
   Theorem noetherian__wf_strict_incl_rev :
-    well_founded R.
+    well_founded T.
   Proof.
     intro.
     apply bar_PA__Acc with (l := []); auto.
@@ -71,7 +71,7 @@ Section noetherian_wf.
     well_founded (λ P Q : sig (@ideal 𝓡), proj1_sig Q ⊂w proj1_sig P).
   Proof.
     generalize noetherian__wf_strict_incl_rev.
-    unfold R.
+    unfold T.
     wf rel morph (λ x y, x = proj1_sig y).
     + intros []; simpl; eauto.
     + intros ? ? [] []; simpl; intros; subst; auto.
