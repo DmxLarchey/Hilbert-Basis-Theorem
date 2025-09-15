@@ -1,6 +1,122 @@
-# Hilbert Basis Theorem constructivelly in Coq/Rocq
+```
+(**************************************************************)
+(*   Copyright Dominique Larchey-Wendling [*]                 *)
+(*                                                            *)
+(*                             [*] Affiliation LORIA -- CNRS  *)
+(**************************************************************)
+(*      This file is distributed under the terms of the       *)
+(*        Mozilla Public License Version 2.0, MPL-2.0         *)
+(**************************************************************)
+```
 
-The repository contains a constructive proof of Hilbert's Basis Theorem (a.k.a. HBT below) partly following the outline given in _Coquand & Persson 98_ (see refs below).
+# Hilbert Basis Theorem constructivelly in Rocq (artifact)
+
+The repository contains an artifact for the draft paper [_Bar Inductive Predicates for Constructive Algebra in Rocq_]()
+by Dominique Larchey-Wendling (submitted Sept. 2025). It contains the following the main results:
+
+- a characterization of _(Bar) Noetherian rings_ using `bar` inductive predicates;
+- constructive proof of Hilbert's Basis Theorem (HBT) partly following the outline given in _Coquand & Persson 98_ (see refs below);
+- a proof that (Bar) Noetherian rings are closed under direct products;
+- a comparison with alternate constructive characterizations of Noetherianity, in the case of strongly discrete rings.
+
+## Compile and review instructions
+
+This artifact was written for `Rocq-9.0.0`. The main incompatibility with `Coq` relies in the
+`From ... Import ...` directives: `From Stdlib Import ...` should be replaced with `From Coq Inport ...`
+but doing so, `roqc` would then complain with warnings, so I decided to format the code for `Rocq` only.
+
+Before reviewing the code, you should install `Rocq-9.0.0`. 
+We suggest using the opam tool for this task and detail this
+procedure below, as a last resort in case you do not have
+other means to install Rocq. 
+
+You can visit (https://github.com/rocq-prover/opam) 
+for information about `Rocq` & `opam`. We suggest registering
+the `released` repo, the recommended default.
+
+The following tested sequence of commands will create a new opam 
+switch named `hbt`, then register the `released` repo, and 
+then install vanilla `Rocq-9.0.0` with `Stdlib` and `RocqIDE`. 
+It is enough for the review, no external libraries are needed:
+
+```console
+opam switch create hbt ocaml-base-compiler.4.14.1 --jobs=16
+eval $(opam env --switch=hbt)
+opam repo add rocq-released https://rocq-prover.org/opam/released
+opam update
+opam install rocq-stdlib.9.0.0 rocqide.9.0.0 --jobs=16
+```
+
+The first and last command may take some time to complete.
+
+Once `Rocq-9.0.0` is installed, unpack the archive and, in a terminal, 
+from the main directory of the archive, compile the whole project with
+
+```console
+git clone 
+cd ../theories
+make all
+```
+
+This should run and complete in less than 15 seconds. Some of the main 
+results are purposely displayed while they are compiled by Rocq.
+After the code is compiled, you can review the individual files 
+using your favorite Rocq visual editor, possibly RocqIDE as a
+fallback. The following commands invokes RocqIDE:
+
+```console
+rocqide hbt.v
+```
+
+Some of the `*.v` files below are heavily commented.
+
+## Contents of the individual `*.v` files
+
+```console
+_CoqProject:           lists the *.v Rocq source code files          
+Makefile:              use _CoqProject to manage the Rocq compilation process
+ 
+utils.v:               utilities and basic notations
+measure.v:             tools for induction on a measure
+php.v:                 tailored instance of the finite pigeon hole principle
+
+bar.v:                 bar inductive predicates in general
+
+ring.v:                the definition of (non-discrete) rings
+
+ideal.v:               definition and tools for finitely generated ring ideals
+
+monotone_closure.v:    monotone closure of a relation
+
+noetherian_nc.v:       why does the classical characterization of
+                       Noetherian rings fail constructively
+
+bezout.v:              Bezout rings, among which Z, the ring of integers
+                     
+noetherian.v:          definition of (Bar) Noetherian rings and
+                       Z is a (Bar) Noetherian ring
+                     
+product.v:             construction of the direct product of two rings
+
+product_noetherian.v:  the direct product preserves Noetherian rings
+                     
+poly.v:                construction of the polynomial ring R[X] for a ring R
+                     
+category.v:            categorical characterizations of product rings,
+                       polynomial rings, and multivariate polynomial rings
+
+hbt.v:                 the Hilbert Basis Theorem
+
+noetherian_wf.v:       well-founded induction principles for Noetherian rings
+
+noetherian_alt.v:      comparison with alternate constructive characterizations
+                       of RS- and ML-Noetherian rings
+   
+ramsey.v:              reworked proof that the direct product of two WQOs
+                       is a WQO (for the record)
+```
+
+# Description of some of the theoritical results 
 
 ## Rings and ideals (constructivelly)
 
