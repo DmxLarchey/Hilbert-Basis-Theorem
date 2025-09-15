@@ -53,8 +53,8 @@ Once `Rocq-9.0.0` is installed, unpack the archive and, in a terminal,
 from the main directory of the archive, compile the whole project with
 
 ```console
-git clone 
-cd ../theories
+git clone https://github.com/DmxLarchey/Hilbert-Basis-Theorem.git
+cd Hilbert-Basis-Theorem/theories
 make all
 ```
 
