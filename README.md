@@ -11,7 +11,7 @@
 
 # Hilbert Basis Theorem constructivelly in Rocq (artifact)
 
-The repository contains an artifact for the draft paper [_Bar Inductive Predicates for Constructive Algebra in Rocq_]()
+The repository contains an artifact for the draft paper [_Bar Inductive Predicates for Constructive Algebra in Rocq_](https://members.loria.fr/DLarchey/files/papers/HBT_2025.pdf)
 by Dominique Larchey-Wendling (submitted Sept. 2025). It contains the following the main results:
 
 - a characterization of _(Bar) Noetherian rings_ using `bar` inductive predicates;
