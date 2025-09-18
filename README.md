@@ -22,7 +22,7 @@ by Dominique Larchey-Wendling (submitted Sept. 2025). It contains the following 
 ## Compile and review instructions
 
 This artifact was written for `Rocq-9.0.0`. The main incompatibility with `Coq` relies in the
-`From ... Import ...` directives: `From Stdlib Import ...` should be replaced with `From Coq Inport ...`
+`From ... Import ...` directives: `From Stdlib Import ...` should be replaced with `From Coq Import ...`
 but doing so, `roqc` would then complain with warnings, so I decided to format the code for `Rocq` only.
 
 Before reviewing the code, you should install `Rocq-9.0.0`. 
