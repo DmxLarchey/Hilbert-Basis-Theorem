@@ -26,12 +26,12 @@ This artifact was written for `Rocq-9.0.0`. The main incompatibility with `Coq` 
 but doing so, `roqc` would then complain with warnings, so I decided to format the code for `Rocq` only.
 
 Before reviewing the code, you should install `Rocq-9.0.0`. 
-We suggest using the opam tool for this task and detail this
+I suggest using the opam tool for this task and detail this
 procedure below, as a last resort in case you do not have
 other means to install Rocq. 
 
 You can visit (https://github.com/rocq-prover/opam) 
-for information about `Rocq` & `opam`. We suggest registering
+for information about `Rocq` & `opam`. I suggest registering
 the `released` repo, the recommended default.
 
 The following tested sequence of commands will create a new opam 
