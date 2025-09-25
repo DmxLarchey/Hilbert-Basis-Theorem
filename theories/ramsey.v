@@ -46,22 +46,38 @@ Section bar_good_middle.
 
   Variables (X : Type) (R : X → X → Prop).
 
-  (* x is above some member of l *)
-  Definition lowered l x := ∃y, y ∈ l ∧ R y x.
+  Implicit Types (P Q : X → Prop).
 
-  Fact lowered_incl l m x : incl l m → lowered l x → lowered m x.
-  Proof. intros H (? & ?%H & ?); red; eauto. Qed.
+  Definition idl P x := ∃y, P y ∧ R y x.
+
+  Fact idl_mono P Q : P ⊆₁ Q → idl P ⊆₁ idl Q.
+  Proof. intros H ? (y & ?%H & ?); now exists y. Qed.
+
+  (* x is above some member of l *)
+  Definition lowered l := idl ⌞l⌟.
+
+  Fact lowered_incl l m : incl l m → lowered l ⊆₁ lowered m.
+  Proof. apply idl_mono. Qed.
 
   Hint Resolve in_or_app : core.
 
-  Fact lowered_app_left l r x : lowered r x → lowered (l++r) x.
+  Fact lowered_app_left l r : lowered r ⊆₁ lowered (l++r).
   Proof. apply lowered_incl; red; eauto. Qed.
 
-  Fact lowered_app_right l r x : lowered l x → lowered (l++r) x.
+  Fact lowered_app_right l r : lowered l ⊆₁ lowered (l++r).
   Proof. apply lowered_incl; red; eauto. Qed.
 
   Fact lowered_cons_inv y l x : lowered (y::l) x → R y x ∨ lowered l x.
-  Proof. intros (? & [ <- | ] & ?); auto; right; red; eauto. Qed.  
+  Proof. intros (z & [ <- | ] & ?); auto; right; red; eauto; now exists z. Qed.
+
+  Hint Resolve lowered_app_left lowered_app_right : core.
+
+  Fact lowered_app_iff l r x : lowered (l++r) x ↔ lowered l x ∨ lowered r x.
+  Proof. 
+    split.
+    + intros (z & []%in_app_iff & Hz); [ left | right ]; now exists z.
+    + intros []; eauto.
+  Qed.
 
   Definition good := MC lowered.
 
@@ -88,10 +104,12 @@ Section bar_good_middle.
   Fact good_app_left l r : good r → good (l++r).
   Proof. apply MC_app_left. Qed.
 
-  Fact good_app_right l r : good l → good (l++r).
-  Proof. revert l; apply MC_app_right; intros ? ? (? & []); red; eauto. Qed.
+  Hint Resolve lowered_app_right : core.
 
-  Hint Resolve good_app_left good_app_right : core.
+  Fact good_app_right l r : good l → good (l++r).
+  Proof. revert l; apply MC_app_right; eauto. Qed.
+
+  Hint Resolve good_app_left good_app_right good_monotone : core.
 
   Fact good_iff_split p : good p ↔ ∃ l x m y r, p = l++x::m++y::r ∧ R y x.
   Proof.
@@ -108,11 +126,10 @@ Section bar_good_middle.
   Proof.
     split.
     + induction l as [ | x l IHl ]; simpl; eauto.
-      intros [ (y & [ H1 | H1 ]%in_app_iff & H2) | [ | [ | (u & v & ? & []) ] ]%IHl ]%MC_inv; eauto.
-      * left; constructor 1; red; eauto.
-      * do 2 right; exists x; split; auto; red; eauto.
-      * left; now constructor 2.
-      * do 2 right; exists u; split; auto; red; eauto.
+      intros [ [ | [ | (z & []) ] ]%IHl | []%lowered_app_iff ]%good_cons_inv; eauto.
+      * do 2 right; exists z; eauto.
+      * left; now constructor 1.
+      * do 2 right; exists x; eauto.
     + intros [ | [ | (x & (l' & m & ->)%in_split & ?) ] ]; eauto.
       rewrite <- app_assoc; simpl.
       apply MC_app_left; constructor 1; eauto.
@@ -123,13 +140,14 @@ Section bar_good_middle.
     rewrite good_app_inv; split.
     + intros [ | [ []%good_sg_inv | (? & ? & ? & [ <- | [] ] & ?) ] ]; eauto.
     + intros [ | (y & ? & ?) ]; eauto.
-      do 2 right; exists y; split; auto; red; eauto.
+      do 2 right; exists y; split; eauto.
+      exists x; eauto.
   Qed.
   
   Fact good_app_middle l m r : good (l++r) → good (l++m++r).
   Proof.
     intros [ | [ | (x & y & ?  & [])] ]%good_app_inv; apply good_app_inv; eauto.
-    do 2 right; exists x; split; auto; red; eauto.
+    do 2 right; exists x; rewrite lowered_app_iff; split; auto; right; eexists; eauto.
   Qed.
   
   Hint Resolve good_app_middle : core.
@@ -148,6 +166,7 @@ Section bar_good_middle.
 
 End bar_good_middle.
 
+Arguments idl {_}.
 Arguments lowered {_}.
 Arguments good {_}.
 
