@@ -209,9 +209,9 @@ Tactic Notation "double" "bar" "induction" "as" simple_intropattern(Hl) simple_i
 
 Section ramsey_gen.
 
-  Variables (A B : Type) (P : list A → Prop) (Q : list B → Prop) 
-            (K : list (A*B) → Prop) 
-            (φ : list A → list B → list (A*B) → list (A*B)).
+  Variables (A B C : Type) (P : list A → Prop) (Q : list B → Prop) 
+            (K : list C → Prop) 
+            (φ : list A → list B → list (A*B) → list C).
 
   Let T la lb m := K (φ la lb m).
 

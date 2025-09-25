@@ -186,8 +186,8 @@ Section ramsey.
     match a, b with
     | inX x, inX x' => R x x'
     | inY y, inY y' => S y y'
-    | inX x, inXY (x',_) => R x x'
-    | inY y, inXY (_,y') => S y y'
+    | inX x, inXY z => R x (fst z)
+    | inY y, inXY z => S y (snd z)
     | inXY a, inXY b => T a b
     | _, _ => False
     end.
@@ -255,22 +255,51 @@ Section ramsey.
 
   Hint Resolve good_monotone good_app_right
                in_or_app in_eq : core.
+               
+  Let phi lx ly m := map inXY m ++ map inX lx ++ map inY ly.
+  
+  Check phi.
+               
+  Theorem bar_ramsey : bar (good R) [] -> bar (good S) [] -> bar (fun m => good RS (phi [] [] m)) [].
+  Proof.
+    apply bar_ramsey.
+    + intros lx ly z m; unfold phi; simpl; apply good_monotone.
+    + intros lx ly; unfold phi; simpl.
+      intro H; apply good_app_right.
+      revert lx H; apply good_map; simpl; auto.
+    + intros lx ly; unfold phi; simpl.
+      intro H; apply good_app_left.
+      revert ly H; apply good_map; simpl; auto.
+    + intros x lx y ly m; unfold phi; simpl.
+      admit.
+    + intros x lx y ly m; unfold phi; simpl.
+      admit.
+  Admitted.
 
   Section nested_induction.
 
-    Variables (lx : list X) (ly : list Y) (z : X*Y).
+    Variables (lx : list X) (ly : list Y) (x : X) (y : Y).
+    
+    Local Lemma lem_ramsey_1' h l :
+        (∀u, R x (fst u) → bar (θ lx ly) (u::l++[(x,y)]))
+      → bar (θ (x::lx) ly) h
+      → bar (θ lx ly) (h++l++[(x,y)]).
+    Proof.
+      intros H1 H2.
+      rewrite bar_app_iff.
+    Admitted.
 
     Local Lemma lem_ramsey_1 h l :
-        (∀u, R (fst z) (fst u) → bar (θ lx ly) (u::l++[z]))
-      → bar (θ (fst z::lx) ly) h
-      → bar (θ lx ly) (h++l++[z]).
+        (∀u, RS (inX x) (inXY u) → bar (θ lx ly) (u::l++[(x,y)]))
+      → bar (θ (x::lx) ly) h
+      → bar (θ lx ly) (h++l++[(x,y)]).
     Proof.
       intros G.
       induction 1 as [ h Hh | h _ IHh ].
       2: constructor 2; auto.
       destruct Hh as [ []%good_cons_inv | [ | [ | [Hh|(u & [])] ] ] ].
       1,2,3,4,6: constructor 1; red; auto.
-      + do 3 right; left; eauto; exists z; rewrite !in_app_iff; simpl; eauto.
+      + do 3 right; left; eauto; exists (x,y); rewrite !in_app_iff; simpl; eauto.
       + do 4 right; eauto.
       + destruct Hh as (u & Hu & []%lowered_cons_inv); eauto.
         * apply in_split in Hu as (? & ? & ->).
@@ -280,19 +309,20 @@ Section ramsey.
           do 3 right; left; eauto.
     Qed.
 
-    Hypothesis (B1 : bar (θ (fst z::lx) ly) []).
+    Hypothesis (B1 : bar (θ (x::lx) ly) []).
 
     Local Lemma lemma_ramsey_2 l :
-        Forall (λ u, R (fst z) (fst u)) l
-      → bar (θ lx (snd z::ly)) l
-      → bar (θ lx ly) (l++[z]).
+        Forall (λ u, RS (inX x) (inXY u)) l
+      → bar (θ lx (y::ly)) l
+      → bar (θ lx ly) (l++[(x,y)]).
     Proof.
       intros H1 H2; revert H2 H1.
       induction 1 as [ l Hl | l _ IHl ].
-      + intros H1; rewrite Forall_forall in H1.
+      + clear B1.
+        intros H1; rewrite Forall_forall in H1.
         constructor 1.
         destruct Hl as [ | [ []%good_cons_inv | [ | [ (u & []) | (u & Hu & []%lowered_cons_inv) ] ] ] ]; red; eauto.
-        * do 4 right; exists z; split right; eauto.
+        * do 4 right; exists (x,y); split right; eauto.
         * do 3 right; left; exists u; split right; eauto.
         * specialize (H1 _ Hu).
           do 2 right; left.
@@ -302,9 +332,9 @@ Section ramsey.
       + intros H1; apply lem_ramsey_1 with (h := []); eauto.
     Qed.
 
-    Hypothesis (B2 : bar (θ lx (snd z::ly)) []).
+    Hypothesis (B2 : bar (θ lx (y::ly)) []).
 
-    Local Lemma lemma_ramsey_3 : bar (θ lx ly) [z].
+    Local Lemma lemma_ramsey_3 : bar (θ lx ly) [(x,y)].
     Proof. apply lemma_ramsey_2 with (l := []); simpl; auto. Qed.
 
   End nested_induction.
@@ -314,7 +344,7 @@ Section ramsey.
     double bar induction as ? ?.
     + constructor 1; red; auto.
     + constructor 1; red; auto.
-    + constructor 2; intro; apply lemma_ramsey_3; auto.
+    + constructor 2; intros []; apply lemma_ramsey_3; auto.
   Qed.
 
   Local Fact bar_phi_good : bar (θ [] []) [] → bar (good T) [].
