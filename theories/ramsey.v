@@ -135,6 +135,23 @@ Section bar_good_middle.
       apply MC_app_left; constructor 1; eauto.
   Qed.
 
+  Fact good_split_inv l x r : good (l++x::r) 
+                            ↔ (exists l' y m, l = l'++y::m /\ lowered (m++x::r) y)
+                            \/ lowered r x
+                            \/ good r.
+  Proof.
+    split.
+    + induction l as [ | y l IHl ]; simpl.
+      * intros [|]%good_cons_inv; eauto.
+      * intros [[(l' & z & m & -> & H)|[]]%IHl|H]%good_cons_inv; eauto.
+        - left; exists (y::l'), z, m; auto.
+        - left; exists [], y, l; auto.
+    + intros [ (l' & y & m & -> & H)| [] ].
+      * rewrite <- app_assoc; simpl; apply good_app_left; now constructor 1.
+      * apply good_app_left; now constructor 1.
+      * apply good_app_left; now constructor 2.
+  Qed.
+
   Fact good_snoc_inv l x : good (l++[x]) ↔ good l ∨ ∃y, y ∈ l ∧ R x y.
   Proof.
     rewrite good_app_inv; split.
@@ -178,7 +195,7 @@ Fact good_map X Y (f : X → Y) (R : X → X → Prop) (T : Y → Y → Prop) :
 Proof.
   intros H.
   induction 1 as [ ? ? (? & []) | ]; simpl.
-  + constructor 1; red; eauto.
+  + constructor 1; exists (f x); eauto.
   + now constructor 2.
 Qed.
 
@@ -268,8 +285,8 @@ Section ramsey.
       * right; eauto.
       * destruct H as (? & (x & <- & ?)%in_map_iff & ? & (y & <- & ?)%in_map_iff & []).
       * destruct H as (? & ((x' & y') & <- & ?)%in_map_iff & ? & [(x & <- & ?)%in_map_iff|(y & <- & ?)%in_map_iff]%in_app_iff & ?); simpl in *.
-        - do 3 right; left; exists (x',y'); split; auto; red; eauto.
-        - do 4 right; exists (x',y'); split; auto; red; eauto.
+        - do 3 right; left; exists (x',y'); split; auto; red; simpl; red; eauto.
+        - do 4 right; exists (x',y'); split; auto; red; simpl; red; eauto.
   Qed.
 
   Hint Resolve good_monotone good_app_right
@@ -290,6 +307,13 @@ Section ramsey.
       intro H; apply good_app_left.
       revert ly H; apply good_map; simpl; auto.
     + intros x lx y ly m; unfold phi; simpl.
+      intros [ H1 | H1 ]%good_cons_inv.
+      * intros _.
+        do 2 apply good_app_left.
+        revert H1; apply good_map; simpl; eauto.
+      * intros [(l1 & k & l2 & E & H2) | [H2|H2]]%good_split_inv.
+        apply map_split_inv in E as (m1 & z & m2 & ? & ? & ? & ?); subst.
+        Search map eq cons app.
       admit.
     + intros x lx y ly m; unfold phi; simpl.
       admit.
