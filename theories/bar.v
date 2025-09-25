@@ -207,6 +207,45 @@ Tactic Notation "double" "bar" "induction" "as" simple_intropattern(Hl) simple_i
       [ intros l m Hl | intros l m Hm | intros l m Hl Hm ]
   end.
 
+Section ramsey_gen.
+
+  Variables (A B : Type) (P : list A → Prop) (Q : list B → Prop) 
+            (K : list (A*B) → Prop) 
+            (φ : list A → list B → list (A*B) → list (A*B)).
+
+  Let T la lb m := K (φ la lb m).
+
+  Variables   (HK0 : ∀ la lb, monotone (T la lb))
+              (HK1 : ∀ la lb, P la → T la lb [])
+              (HK2 : ∀ lx ly, Q ly → T lx ly [])
+              (HK3 : ∀ a la b lb m, Q (b::lb) → T (a::la) lb m → T la lb (m++[(a,b)]))
+              (HK4 : ∀ a la b lb m, T la (b::lb) m → T la lb (m++[(a,b)]) ∨ Q (b::lb)).
+              
+  Hint Constructors bar : core.
+  
+  Theorem bar_ramsey_rec1 la lb a b m : bar (T la (b::lb)) m → bar (T (a::la) lb) m → bar (T la lb) (m++[(a,b)]).
+  Proof.
+    induction 1 as [ m H1 | m _ IH ].
+    + apply HK4 with (a := a) in H1 as [ H1 | H1 ]; auto.
+      intros H; apply bar_app_iff; revert H; apply bar_mono; eauto.
+    + intros H2.
+      constructor 2; intro.
+      apply IH, bar_monotone; auto.
+  Qed.
+
+  Theorem bar_ramsey_rec2 la lb : bar P la → bar Q lb → bar (T la lb) [].
+  Proof.
+    unfold T in *.
+    double bar induction as Hla Hlb; eauto.
+    constructor 2; intros (a,b).
+    apply bar_ramsey_rec1 with (m := []); unfold T; auto.
+  Qed.
+
+  Corollary bar_ramsey : bar P [] → bar Q [] → bar (T [] []) [].
+  Proof. apply bar_ramsey_rec2. Qed.
+
+End ramsey_gen.
+
 Section bar_nc.
 
   (** This section is about bar in "non-constructive" settings, following
