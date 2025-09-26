@@ -312,25 +312,29 @@ Section ramsey.
         do 2 apply good_app_left.
         revert H1; apply good_map; simpl; eauto.
       * intros [(l1 & k & l2 & E & H2) | [H2|H2]]%good_split_inv.
-        apply map_split_inv in E as (m1 & z & m2 & ? & ? & ? & ?); subst.
+        - apply map_split_inv in E as (m1 & z & m2 & ? & ? & ? & ?); subst.
         Search map eq cons app.
-      admit.
-    + intros x lx y ly m; unfold phi; simpl.
-      admit.
   Admitted.
 
   Section nested_induction.
 
     Variables (lx : list X) (ly : list Y) (x : X) (y : Y).
     
-    Local Lemma lem_ramsey_1' h l :
-        (∀u, R x (fst u) → bar (θ lx ly) (u::l++[(x,y)]))
-      → bar (θ (x::lx) ly) h
-      → bar (θ lx ly) (h++l++[(x,y)]).
+    (*
+    
+    Local Lemma lem_ramsey_9 l m :
+  (*      (∀u, R x (fst u) → bar (θ lx ly) (u::l++[(x,y)])) *)
+        bar (θ (x::lx) ly) l
+      → bar (θ lx (y::ly)) m
+      → bar (θ lx ly) (l++m++[(x,y)]).
     Proof.
+      induction 1 as [ l Hl | l Hl IHl ] in m |- *.
+      + rewrite θ_iff_good in Hl.
       intros H1 H2.
       rewrite bar_app_iff.
     Admitted.
+    
+    *)
 
     Local Lemma lem_ramsey_1 h l :
         (∀u, RS (inX x) (inXY u) → bar (θ lx ly) (u::l++[(x,y)]))
@@ -364,6 +368,7 @@ Section ramsey.
       + clear B1.
         intros H1; rewrite Forall_forall in H1.
         constructor 1.
+        rewrite θ_iff_good in Hl |- *.
         destruct Hl as [ | [ []%good_cons_inv | [ | [ (u & []) | (u & Hu & []%lowered_cons_inv) ] ] ] ]; red; eauto.
         * do 4 right; exists (x,y); split right; eauto.
         * do 3 right; left; exists u; split right; eauto.
