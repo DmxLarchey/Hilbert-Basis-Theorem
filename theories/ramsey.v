@@ -40,6 +40,9 @@ Import ListNotations.
     of the below proof to the context of Bar Noetherian
     rings. *)
 
+Fact In_split_special X (x : X) l y r : y ∈ l++x::r ↔ x = y ∨ y ∈ l++r.
+Proof. rewrite !in_app_iff; simpl; tauto. Qed. 
+
 Section bar_good_middle.
 
   Notation MC := monotone_closure.
@@ -53,33 +56,7 @@ Section bar_good_middle.
   Fact idl_mono P Q : P ⊆₁ Q → idl P ⊆₁ idl Q.
   Proof. intros H ? (y & ?%H & ?); now exists y. Qed.
 
-  (* x is above some member of l *)
-  Definition lowered l := idl ⌞l⌟.
-
-  Fact lowered_incl l m : incl l m → lowered l ⊆₁ lowered m.
-  Proof. apply idl_mono. Qed.
-
-  Hint Resolve in_or_app : core.
-
-  Fact lowered_app_left l r : lowered r ⊆₁ lowered (l++r).
-  Proof. apply lowered_incl; red; eauto. Qed.
-
-  Fact lowered_app_right l r : lowered l ⊆₁ lowered (l++r).
-  Proof. apply lowered_incl; red; eauto. Qed.
-
-  Fact lowered_cons_inv y l x : lowered (y::l) x → R y x ∨ lowered l x.
-  Proof. intros (z & [ <- | ] & ?); auto; right; red; eauto; now exists z. Qed.
-
-  Hint Resolve lowered_app_left lowered_app_right : core.
-
-  Fact lowered_app_iff l r x : lowered (l++r) x ↔ lowered l x ∨ lowered r x.
-  Proof. 
-    split.
-    + intros (z & []%in_app_iff & Hz); [ left | right ]; now exists z.
-    + intros []; eauto.
-  Qed.
-
-  Definition good := MC lowered.
+  Definition good := MC (λ l, idl ⌞l⌟).
 
   Hint Constructors MC : core.
 
@@ -91,7 +68,7 @@ Section bar_good_middle.
   Fact good_nil_inv : good [] → False.
   Proof. now intros ?%MC_inv. Qed.
 
-  Fact good_cons_inv x l : good (x::l) ↔ good l ∨ lowered l x.
+  Fact good_cons_inv x l : good (x::l) ↔ good l ∨ idl ⌞l⌟ x.
   Proof.
     split.
     + intros []%MC_inv; eauto.
@@ -101,17 +78,47 @@ Section bar_good_middle.
   Fact good_sg_inv x : good [x] → False.
   Proof. intros [ []%good_nil_inv | (? & [] & _) ]%good_cons_inv. Qed.
 
+  Fact good_app_inv l r : good (l++r) ↔ (∃ l' x m, l = l'++x::m ∧ idl ⌞m++r⌟ x) ∨ good r.
+  Proof. apply MC_app_inv. Qed.
+
+  Fact good_middle_inv l x r : 
+       good (l++x::r)
+    ↔ (∃ l' y m, l = l'++y::m ∧ idl ⌞m++x::r⌟ y) (* in l *)
+    ∨ idl ⌞r⌟ x                                  (* at x *)
+    ∨ good r                                       (* in r *)
+    .
+  Proof. rewrite good_app_inv, good_cons_inv; tauto. Qed.
+
+  Fact good_special_inv l m x r :
+       good (l++m++x::r)
+    ↔ (∃ l₁ y l₂, l = l₁++y::l₂ ∧ idl ⌞l₂++m++x::r⌟ y) (* in l *)
+    ∨ (∃ m₁ y m₂, m = m₁++y::m₂ ∧ idl ⌞m₂++x::r⌟ y)    (* in m *)
+    ∨ idl ⌞r⌟ x                                        (* at x *)
+    ∨ good r                                             (* in r*)
+    .
+  Proof. rewrite !good_app_inv, good_cons_inv; tauto. Qed.
+
   Fact good_app_left l r : good r → good (l++r).
   Proof. apply MC_app_left. Qed.
 
-  Hint Resolve lowered_app_right : core.
+  Fact good_app_middle m : ∀ l r, good (l++r) → good (l++m++r).
+  Proof.
+    apply MC_app_middle.
+    intros ? ? ?; apply idl_mono.
+    intros ?; rewrite !in_app_iff; tauto.
+  Qed.
 
   Fact good_app_right l r : good l → good (l++r).
-  Proof. revert l; apply MC_app_right; eauto. Qed.
+  Proof.
+    intros H.
+    rewrite <- app_nil_r, <- app_assoc.
+    apply good_app_middle.
+    now rewrite app_nil_r.
+  Qed.
 
   Hint Resolve good_app_left good_app_right good_monotone : core.
 
-  Fact good_iff_split p : good p ↔ ∃ l x m y r, p = l++x::m++y::r ∧ R y x.
+  Remark good_iff_split p : good p ↔ ∃ l x m y r, p = l++x::m++y::r ∧ R y x.
   Proof.
     unfold good; rewrite MC_split; split.
     + intros (l & x & ? & -> & y & (m & r & ->)%in_split & ?); simpl.
@@ -119,64 +126,17 @@ Section bar_good_middle.
     + intros (l & x & m & y & r & -> & ?); exists l, x, (m++y::r); split; auto.
       exists y; rewrite in_app_iff; simpl; eauto.
   Qed.
-  
-  Hint Resolve lowered_app_left lowered_app_right : core.
 
-  Fact good_app_inv l r : good (l++r) ↔ good l ∨ good r ∨ ∃x, x ∈ l ∧ lowered r x.
-  Proof.
-    split.
-    + induction l as [ | x l IHl ]; simpl; eauto.
-      intros [ [ | [ | (z & []) ] ]%IHl | []%lowered_app_iff ]%good_cons_inv; eauto.
-      * do 2 right; exists z; eauto.
-      * left; now constructor 1.
-      * do 2 right; exists x; eauto.
-    + intros [ | [ | (x & (l' & m & ->)%in_split & ?) ] ]; eauto.
-      rewrite <- app_assoc; simpl.
-      apply MC_app_left; constructor 1; eauto.
-  Qed.
-
-  Fact good_split_inv l x r : good (l++x::r) 
-                            ↔ (exists l' y m, l = l'++y::m /\ lowered (m++x::r) y)
-                            \/ lowered r x
-                            \/ good r.
-  Proof.
-    split.
-    + induction l as [ | y l IHl ]; simpl.
-      * intros [|]%good_cons_inv; eauto.
-      * intros [[(l' & z & m & -> & H)|[]]%IHl|H]%good_cons_inv; eauto.
-        - left; exists (y::l'), z, m; auto.
-        - left; exists [], y, l; auto.
-    + intros [ (l' & y & m & -> & H)| [] ].
-      * rewrite <- app_assoc; simpl; apply good_app_left; now constructor 1.
-      * apply good_app_left; now constructor 1.
-      * apply good_app_left; now constructor 2.
-  Qed.
-
-  Fact good_snoc_inv l x : good (l++[x]) ↔ good l ∨ ∃y, y ∈ l ∧ R x y.
-  Proof.
-    rewrite good_app_inv; split.
-    + intros [ | [ []%good_sg_inv | (? & ? & ? & [ <- | [] ] & ?) ] ]; eauto.
-    + intros [ | (y & ? & ?) ]; eauto.
-      do 2 right; exists y; split; eauto.
-      exists x; eauto.
-  Qed.
-  
-  Fact good_app_middle l m r : good (l++r) → good (l++m++r).
-  Proof.
-    intros [ | [ | (x & y & ?  & [])] ]%good_app_inv; apply good_app_inv; eauto.
-    do 2 right; exists x; rewrite lowered_app_iff; split; auto; right; eexists; eauto.
-  Qed.
-  
   Hint Resolve good_app_middle : core.
 
-  Fact bar_good_middle l m r : bar good (l++r) → bar good (l++m++r).
+  Fact bar_good_app_middle l m r : bar good (l++r) → bar good (l++m++r).
   Proof. revert l r; apply bar_app_middle; auto. Qed.
 
   Fact bar_good_app_head l r : bar good r → bar good (l++r).
-  Proof. apply bar_good_middle with (l := []). Qed.
+  Proof. apply bar_good_app_middle with (l := []). Qed.
 
   Fact bar_good_skip_app x m r : bar good (x::r) → bar good (x::m++r).
-  Proof. apply bar_good_middle with (l := [_]). Qed.
+  Proof. apply bar_good_app_middle with (l := [_]). Qed.
 
   Fact bar_good_skip_cons x y r : bar good (x::r) → bar good (x::y::r).
   Proof. apply bar_good_skip_app with (m := [_]). Qed.
@@ -184,10 +144,15 @@ Section bar_good_middle.
 End bar_good_middle.
 
 Arguments idl {_}.
-Arguments lowered {_}.
 Arguments good {_}.
 
 #[local] Hint Resolve in_map in_or_app : core.
+
+Fact good_mono X (R T : X → X → Prop) : R ⊆₂ T -> good R ⊆₁ good T.
+Proof.
+  intros H; apply MC_mono.
+  intros ? ? (u & ? & ?); exists u; eauto.
+Qed.
 
 Fact good_map X Y (f : X → Y) (R : X → X → Prop) (T : Y → Y → Prop) :
     (∀ x y, R x y → T (f x) (f y))
@@ -228,21 +193,28 @@ Section ramsey.
     | _, _ => False
     end.
 
+  Local Fact R_RS x x' : R x x' → RS (inX x) (inX x').   Proof. now simpl. Qed.
+  Local Fact S_RS y y' : S y y' → RS (inY y) (inY y').   Proof. now simpl. Qed.
+  Local Fact T_RS a b : T a b → RS (inXY a) (inXY b).    Proof. now simpl. Qed.
+
+  Local Fact RS_R x x' : RS (inX x) (inX x') → R x x'.   Proof. now simpl. Qed.
+  Local Fact RS_S y y' : RS (inY y) (inY y') → S y y'.   Proof. now simpl. Qed.
+  Local Fact RS_T a b :  RS (inXY a) (inXY b) → T a b.   Proof. now simpl. Qed.
+
+  Hint Resolve R_RS S_RS T_RS RS_R RS_S RS_T good_map good_map_inv good_app_left good_app_right : core.
+
   (** This is the over approximation proposed in [1] which does not
       have the shape good ? (combination of l, lx, ly)  *)
 
-  Let θ lx ly l := good R lx ∨ good S ly ∨ good T l
-                 ∨ (∃z, z ∈ l ∧ lowered R lx (fst z))
-                 ∨ (∃z, z ∈ l ∧ lowered S ly (snd z))
-                   .
+  Let θ lx ly l := good RS (map inXY l++map inX lx++map inY ly).
 
   Hint Resolve good_app_middle in_or_app : core.
 
   Local Fact θ_app_middle lx ly l m r : θ lx ly (l++r) → θ lx ly (l++m++r).
-  Proof.
-    intros [ | [ | [ | [] ] ] ]; red; eauto.
-    + destruct H as (z & []%in_app_iff & ?); do 3 right; left; exists z; split; eauto.
-    + destruct H as (z & []%in_app_iff & ?); do 4 right; exists z; split; eauto.
+  Proof. 
+    unfold θ.
+    rewrite !map_app, <- !app_assoc.
+    apply good_app_middle.
   Qed.
 
   Hint Resolve θ_app_middle : core.
@@ -256,42 +228,11 @@ Section ramsey.
   Local Fact bar_θ_cons_middle lx ly x m r : bar (θ lx ly) (x::r) → bar (θ lx ly) (x::m++r).
   Proof. apply bar_app_middle with (l := [x]); auto. Qed.
 
-  (** We rework the shape of θ to give a more generic form *)
-
-  Local Fact R_RS x x' : R x x' → RS (inX x) (inX x').   Proof. now simpl. Qed.
-  Local Fact S_RS y y' : S y y' → RS (inY y) (inY y').   Proof. now simpl. Qed.
-  Local Fact T_RS a b : T a b → RS (inXY a) (inXY b).    Proof. now simpl. Qed.
-
-  Local Fact RS_R x x' : RS (inX x) (inX x') → R x x'.   Proof. now simpl. Qed.
-  Local Fact RS_S y y' : RS (inY y) (inY y') → S y y'.   Proof. now simpl. Qed.
-  Local Fact RS_T a b :  RS (inXY a) (inXY b) → T a b.   Proof. now simpl. Qed.
-
-  Hint Resolve R_RS S_RS T_RS RS_R RS_S RS_T good_map good_app_left good_app_right good_map_inv : core.
-
-  (** This equivalence is a *critical* observation when one wants to transfer
-      the θ _ _ over-approximation of (good T) to ideals instead of relations 
-
-      But it is not necessary for the proof of Ramsey below. *)
-
-  Local Remark θ_iff_good lx ly l : θ lx ly l ↔ good RS (map inXY l++map inX lx++map inY ly).
-  Proof.
-    split.
-    + intros [ | [ | [ | [ ((x' & y') & ? & x & []) | ((x' & y') & ? & y & []) ] ] ] ]; eauto.
-      * apply good_app_inv; do 2 right.
-        exists (inXY (x',y')); split; auto; exists (inX x); simpl; split right; eauto.
-      * apply good_app_inv; do 2 right.
-        exists (inXY (x',y'));split; auto; exists (inY y); simpl; split right; eauto.
-    + intros [ H | [ [ H | [ H | H ] ]%good_app_inv | H ] ]%good_app_inv; red; eauto.
-      * right; eauto.
-      * destruct H as (? & (x & <- & ?)%in_map_iff & ? & (y & <- & ?)%in_map_iff & []).
-      * destruct H as (? & ((x' & y') & <- & ?)%in_map_iff & ? & [(x & <- & ?)%in_map_iff|(y & <- & ?)%in_map_iff]%in_app_iff & ?); simpl in *.
-        - do 3 right; left; exists (x',y'); split; auto; red; simpl; red; eauto.
-        - do 4 right; exists (x',y'); split; auto; red; simpl; red; eauto.
-  Qed.
-
   Hint Resolve good_monotone good_app_right
                in_or_app in_eq : core.
                
+               
+               (*
   Let phi lx ly m := map inXY m ++ map inX lx ++ map inY ly.
   
   Check phi.
@@ -315,6 +256,8 @@ Section ramsey.
         - apply map_split_inv in E as (m1 & z & m2 & ? & ? & ? & ?); subst.
         Search map eq cons app.
   Admitted.
+  
+  *)
 
   Section nested_induction.
 
@@ -344,16 +287,23 @@ Section ramsey.
       intros G.
       induction 1 as [ h Hh | h _ IHh ].
       2: constructor 2; auto.
-      destruct Hh as [ []%good_cons_inv | [ | [ | [Hh|(u & [])] ] ] ].
-      1,2,3,4,6: constructor 1; red; auto.
-      + do 3 right; left; eauto; exists (x,y); rewrite !in_app_iff; simpl; eauto.
-      + do 4 right; eauto.
-      + destruct Hh as (u & Hu & []%lowered_cons_inv); eauto.
-        * apply in_split in Hu as (? & ? & ->).
-          rewrite <- app_assoc; simpl.
-          apply bar_θ_app_left, bar_θ_cons_middle; auto.
-        * constructor 1; red.
-          do 3 right; left; eauto.
+      red in Hh; simpl in Hh.
+      apply good_middle_inv in Hh
+        as [ (? & ? & ? & (h1 & z & h2 & -> & <- & <- & <-)%map_split_inv & ?) | [ | ] ].
+      + destruct H as (k & [ <- | H ]%In_split_special & Hk).
+        * rewrite <- app_assoc; simpl.
+          now apply bar_θ_app_left, bar_θ_middle with (l := [_]), G.
+        * constructor 1; red; rewrite !map_app, <- !app_assoc; simpl.
+          apply good_app_left; constructor 1.
+          exists k; split; auto.
+          revert H; repeat (rewrite !in_app_iff; simpl); tauto.
+      + constructor 1; red; rewrite !map_app, <- !app_assoc.
+        do 2 apply good_app_left; constructor 1.
+        destruct H as (k & H%in_app_iff & Hk); exists k; split; auto.
+        destruct H as [ (x' & <- & H)%in_map_iff | (y' & <- & H)%in_map_iff ]; auto.
+        destruct Hk.
+      + constructor 1; red.
+        now apply good_app_left.
     Qed.
 
     Hypothesis (B1 : bar (θ (x::lx) ly) []).
@@ -368,15 +318,28 @@ Section ramsey.
       + clear B1.
         intros H1; rewrite Forall_forall in H1.
         constructor 1.
-        rewrite θ_iff_good in Hl |- *.
-        destruct Hl as [ | [ []%good_cons_inv | [ | [ (u & []) | (u & Hu & []%lowered_cons_inv) ] ] ] ]; red; eauto.
-        * do 4 right; exists (x,y); split right; eauto.
-        * do 3 right; left; exists u; split right; eauto.
-        * specialize (H1 _ Hu).
-          do 2 right; left.
-          apply good_snoc_inv; right.
-          exists u; split right; auto.
-        * do 4 right; exists u; split right; eauto.
+        red in Hl |- *; simpl in Hl.
+        rewrite map_app, <- app_assoc; simpl.
+        apply good_special_inv in Hl
+          as [ (? & ? & ? & (l1 & k & l2 & -> & <- & <- & <-)%map_split_inv & Hl) | 
+             [ (? & ? & ? & (lx1 & x' & lx2 & -> & <- & <- & <-)%map_split_inv & ?) | [] ] ].
+        * rewrite map_app; simpl; rewrite <- !app_assoc; simpl.
+          apply good_app_left; constructor 1.
+          rewrite app_assoc in Hl.
+          destruct Hl as (u & [<- | Hu ]%In_split_special & Hl).
+          - exists (inXY (x,y)); split; eauto; split; simpl; auto.
+            apply (H1 k); eauto.
+          - exists u; split; auto.
+            revert Hu; repeat (rewrite !in_app_iff; simpl); tauto.
+        * destruct H as (u & [<- | Hu ]%In_split_special & H).
+          - destruct H.
+          - rewrite map_app; simpl; rewrite <- app_assoc.
+            apply good_app_left, good_app_left with (l := [_]), good_app_left.
+            simpl; constructor 1; exists u; split; auto.
+        * apply good_app_left; constructor 1.
+          destruct H as (? & (u & <- & ?)%in_map_iff & ?).
+          exists (inY u); split; auto.
+        * now apply good_app_left, good_app_left with (l := [_]), good_app_left.
       + intros H1; apply lem_ramsey_1 with (h := []); eauto.
     Qed.
 
@@ -390,15 +353,17 @@ Section ramsey.
   Local Lemma bar_compose lx ly : bar (good R) lx → bar (good S) ly → bar (θ lx ly) [].
   Proof.
     double bar induction as ? ?.
-    + constructor 1; red; auto.
-    + constructor 1; red; auto.
+    + constructor 1; red; simpl.
+      apply good_app_right, good_map with (2 := H); auto.
+    + constructor 1; red; simpl.
+      apply good_app_left, good_map with (2 := H); auto.
     + constructor 2; intros []; apply lemma_ramsey_3; auto.
   Qed.
 
   Local Fact bar_phi_good : bar (θ [] []) [] → bar (good T) [].
   Proof.
     apply bar_mono.
-    intro; rewrite θ_iff_good; simpl; rewrite app_nil_r; eauto.
+    unfold θ; intro; simpl; rewrite app_nil_r; eauto.
   Qed.
 
   Corollary ramsey : bar (good R) [] → bar (good S) [] → bar (good T) [].
