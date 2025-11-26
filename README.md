@@ -50,12 +50,13 @@ opam install rocq-stdlib.9.0.0 rocqide.9.0.0 --jobs=16
 The first and last command may take some time to complete.
 
 Once `Rocq-9.0.0` is installed, unpack the archive corresponding to
-`tag: 1.0`, and in a terminal, from the main directory of the archive, 
+git branch `artifact` (orelse `tag: 1.0`), and in a terminal, 
+from the main directory of the archive, 
 compile the whole project with
 
 ```console
 git clone https://github.com/DmxLarchey/Hilbert-Basis-Theorem.git
-git checkout tags/1.0
+git checkout artifact
 cd Hilbert-Basis-Theorem/theories
 make all
 ```
