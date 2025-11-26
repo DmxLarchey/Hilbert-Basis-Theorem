@@ -1,4 +1,8 @@
 (**************************************************************)
+(*   Copyright Dominique Larchey-Wendling [*]                 *)
+(*                                                            *)
+(*                             [*] Affiliation LORIA -- CNRS  *)
+(**************************************************************)
 (*      This file is distributed under the terms of the       *)
 (*        Mozilla Public License Version 2.0, MPL-2.0         *)
 (**************************************************************)
@@ -13,7 +17,8 @@ Import ListNotations.
 
 Section bar.
 
-  (** Code partly imported/inspired from the coq-kruskal-almostfull project *)
+  (** Code partly imported/inspired from the Kruskal-AlmostFull 
+      project in https://dmxlarchey.github.io/Coq-Kruskal/ *)
 
   Variables (A : Type).
 
@@ -72,7 +77,10 @@ Section bar.
         https://doi.org/10.1007/3-540-48167-2_3 (Coquand&Persson 98)
       It avoids us to introduce the notion of sublist or the even
       more complicated "intercalate" function that is used in
-        https://doi.org/10.1007/BFb0097789 (Fridlender 96) *)
+        https://doi.org/10.1007/BFb0097789 (Fridlender 96) 
+
+      It is not part of Kruskal-AlmostFull and could be added there
+      as a usefull tool too. *)
   Lemma bar_app_middle P m :
    (∀ l r, P (l++r) → P (l++m++r))
   → ∀ l r, bar P (l++r) → bar P (l++m++r).
@@ -199,4 +207,79 @@ Tactic Notation "double" "bar" "induction" "as" simple_intropattern(Hl) simple_i
       [ intros l m Hl | intros l m Hm | intros l m Hl Hm ]
   end.
 
+Section bar_nc.
+
+  (** This section is about bar in "non-constructive" settings, following
+      the developments in "Constructive Substitutes for König's lemma"
+        https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.TYPES.2024.2 *)
+
+  Variables (A : Type) (Q : list A → Prop).
+
+  Local Fact not_bar_1 l : ¬ bar Q l → ¬ Q l.
+  Proof. intros H ?; apply H; now constructor 1. Qed.
+
+  Hypothesis xm : ∀P, P ∨ ¬ P.
+
+  Local Fact not_bar_2__XM l : ¬ bar Q l → ∃a, ¬ bar Q (a::l).
+  Proof.
+    intros H.
+    destruct (xm (∃a, ¬ bar Q (a::l))) as [ | C ]; auto.
+    destruct H; constructor 2.
+    intros a.
+    destruct (xm (bar Q (a::l))) as [ | D ]; auto.
+    destruct C; eauto.
+  Qed.
+
+  Hypothesis dc : ∀ B (R : B → B → Prop), (∀a, ∃b, R a b) → ∀a, ∃ρ, ρ 0 = a ∧ ∀n, R (ρ n) (ρ (1+n)).
+
+  (** This is a form of dependent choice over Σ-types *)
+  Fact dc_sigma B (P : B → Prop) R : 
+      (∀a, P a → ∃b, P b ∧ R a b)
+     → ∀a, P a → ∃ρ, ρ 0 = a ∧ (∀n, P (ρ n) ∧ R (ρ n) (ρ (S n))).
+  Proof.
+    intros HP a Ha.
+    set (C := sig P).
+    set (T (x y : C) := R (proj1_sig x) (proj1_sig y)).
+    destruct (dc _ T) with (a := exist _ a Ha) as (f & H1 & H2).
+    + intros (c & Hc).
+      destruct (HP _ Hc) as (b & Hb & ?).
+      exists (exist _ b Hb); auto.
+    + exists (λ n, proj1_sig (f n)); split.
+      * now rewrite H1.
+      * intro; split.
+        - apply proj2_sig.
+        - apply H2.
+  Qed.
+
+  Hint Constructors extends bar : core.
+
+  Lemma not_bar_nil__XM_DC : ¬ bar Q [] → ∃ρ, ∀n, ¬ Q (pfx_rev ρ n).
+  Proof.
+    intros H0.
+    destruct dc_sigma
+      with (P := λ x, ¬ bar Q x)
+           (R := @extends A)
+           (a := @nil A)
+      as (f & H1 & H2); auto.
+    + intros l (a & ?)%not_bar_2__XM.
+      exists (a::l); auto.
+    + destruct (extends_pfx_rev f) as (g & Hg); auto.
+      * intro; apply H2.
+      * exists g.
+        intros n Hn.
+        apply (H2 n); rewrite Hg; auto.
+  Qed.
+
+  (** Reminder of the bar theorem (under XM + DC of course) *)
+  Theorem bar_theorem__XM_DC : bar Q [] ↔ ∀ρ, ∃n, Q (pfx_rev ρ n).
+  Proof.
+    split.
+    + apply bar_sequences.
+    + intros H.
+      destruct (xm (bar Q [])) as [ | C ]; auto || exfalso.
+      apply not_bar_nil__XM_DC in C as (rho & Hrho).
+      now destruct (H rho) as (? & ?%Hrho).
+  Qed.
+
+End bar_nc.
 
