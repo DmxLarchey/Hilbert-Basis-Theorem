@@ -56,8 +56,9 @@ compile the whole project with
 
 ```console
 git clone https://github.com/DmxLarchey/Hilbert-Basis-Theorem.git
+cd Hilbert-Basis-Theorem
 git checkout artifact
-cd Hilbert-Basis-Theorem/theories
+cd theories
 make all
 ```
 
