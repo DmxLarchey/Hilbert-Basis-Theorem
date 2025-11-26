@@ -135,7 +135,7 @@ Section Bar_noetherian__ML_noetherian__strongly_discrete.
   Implicit Type (l : list 𝓡).
 
   (** In a strongly discrete ring, Noetherian entails ML-Noetherian *)
-  Local Lemma noetherian__ML_noetherian : noetherian 𝓡 → ML_noetherian 𝓡.
+  Lemma noetherian__ML_noetherian : noetherian 𝓡 → ML_noetherian 𝓡.
   Proof.
     intros H%noetherian__wf_strict_incl_ideal; revert H.
     wf rel morph (λ P Q, proj1_sig P = proj1_sig Q).
@@ -147,7 +147,7 @@ Section Bar_noetherian__ML_noetherian__strongly_discrete.
 
   Hint Resolve strongly_discrete__PA_dec : core.
 
-  Local Lemma ML_noetherian__noetherian :
+  Lemma ML_noetherian__noetherian :
       ML_noetherian 𝓡 → noetherian 𝓡.
   Proof.
     intros HR.

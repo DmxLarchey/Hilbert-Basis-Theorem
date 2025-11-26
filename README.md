@@ -49,11 +49,13 @@ opam install rocq-stdlib.9.0.0 rocqide.9.0.0 --jobs=16
 
 The first and last command may take some time to complete.
 
-Once `Rocq-9.0.0` is installed, unpack the archive and, in a terminal, 
-from the main directory of the archive, compile the whole project with
+Once `Rocq-9.0.0` is installed, unpack the archive corresponding to
+`tag: 1.0`, and in a terminal, from the main directory of the archive, 
+compile the whole project with
 
 ```console
 git clone https://github.com/DmxLarchey/Hilbert-Basis-Theorem.git
+git checkout tags/1.0
 cd Hilbert-Basis-Theorem/theories
 make all
 ```
@@ -73,7 +75,8 @@ Some of the `*.v` files below are heavily commented.
 ## Contents of the individual `*.v` files
 
 ```console
-_CoqProject:           lists the *.v Rocq source code files          
+## files which are part of the artifact of the paper
+_CoqProject:           lists the *.v Rocq source code files
 Makefile:              use _CoqProject to manage the Rocq compilation process
  
 utils.v:               utilities and basic notations
@@ -114,6 +117,12 @@ noetherian_alt.v:      comparison with alternate constructive characterizations
    
 ramsey.v:              reworked proof that the direct product of two WQOs
                        is a WQO (for the record)
+
+## files with extra results related to fields and bases 
+
+field.v:               some results about discrete fields
+
+find_basis.v:          some algorithms to computes bases in stringly discrete Noetherian rings
 ```
 
 # Description of some of the theoritical results 
